@@ -28,13 +28,9 @@ def callback():
     signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
 
-    print("📩 Received body:", body)
-    print("🧾 Signature:", signature)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        print("❌ Invalid Signature — กรุณาตรวจสอบ LINE_CHANNEL_SECRET")
         abort(400)
     except Exception as e:
         print(f"❌ Exception occurred: {e}")
@@ -49,7 +45,6 @@ def send_drug_selection(event):
         CarouselColumn(title='Cephalexin', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cephalexin', text='เลือกยา: Cephalexin')]),
         CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cefdinir', text='เลือกยา: Cefdinir')])
     ])
-
     carousel2 = CarouselTemplate(columns=[
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Cefixime', text='เลือกยา: Cefixime')]),
         CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก Augmentin', text='เลือกยา: Augmentin')]),
@@ -57,13 +52,29 @@ def send_drug_selection(event):
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
     ])
-
     line_bot_api.reply_message(
         event.reply_token,
         [
             TemplateSendMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
             TemplateSendMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
         ]
+    )
+
+def send_amoxicillin_indications(event):
+    carousel = CarouselTemplate(columns=[
+        CarouselColumn(title="Pharyngitis", text="25–50 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก Pharyngitis", text="Indication: Pharyngitis")
+        ]),
+        CarouselColumn(title="Otitis Media", text="80–90 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก Otitis Media", text="Indication: Otitis Media")
+        ]),
+        CarouselColumn(title="Sinusitis", text="45 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก Sinusitis", text="Indication: Sinusitis")
+        ])
+    ])
+    line_bot_api.reply_message(
+        event.reply_token,
+        TemplateSendMessage(alt_text="เลือกข้อบ่งใช้ของ Amoxicillin", template=carousel)
     )
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -76,37 +87,53 @@ def handle_message(event):
         return
 
     if text == "เลือกยาใหม่":
-        if user_id in user_drug_selection:
-            del user_drug_selection[user_id]
+        user_drug_selection.pop(user_id, None)
         send_drug_selection(event)
         return
 
     if text.startswith("เลือกยา:"):
         drug_name = text.replace("เลือกยา:", "").strip()
-        user_drug_selection[user_id] = drug_name
-        reply = f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        user_drug_selection[user_id] = {"drug": drug_name}
+
+        if drug_name == "Amoxicillin":
+            send_amoxicillin_indications(event)
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
+            )
+        return
+
+    if text.startswith("Indication:"):
+        indication = text.replace("Indication:", "").strip()
+        if user_id in user_drug_selection:
+            user_drug_selection[user_id]["indication"] = indication
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
+            )
         return
 
     if user_id in user_drug_selection:
         match = re.search(r"(\d+(\.\d+)?)", text)
         if match:
             weight = float(match.group(1))
-            drug = user_drug_selection[user_id]
+            entry = user_drug_selection[user_id]
+            drug = entry.get("drug")
 
             try:
                 if drug == "Paracetamol":
                     dose_min = weight * 10
                     dose_max = weight * 15
-                    reply = f"Paracetamol ขนาดที่แนะนำ: {dose_min:.2f} - {dose_max:.2f} mg ต่อครั้ง"
+                    reply = f"Paracetamol: {dose_min:.2f} – {dose_max:.2f} mg ต่อครั้ง"
 
                 elif drug == "Cetirizine":
                     dose = weight * 0.25
-                    reply = f"Cetirizine ขนาดที่แนะนำ: {dose:.2f} mg ต่อวัน"
+                    reply = f"Cetirizine: {dose:.2f} mg ต่อวัน"
 
                 elif drug == "Domperidone":
                     dose = weight * 0.25
-                    reply = f"Domperidone ขนาดที่แนะนำ: {dose:.2f} mg (1 mg/ml) ≈ {dose:.2f} ml ต่อครั้ง"
+                    reply = f"Domperidone: {dose:.2f} mg ≈ {dose:.2f} ml ต่อครั้ง"
 
                 elif drug == "Hydroxyzine":
                     dose = weight * 0.5
@@ -118,19 +145,23 @@ def handle_message(event):
                     volume = dose / (15 / 0.6)
                     reply = f"Ferrous fumarate: {dose:.2f} mg ≈ {volume:.2f} ml ต่อวัน"
 
-                elif drug == "Salbutamol":
-                    dose = weight * 0.15
-                    volume = dose / (2 / 5)
-                    reply = f"Salbutamol: {dose:.2f} mg ≈ {volume:.2f} ml ต่อครั้ง"
+                elif drug == "Amoxicillin":
+                    indication = entry.get("indication")
+                    if indication == "Pharyngitis":
+                        dose_min = weight * 25
+                        dose_max = weight * 50
+                        reply = f"Amoxicillin (Pharyngitis): {dose_min:.0f}–{dose_max:.0f} mg/วัน ÷ 2 ครั้ง"
+                    elif indication == "Otitis Media":
+                        dose = weight * 90
+                        reply = f"Amoxicillin (Otitis Media): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
+                    elif indication == "Sinusitis":
+                        dose = weight * 45
+                        reply = f"Amoxicillin (Sinusitis): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
+                    else:
+                        reply = "กรุณาเลือกข้อบ่งใช้ของ Amoxicillin ก่อนครับ"
 
-                elif drug == "Chlorpheniramine":
-                    dose = weight * 0.35
-                    volume = dose / (2 / 5)
-                    reply = f"Chlorpheniramine: {dose:.2f} mg/day ≈ {volume:.2f} ml/day (แบ่งให้ทุก 8 ชม.)"
-
-                elif drug in ["Amoxicillin", "Cephalexin", "Cefdinir", "Cefixime", "Augmentin", "Azithromycin"]:
+                elif drug in ["Cephalexin", "Cefdinir", "Cefixime", "Augmentin", "Azithromycin"]:
                     settings = {
-                        "Amoxicillin":   {"dose": 50, "conc": 250 / 5, "bottle": 60, "days": 7},
                         "Cephalexin":    {"dose": 50, "conc": 125 / 5, "bottle": 60, "days": 7},
                         "Cefdinir":      {"dose": 14, "conc": 125 / 5, "bottle": 30, "days": 5},
                         "Cefixime":      {"dose": 8,  "conc": 100 / 5, "bottle": 30, "days": 5},
@@ -146,7 +177,7 @@ def handle_message(event):
 
                     reply = (
                         f"{drug}:\n"
-                        f"ขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+                        f"{total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
                         f"ใช้ {cfg['days']} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({cfg['bottle']} ml)"
                     )
                 else:
@@ -160,7 +191,7 @@ def handle_message(event):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")
+                TextSendMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")
             )
 
 if __name__ == "__main__":
