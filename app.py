@@ -24,6 +24,10 @@ def home():
 def callback():
     signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
+
+    print("📩 Received body:", body)
+    print("📩 Signature:", signature)
+
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
