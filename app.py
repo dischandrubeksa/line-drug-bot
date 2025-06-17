@@ -1,7 +1,7 @@
 from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import *
+from linebot.v3 import WebhookHandler
+from linebot.v3.messaging import MessagingApi, Configuration, ApiClient
+from linebot.v3.messaging.models import (ReplyMessageRequest, TextMessage, TemplateMessage, CarouselTemplate, CarouselColumn, MessageAction)
 import os
 import re
 import math
@@ -14,7 +14,7 @@ LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
 if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
     raise ValueError("Missing LINE_CHANNEL_ACCESS_TOKEN or LINE_CHANNEL_SECRET")
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 user_drug_selection = {}  # user_id: drug
@@ -31,8 +31,6 @@ def callback():
 
     try:
         handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
     except Exception as e:
         abort(400)
     return 'OK'
@@ -54,13 +52,17 @@ def send_drug_selection(event):
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
     ])
 
-    line_bot_api.reply_message(
-        event.reply_token,
-        [
-            TemplateSendMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
-            TemplateSendMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
-        ]
-    )
+    with ApiClient(configuration) as api_client:
+        messaging_api = MessagingApi(api_client)
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[
+                    TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
+                    TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
+                ]
+            )
+        )
 
 def send_amoxicillin_indications(event):
     indications = [
@@ -79,96 +81,116 @@ def send_amoxicillin_indications(event):
         columns.append(col)
 
     carousel = CarouselTemplate(columns=columns)
-    line_bot_api.reply_message(event.reply_token, TemplateSendMessage(alt_text="เลือก indication", template=carousel))
+    with ApiClient(configuration) as api_client:
+        messaging_api = MessagingApi(api_client)
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TemplateMessage(alt_text="เลือก indication", template=carousel)]
+            )
+        )
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(event_type="message", message_type="text")
 def handle_message(event):
     user_id = event.source.user_id
     text = event.message.text.strip()
 
-    if text.lower() in ['คำนวณยา', 'dose', 'เริ่ม']:
-        send_drug_selection(event)
-        return
+    with ApiClient(configuration) as api_client:
+        messaging_api = MessagingApi(api_client)
 
-    if text == "เลือกยาใหม่":
-        user_drug_selection.pop(user_id, None)
-        user_indication_selection.pop(user_id, None)
-        send_drug_selection(event)
-        return
+        if text.lower() in ['คำนวณยา', 'dose', 'เริ่ม']:
+            send_drug_selection(event)
+            return
 
-    if text.startswith("เลือกยา:"):
-        drug_name = text.replace("เลือกยา:", "").strip()
-        user_drug_selection[user_id] = drug_name
+        if text == "เลือกยาใหม่":
+            user_drug_selection.pop(user_id, None)
+            user_indication_selection.pop(user_id, None)
+            send_drug_selection(event)
+            return
 
-        if drug_name == "Amoxicillin":
-            send_amoxicillin_indications(event)
-        else:
-            reply = f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-        return
+        if text.startswith("เลือกยา:"):
+            drug_name = text.replace("เลือกยา:", "").strip()
+            user_drug_selection[user_id] = drug_name
 
-    if text.startswith("indication:"):
-        indication = text.replace("indication:", "").strip()
-        user_indication_selection[user_id] = indication
-        reply = f"เลือก indication: {indication}\nกรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-        return
+            if drug_name == "Amoxicillin":
+                send_amoxicillin_indications(event)
+            else:
+                reply = f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20"
+                messaging_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
+                )
+            return
 
-    if user_id in user_drug_selection:
-        match = re.search(r"(\d+(\.\d+)?)", text)
-        if match:
-            weight = float(match.group(1))
-            drug = user_drug_selection[user_id]
+        if text.startswith("indication:"):
+            indication = text.replace("indication:", "").strip()
+            user_indication_selection[user_id] = indication
+            reply = f"เลือก indication: {indication}\nกรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20"
+            messaging_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
+            )
+            return
 
-            try:
-                if drug == "Amoxicillin" and user_id in user_indication_selection:
-                    ind = user_indication_selection[user_id]
-                    dose_map = {
-                        "Pharyngitis": (50, 10),
-                        "Otitis media": (90, 10),
-                        "Pneumonia": (90, 7),
-                        "Anthrax": (75, 60),
-                        "Helicobacter pylori": (62.5, 14),
-                        "UTI": (75, 7),
-                        "Rhinosinusitis": (90, 10),
-                        "Endocarditis prophylaxis": (50, 1),
-                        "Lyme disease": (50, 14),
-                        "Osteoarticular infection": (100, 14)
-                    }
-                    max_dose = {
-                        "Pneumonia": 4000,
-                        "Anthrax": 1000,
-                        "UTI": 500,
-                        "Rhinosinusitis": 2000,
-                        "Endocarditis prophylaxis": 2000,
-                        "Lyme disease": 500,
-                        "Osteoarticular infection": 4000
-                    }
+        if user_id in user_drug_selection:
+            match = re.search(r"(\d+(\.\d+)?)", text)
+            if match:
+                weight = float(match.group(1))
+                drug = user_drug_selection[user_id]
 
-                    dose_per_kg, days = dose_map.get(ind, (50, 7))
-                    total_mg = weight * dose_per_kg
-                    max_mg = max_dose.get(ind)
-                    if max_mg:
-                        dose_info = f"{min(total_mg, max_mg):.0f} mg/day (สูงสุด {max_mg} mg)"
+                try:
+                    if drug == "Amoxicillin" and user_id in user_indication_selection:
+                        ind = user_indication_selection[user_id]
+                        dose_map = {
+                            "Pharyngitis": (50, 10),
+                            "Otitis media": (90, 10),
+                            "Pneumonia": (90, 7),
+                            "Anthrax": (75, 60),
+                            "Helicobacter pylori": (62.5, 14),
+                            "UTI": (75, 7),
+                            "Rhinosinusitis": (90, 10),
+                            "Endocarditis prophylaxis": (50, 1),
+                            "Lyme disease": (50, 14),
+                            "Osteoarticular infection": (100, 14)
+                        }
+                        max_dose = {
+                            "Pneumonia": 4000,
+                            "Anthrax": 1000,
+                            "UTI": 500,
+                            "Rhinosinusitis": 2000,
+                            "Endocarditis prophylaxis": 2000,
+                            "Lyme disease": 500,
+                            "Osteoarticular infection": 4000
+                        }
+
+                        dose_per_kg, days = dose_map.get(ind, (50, 7))
+                        total_mg = weight * dose_per_kg
+                        max_mg = max_dose.get(ind)
+                        if max_mg:
+                            dose_info = f"{min(total_mg, max_mg):.0f} mg/day (สูงสุด {max_mg} mg)"
+                        else:
+                            dose_info = f"{total_mg:.0f} mg/day"
+
+                        reply = (
+                            f"{drug} - {ind}:\n"
+                            f"ขนาด: {dose_info}\nระยะเวลา: {days} วัน"
+                        )
                     else:
-                        dose_info = f"{total_mg:.0f} mg/day"
+                        reply = f"ยังไม่รองรับยา {drug} หรือไม่พบ indication"
 
-                    reply = (
-                        f"{drug} - {ind}:\n"
-                        f"ขนาด: {dose_info}\nระยะเวลา: {days} วัน"
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
                     )
-                else:
-                    reply = f"ยังไม่รองรับยา {drug} หรือไม่พบ indication"
-
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-            except Exception as e:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="เกิดข้อผิดพลาดในการคำนวณ"))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20"))
+                except Exception as e:
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text="เกิดข้อผิดพลาดในการคำนวณ")])
+                    )
+            else:
+                messaging_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")])
+                )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
+    
 LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
 LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
