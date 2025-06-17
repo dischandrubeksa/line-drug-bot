@@ -138,7 +138,7 @@ def handle_message(event):
         send_drug_selection(event)
         return
 
-    if text.startswith("เลือกยา:"):
+    elif text.startswith("เลือกยา:"):
         drug_name = text.replace("เลือกยา:", "").strip()
         user_drug_selection[user_id] = {"drug": drug_name}
 
@@ -148,9 +148,9 @@ def handle_message(event):
         send_cephalexin_indications(event)
     else:
         line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
-        )
+        event.reply_token,
+        TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
+    )
     return
 
 
