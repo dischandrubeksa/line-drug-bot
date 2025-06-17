@@ -226,7 +226,10 @@ def handle_message(event):
                 print(f"❌ Error in calculation: {e}")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="เกิดข้อผิดพลาดในการคำนวณ"))
         else:
-            line_bot_api.reply
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")
+    )
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
