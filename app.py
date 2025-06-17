@@ -105,25 +105,6 @@ def send_amoxicillin_indications(event):
         ]
     )
 
-def send_cephalexin_indications(event):
-    carousel = CarouselTemplate(columns=[
-        CarouselColumn(title="Skin/Skin Structure", text="25–50 mg/kg/day ÷ 4", actions=[
-            MessageAction(label="เลือก SSTI", text="Indication: Cephalexin-SSTI")
-        ]),
-        CarouselColumn(title="Pharyngitis", text="25–50 mg/kg/day ÷ 2", actions=[
-            MessageAction(label="เลือก Pharyngitis", text="Indication: Cephalexin-Pharyngitis")
-        ]),
-        CarouselColumn(title="UTI", text="50–100 mg/kg/day ÷ 4", actions=[
-            MessageAction(label="เลือก UTI", text="Indication: Cephalexin-UTI")
-        ])
-    ])
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        [TemplateSendMessage(alt_text="เลือกข้อบ่งใช้ของ Cephalexin", template=carousel)]
-    )
-
-
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
@@ -138,21 +119,18 @@ def handle_message(event):
         send_drug_selection(event)
         return
 
-    elif text.startswith("เลือกยา:"):
+    if text.startswith("เลือกยา:"):
         drug_name = text.replace("เลือกยา:", "").strip()
         user_drug_selection[user_id] = {"drug": drug_name}
 
-    if drug_name == "Amoxicillin":
-        send_amoxicillin_indications(event)
-    elif drug_name == "Cephalexin":
-        send_cephalexin_indications(event)
-    else:
-        line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
-    )
-    return
-
+        if drug_name == "Amoxicillin":
+            send_amoxicillin_indications(event)
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
+            )
+        return
 
     if text.startswith("Indication:"):
         indication = text.replace("Indication:", "").strip()
@@ -214,33 +192,6 @@ def handle_message(event):
                         f"≈ {ml_per_day:.1f} ml/วัน, ครั้งละ ~{ml_per_dose:.1f} ml วันละ 2 ครั้ง"
                         f"ใช้ {days} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
                     )
-                elif drug == "Cephalexin":
-                    indication = entry.get("indication", "ทั่วไป")
-                    dose_map = {
-                        "Cephalexin-SSTI": (50, 7, 4),
-                        "Cephalexin-Pharyngitis": (50, 10, 2),
-                        "Cephalexin-UTI": (100, 7, 4)
-                    }
-                    conc = 125 / 5  # 25 mg/ml
-                    bottle_size = 60
-
-                    dose_info = dose_map.get(indication)
-                    if not dose_info:
-                        reply = f"ยังไม่มีข้อมูลการคำนวณสำหรับ {indication}"
-                    else:
-                        dose_per_kg, days, freq = dose_info
-                        total_mg_day = weight * dose_per_kg
-                        ml_per_day = total_mg_day / conc
-                        ml_per_dose = ml_per_day / freq
-                        total_ml = ml_per_day * days
-                        bottles = math.ceil(total_ml / bottle_size)
-
-                        reply = (
-                            f"{drug} - {indication} (น้ำหนัก {weight} kg):\n"
-                            f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/วัน\n"
-                            f"≈ {ml_per_day:.1f} ml/วัน, ครั้งละ ~{ml_per_dose:.1f} ml วันละ {freq} ครั้ง\n"
-                            f"ใช้ {days} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
-                        )
                 else:
                     reply = f"ยังไม่รองรับยา {drug}"
 
