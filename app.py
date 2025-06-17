@@ -8,11 +8,8 @@ import math
 
 app = Flask(__name__)
 
-LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
-
-if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
-    raise ValueError("Missing LINE_CHANNEL_ACCESS_TOKEN or LINE_CHANNEL_SECRET")
+LINE_CHANNEL_ACCESS_TOKEN = 'ใส่ access token ของคุณตรงนี้'
+LINE_CHANNEL_SECRET = 'ใส่ channel secret ของคุณตรงนี้'
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -127,6 +124,91 @@ def handle_message(event):
                 volume = dose / (2/5)
                 reply = f"Chlorpheniramine: {dose:.2f} mg/day ≈ {volume:.2f} ml/day (แบ่งให้ทุก 8 ชม.)"
 
+            elif drug == "Amoxicillin":
+                dose = 50  # mg/kg/day
+                conc = 250 / 5  # mg/ml
+                bottle_size = 60  # ml
+                duration = 7  # days
+                total_mg_day = weight * dose
+                ml_per_day = total_mg_day / conc
+                total_ml = ml_per_day * duration
+                bottles = math.ceil(total_ml / bottle_size)
+                reply = (
+    f"Amoxicillin:\nขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+    f"ใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (60 ml)"
+)
+
+            elif drug == "Cephalexin":
+                dose = 50
+                conc = 125 / 5
+                bottle_size = 60
+                duration = 7
+                total_mg_day = weight * dose
+                ml_per_day = total_mg_day / conc
+                total_ml = ml_per_day * duration
+                bottles = math.ceil(total_ml / bottle_size)
+                reply = (
+    f"Cephalexin:\nขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+    f"ใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (60 ml)"
+)
+
+            elif drug == "Cefdinir":
+                dose = 14
+                conc = 125 / 5
+                bottle_size = 30
+                duration = 5
+                total_mg_day = weight * dose
+                ml_per_day = total_mg_day / conc
+                total_ml = ml_per_day * duration
+                bottles = math.ceil(total_ml / bottle_size)
+                reply = (
+    f"Cefdinir:\nขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+    f"ใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (30 ml)"
+)
+
+            elif drug == "Cefixime":
+                dose = 8
+                conc = 100 / 5
+                bottle_size = 30
+                duration = 5
+                total_mg_day = weight * dose
+                ml_per_day = total_mg_day / conc
+                total_ml = ml_per_day * duration
+                bottles = math.ceil(total_ml / bottle_size)
+                reply = (
+    f"Cefixime:\nขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+    f"ใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (30 ml)"
+)
+
+            elif drug == "Augmentin":
+                dose = 90
+                conc = 600 / 5
+                bottle_size = 70
+                duration = 10
+                total_mg_day = weight * dose
+                ml_per_day = total_mg_day / conc
+                total_ml = ml_per_day * duration
+                bottles = math.ceil(total_ml / bottle_size)
+                reply = (
+    f"Augmentin:\nขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+    f"ใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (70 ml)"
+)
+
+            elif drug == "Azithromycin":
+                dose = 10
+                conc = 200 / 5
+                bottle_size = 15
+                duration = 3
+                total_mg_day = weight * dose
+                ml_per_day = total_mg_day / conc
+                total_ml = ml_per_day * duration
+                bottles = math.ceil(total_ml / bottle_size)
+                reply = (
+    f"Azithromycin:\n"
+    f"ขนาด: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
+    f"ใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (15 ml)"
+)
+
             else:
                 reply = "ขออภัย ยังไม่รองรับตัวยานี้ครับ"
 
@@ -142,6 +224,6 @@ def handle_message(event):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-    
+
 LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
 LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
