@@ -61,20 +61,48 @@ def send_drug_selection(event):
     )
 
 def send_amoxicillin_indications(event):
-    carousel = CarouselTemplate(columns=[
+    carousel1 = CarouselTemplate(columns=[
         CarouselColumn(title="Pharyngitis", text="25–50 mg/kg/day ÷ 2", actions=[
             MessageAction(label="เลือก Pharyngitis", text="Indication: Pharyngitis")
         ]),
         CarouselColumn(title="Otitis Media", text="80–90 mg/kg/day ÷ 2", actions=[
             MessageAction(label="เลือก Otitis Media", text="Indication: Otitis Media")
         ]),
+        CarouselColumn(title="Pneumonia", text="90 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก Pneumonia", text="Indication: Pneumonia")
+        ]),
+        CarouselColumn(title="Anthrax", text="60 mg/kg/day ÷ 3", actions=[
+            MessageAction(label="เลือก Anthrax", text="Indication: Anthrax")
+        ]),
+        CarouselColumn(title="H. pylori", text="50 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก H. pylori", text="Indication: H. pylori")
+        ]),
+    ])
+    
+    carousel2 = CarouselTemplate(columns=[
+        CarouselColumn(title="UTI", text="25–50 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก UTI", text="Indication: UTI")
+        ]),
         CarouselColumn(title="Sinusitis", text="45 mg/kg/day ÷ 2", actions=[
             MessageAction(label="เลือก Sinusitis", text="Indication: Sinusitis")
-        ])
+        ]),
+        CarouselColumn(title="Endocarditis Prophylaxis", text="50 mg/kg once", actions=[
+            MessageAction(label="เลือก Endocarditis", text="Indication: Endocarditis")
+        ]),
+        CarouselColumn(title="Lyme Disease", text="50 mg/kg/day ÷ 3", actions=[
+            MessageAction(label="เลือก Lyme Disease", text="Indication: Lyme Disease")
+        ]),
+        CarouselColumn(title="Osteoarticular Infection", text="90 mg/kg/day ÷ 2", actions=[
+            MessageAction(label="เลือก Osteoarticular", text="Indication: Osteoarticular")
+        ]),
     ])
+
     line_bot_api.reply_message(
         event.reply_token,
-        TemplateSendMessage(alt_text="เลือกข้อบ่งใช้ของ Amoxicillin", template=carousel)
+        [
+            TemplateSendMessage(alt_text="เลือกข้อบ่งใช้ของ Amoxicillin", template=carousel1),
+            TemplateSendMessage(alt_text="เลือกข้อบ่งใช้อื่นๆ", template=carousel2)
+        ]
     )
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -157,6 +185,28 @@ def handle_message(event):
                     elif indication == "Sinusitis":
                         dose = weight * 45
                         reply = f"Amoxicillin (Sinusitis): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
+                    elif indication == "Pneumonia":
+                        dose = weight * 90
+                        reply = f"Amoxicillin (Pneumonia): {dose:.0f} mg/วัน ÷ 2 ครั้ง"   
+                    elif indication == "Anthrax":
+                        dose = weight * 60
+                        reply = f"Amoxicillin (Anthrax): {dose:.0f} mg/วัน ÷ 3 ครั้ง"
+                    elif indication == "H. pylori":
+                        dose = weight * 50
+                        reply = f"Amoxicillin (H. pylori): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
+                    elif indication == "UTI":
+                        dose_min = weight * 25
+                        dose_max = weight * 50
+                        reply = f"Amoxicillin (UTI): {dose_min:.0f}–{dose_max:.0f} mg/วัน ÷ 2 ครั้ง"
+                    elif indication == "Endocarditis":
+                        dose = weight * 50
+                        reply = f"Amoxicillin (Endocarditis): {dose:.0f} mg once"
+                    elif indication == "Lyme Disease":
+                        dose = weight * 50
+                        reply = f"Amoxicillin (Lyme Disease): {dose:.0f} mg/วัน ÷ 3 ครั้ง"
+                    elif indication == "Osteoarticular":
+                        dose = weight * 90
+                        reply = f"Amoxicillin (Osteoarticular): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
                     else:
                         reply = "กรุณาเลือกข้อบ่งใช้ของ Amoxicillin ก่อนครับ"
 
