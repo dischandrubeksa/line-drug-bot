@@ -68,10 +68,19 @@ def send_drug_selection(event):
     ))
 
 def send_amoxicillin_indications(event):
+# รายชื่อ indication และ label ที่จะใช้แสดง
     indications = [
-        'Pharyngitis', 'Otitis media', 'Pneumonia', 'Anthrax', 'Helicobacter pylori',
-        'UTI', 'Rhinosinusitis', 'Endocarditis prophylaxis', 'Lyme disease', 'Osteoarticular infection'
-    ]
+("Pharyngitis / Tonsillitis", "Pharyngitis"),
+("Otitis media (AOM)", "Otitis media"),
+("Pneumonia (CAP)", "Pneumonia"),
+("Anthrax", "Anthrax"),
+("H. pylori", "H. pylori"),
+("Urinary tract infection", "UTI"),
+("Rhinosinusitis", "Rhinosinusitis"),
+("Endocarditis prophylaxis", "Endocarditis"),
+("Lyme disease", "Lyme disease"),
+("Osteoarticular infection", "Osteoarticular")
+]
 
     columns = []
     for i in range(0, len(indications), 3):
