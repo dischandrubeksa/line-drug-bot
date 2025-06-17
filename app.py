@@ -26,15 +26,15 @@ def callback():
     body = request.get_data(as_text=True)
 
     print("📩 Received body:", body)
-    print("📩 Signature:", signature)
+    print("🧾 Signature:", signature)
 
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        print("❌ Invalid Signature")
+        print("❌ Invalid Signature — กรุณาตรวจสอบ LINE_CHANNEL_SECRET")
         abort(400)
     except Exception as e:
-        print(f"❌ Exception: {e}")
+        print(f"❌ Exception occurred: {e}")
         abort(400)
     return 'OK'
 
