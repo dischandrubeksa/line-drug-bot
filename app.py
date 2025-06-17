@@ -7,7 +7,6 @@ import re
 
 app = Flask(__name__)
 
-# ใส่ Token ของคุณผ่าน Environment Variable
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
 
@@ -17,15 +16,13 @@ if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# ✅ Simple memory เพื่อเก็บตัวยาที่เลือกไว้ชั่วคราว (ควรใช้ DB ถ้า production)
+# 🧠 บันทึกการเลือกยา (session ชั่วคราวต่อ user)
 user_drug_selection = {}
 
-# ✅ route สำหรับตรวจว่าเว็บยังทำงาน
 @app.route('/')
 def home():
     return 'LINE Bot is running!'
 
-# ✅ Webhook endpoint
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -37,7 +34,7 @@ def callback():
         abort(400)
     return 'OK'
 
-# ✅ Rich Message: Carousel สำหรับให้เลือกยา
+# ✅ Rich Message: ให้เลือกยา
 def send_drug_selection(event):
     carousel = TemplateSendMessage(
         alt_text='กรุณาเลือกตัวยาที่ต้องการคำนวณ',
@@ -56,18 +53,24 @@ def send_drug_selection(event):
     )
     line_bot_api.reply_message(event.reply_token, carousel)
 
-# ✅ ตัวหลัก: จัดการข้อความจากผู้ใช้
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
     text = event.message.text.strip()
 
-    # 1. เริ่มต้นคำสั่ง
+    # ✅ เริ่มต้นด้วยคำว่า "คำนวณยา"
     if text.lower() in ['คำนวณยา', 'dose', 'เริ่ม']:
         send_drug_selection(event)
         return
 
-    # 2. ตรวจจับการเลือกยา
+    # ✅ เปลี่ยนตัวยาใหม่
+    if text == "เลือกยาใหม่":
+        if user_id in user_drug_selection:
+            del user_drug_selection[user_id]
+        send_drug_selection(event)
+        return
+
+    # ✅ เลือกยา
     if text.startswith("เลือกยา:"):
         drug_name = text.replace("เลือกยา:", "").strip()
         user_drug_selection[user_id] = drug_name
@@ -75,38 +78,44 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
 
-    # 3. รับน้ำหนักแล้วคำนวณขนาดยา
+    # ✅ ถ้ามีการเลือกยาไว้ → คำนวณจากน้ำหนัก
     if user_id in user_drug_selection:
         match = re.search(r"(\d+(\.\d+)?)", text)
         if match:
             weight = float(match.group(1))
             drug = user_drug_selection[user_id]
 
+            # ✅ คำนวณขนาดยา
             if drug == "Paracetamol":
                 dose_min = weight * 10
                 dose_max = weight * 15
-                reply = f"Paracetamol ขนาดที่แนะนำ: {dose_min:.2f} - {dose_max:.2f} mg ต่อครั้ง"
+                reply = (
+                    f"{drug} ขนาดที่แนะนำ: {dose_min:.2f} - {dose_max:.2f} mg ต่อครั้ง\n\n"
+                    f"พิมพ์น้ำหนักใหม่เพื่อคำนวณอีกครั้ง หรือพิมพ์ 'เลือกยาใหม่' เพื่อเปลี่ยนตัวยา"
+                )
             elif drug == "Cetirizine":
                 dose = weight * 0.25
-                reply = f"Cetirizine ขนาดที่แนะนำ: {dose:.2f} mg ต่อวัน"
+                reply = (
+                    f"{drug} ขนาดที่แนะนำ: {dose:.2f} mg ต่อวัน\n\n"
+                    f"พิมพ์น้ำหนักใหม่เพื่อคำนวณอีกครั้ง หรือพิมพ์ 'เลือกยาใหม่' เพื่อเปลี่ยนตัวยา"
+                )
             else:
-                reply = "ยังไม่รองรับการคำนวณยานี้ครับ"
+                reply = "ขออภัย ยังไม่รองรับตัวยานี้ครับ"
 
-            # ส่งผลลัพธ์และล้างข้อมูลการเลือก
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-            del user_drug_selection[user_id]
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="กรุณาระบุน้ำหนักเป็นตัวเลข เช่น 20"))
         return
 
-    # 4. ข้อความอื่น
-    reply = "พิมพ์ว่า 'คำนวณยา' เพื่อเริ่มการเลือกตัวยา"
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+    # ✅ ข้อความอื่น
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(
+        text="พิมพ์ว่า 'คำนวณยา' เพื่อเริ่ม หรือ 'เลือกยาใหม่' เพื่อเปลี่ยนตัวยา"
+    ))
 
-# ✅ Run Flask app
+# ✅ รันแอป
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render / Heroku
+    port = int(os.environ.get("PORT", 5000))  # สำหรับ Render/Heroku
     app.run(host="0.0.0.0", port=port)
-    
+       
 LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
 LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
