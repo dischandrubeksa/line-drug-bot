@@ -71,28 +71,28 @@ def send_amoxicillin_indications(event):
         CarouselColumn(title="Pneumonia", text="90 mg/kg/day ÷ 2", actions=[
             MessageAction(label="เลือก Pneumonia", text="Indication: Pneumonia")
         ]),
-        CarouselColumn(title="Anthrax", text="60 mg/kg/day ÷ 3", actions=[
+        CarouselColumn(title="Anthrax", text="75 mg/kg/day ÷ 3", actions=[
             MessageAction(label="เลือก Anthrax", text="Indication: Anthrax")
         ]),
         CarouselColumn(title="H. pylori", text="50 mg/kg/day ÷ 2", actions=[
             MessageAction(label="เลือก H. pylori", text="Indication: H. pylori")
         ]),
     ])
-    
+
     carousel2 = CarouselTemplate(columns=[
-        CarouselColumn(title="UTI", text="25–50 mg/kg/day ÷ 2", actions=[
+        CarouselColumn(title="UTI", text="50–100 mg/kg/day ÷ 3", actions=[
             MessageAction(label="เลือก UTI", text="Indication: UTI")
         ]),
-        CarouselColumn(title="Sinusitis", text="45 mg/kg/day ÷ 2", actions=[
+        CarouselColumn(title="Sinusitis", text="45–90 mg/kg/day ÷ 2", actions=[
             MessageAction(label="เลือก Sinusitis", text="Indication: Sinusitis")
         ]),
-        CarouselColumn(title="Endocarditis Prophylaxis", text="50 mg/kg once", actions=[
+        CarouselColumn(title="Endocarditis", text="50 mg/kg once", actions=[
             MessageAction(label="เลือก Endocarditis", text="Indication: Endocarditis")
         ]),
         CarouselColumn(title="Lyme Disease", text="50 mg/kg/day ÷ 3", actions=[
             MessageAction(label="เลือก Lyme Disease", text="Indication: Lyme Disease")
         ]),
-        CarouselColumn(title="Osteoarticular Infection", text="90 mg/kg/day ÷ 2", actions=[
+        CarouselColumn(title="Osteoarticular", text="80–120 mg/kg/day ÷ 3", actions=[
             MessageAction(label="เลือก Osteoarticular", text="Indication: Osteoarticular")
         ]),
     ])
@@ -150,88 +150,50 @@ def handle_message(event):
             drug = entry.get("drug")
 
             try:
-                if drug == "Paracetamol":
-                    dose_min = weight * 10
-                    dose_max = weight * 15
-                    reply = f"Paracetamol: {dose_min:.2f} – {dose_max:.2f} mg ต่อครั้ง"
-
-                elif drug == "Cetirizine":
-                    dose = weight * 0.25
-                    reply = f"Cetirizine: {dose:.2f} mg ต่อวัน"
-
-                elif drug == "Domperidone":
-                    dose = weight * 0.25
-                    reply = f"Domperidone: {dose:.2f} mg ≈ {dose:.2f} ml ต่อครั้ง"
-
-                elif drug == "Hydroxyzine":
-                    dose = weight * 0.5
-                    volume = dose / (10 / 5)
-                    reply = f"Hydroxyzine: {dose:.2f} mg ≈ {volume:.2f} ml ต่อครั้ง"
-
-                elif drug == "Ferrous drop":
-                    dose = weight * 3
-                    volume = dose / (15 / 0.6)
-                    reply = f"Ferrous fumarate: {dose:.2f} mg ≈ {volume:.2f} ml ต่อวัน"
-
-                elif drug == "Amoxicillin":
-                    indication = entry.get("indication")
-                    if indication == "Pharyngitis":
-                        dose_min = weight * 25
-                        dose_max = weight * 50
-                        reply = f"Amoxicillin (Pharyngitis): {dose_min:.0f}–{dose_max:.0f} mg/วัน ÷ 2 ครั้ง"
-                    elif indication == "Otitis Media":
-                        dose = weight * 90
-                        reply = f"Amoxicillin (Otitis Media): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
-                    elif indication == "Sinusitis":
-                        dose = weight * 45
-                        reply = f"Amoxicillin (Sinusitis): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
-                    elif indication == "Pneumonia":
-                        dose = weight * 90
-                        reply = f"Amoxicillin (Pneumonia): {dose:.0f} mg/วัน ÷ 2 ครั้ง"   
-                    elif indication == "Anthrax":
-                        dose = weight * 60
-                        reply = f"Amoxicillin (Anthrax): {dose:.0f} mg/วัน ÷ 3 ครั้ง"
-                    elif indication == "H. pylori":
-                        dose = weight * 50
-                        reply = f"Amoxicillin (H. pylori): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
-                    elif indication == "UTI":
-                        dose_min = weight * 25
-                        dose_max = weight * 50
-                        reply = f"Amoxicillin (UTI): {dose_min:.0f}–{dose_max:.0f} mg/วัน ÷ 2 ครั้ง"
-                    elif indication == "Endocarditis":
-                        dose = weight * 50
-                        reply = f"Amoxicillin (Endocarditis): {dose:.0f} mg once"
-                    elif indication == "Lyme Disease":
-                        dose = weight * 50
-                        reply = f"Amoxicillin (Lyme Disease): {dose:.0f} mg/วัน ÷ 3 ครั้ง"
-                    elif indication == "Osteoarticular":
-                        dose = weight * 90
-                        reply = f"Amoxicillin (Osteoarticular): {dose:.0f} mg/วัน ÷ 2 ครั้ง"
-                    else:
-                        reply = "กรุณาเลือกข้อบ่งใช้ของ Amoxicillin ก่อนครับ"
-
-                elif drug in ["Cephalexin", "Cefdinir", "Cefixime", "Augmentin", "Azithromycin"]:
-                    settings = {
-                        "Cephalexin":    {"dose": 50, "conc": 125 / 5, "bottle": 60, "days": 7},
-                        "Cefdinir":      {"dose": 14, "conc": 125 / 5, "bottle": 30, "days": 5},
-                        "Cefixime":      {"dose": 8,  "conc": 100 / 5, "bottle": 30, "days": 5},
-                        "Augmentin":     {"dose": 90, "conc": 600 / 5, "bottle": 70, "days": 10},
-                        "Azithromycin":  {"dose": 10, "conc": 200 / 5, "bottle": 15, "days": 3}
+                if drug == "Amoxicillin":
+                    indication = entry.get("indication", "ทั่วไป")
+                    dose_map = {
+                        "Pharyngitis": (50, 10),
+                        "Otitis Media": (90, 10),
+                        "Pneumonia": (90, 7),
+                        "Anthrax": (75, 60),
+                        "H. pylori": (62.5, 14),
+                        "UTI": (75, 7),
+                        "Sinusitis": (90, 10),
+                        "Endocarditis": (50, 1),
+                        "Lyme Disease": (50, 14),
+                        "Osteoarticular": (100, 14)
+                    }
+                    max_dose = {
+                        "Pneumonia": 4000,
+                        "Anthrax": 1000,
+                        "UTI": 500,
+                        "Sinusitis": 2000,
+                        "Endocarditis": 2000,
+                        "Lyme Disease": 500,
+                        "Osteoarticular": 4000
                     }
 
-                    cfg = settings[drug]
-                    total_mg_day = weight * cfg["dose"]
-                    ml_per_day = total_mg_day / cfg["conc"]
-                    total_ml = ml_per_day * cfg["days"]
-                    bottles = math.ceil(total_ml / cfg["bottle"])
+                    dose_per_kg, days = dose_map.get(indication, (50, 7))
+                    conc = 250 / 5  # 50 mg/ml
+                    bottle_size = 60  # ml
+
+                    total_mg_day = weight * dose_per_kg
+                    if indication in max_dose:
+                        total_mg_day = min(total_mg_day, max_dose[indication])
+                    ml_per_day = total_mg_day / conc
+                    ml_per_dose = ml_per_day / 2
+                    total_ml = ml_per_day * days
+                    bottles = math.ceil(total_ml / bottle_size)
 
                     reply = (
-                        f"{drug}:\n"
-                        f"{total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\n"
-                        f"ใช้ {cfg['days']} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({cfg['bottle']} ml)"
+                        f"{drug} - {indication} (น้ำหนัก {weight} kg):"
+                        f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/วัน"
+                        f"≈ {ml_per_day:.1f} ml/วัน, ครั้งละ ~{ml_per_dose:.1f} ml วันละ 2 ครั้ง"
+                        f"ใช้ {days} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
                     )
                 else:
-                    reply = "ขออภัย ยังไม่รองรับตัวยานี้ครับ"
+                    reply = f"ยังไม่รองรับยา {drug}"
 
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
 
@@ -247,6 +209,6 @@ def handle_message(event):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
+    
 LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
 LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
