@@ -43,12 +43,23 @@ def send_drug_selection(event):
         CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cefdinir', text='เลือกยา: Cefdinir')]),
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Cefixime', text='เลือกยา: Cefixime')]),
         CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก Augmentin', text='เลือกยา: Augmentin')]),
-        CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')])
+        CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
+        CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
+        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
+    ])
+
+    carousel2 = CarouselTemplate(columns=[
+        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Salbutamol', text='เลือกยา: Salbutamol')]),
+        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Chlorpheniramine', text='เลือกยา: Chlorpheniramine')]),
+        CarouselColumn(title='Domperidone', text='1 mg/ml', actions=[MessageAction(label='เลือก Domperidone', text='เลือกยา: Domperidone')])
     ])
 
     line_bot_api.reply_message(
         event.reply_token,
-        TemplateSendMessage(alt_text="เลือกตัวยา", template=carousel1)
+        [
+            TemplateSendMessage(alt_text="เลือกตัวยา ชุดที่ 1", template=carousel1),
+            TemplateSendMessage(alt_text="เลือกตัวยา ชุดที่ 2", template=carousel2)
+        ]
     )
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -88,71 +99,29 @@ def handle_message(event):
                 dose = weight * 0.25
                 reply = f"Cetirizine ขนาดที่แนะนำ: {dose:.2f} mg ต่อวัน"
 
-            elif drug == "Amoxicillin":
-                dose = 50
-                conc = 250 / 5
-                bottle_size = 60
-                duration = 7
-                total_mg_day = weight * dose
-                ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * duration
-                bottles = math.ceil(total_ml / bottle_size)
-                reply = f"Amoxicillin: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\nใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (60 ml)"
+            elif drug == "Domperidone":
+                dose = weight * 0.25
+                reply = f"Domperidone ขนาดที่แนะนำ: {dose:.2f} mg (1 mg/ml) ≈ {dose:.2f} ml ต่อครั้ง"
 
-            elif drug == "Cephalexin":
-                dose = 50
-                conc = 125 / 5
-                bottle_size = 60
-                duration = 7
-                total_mg_day = weight * dose
-                ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * duration
-                bottles = math.ceil(total_ml / bottle_size)
-                reply = f"Cephalexin: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\nใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (60 ml)"
+            elif drug == "Hydroxyzine":
+                dose = weight * 0.5  # 0.5 mg/kg/dose
+                volume = dose / (10/5)
+                reply = f"Hydroxyzine: {dose:.2f} mg ≈ {volume:.2f} ml ต่อครั้ง"
 
-            elif drug == "Cefdinir":
-                dose = 14
-                conc = 125 / 5
-                bottle_size = 30
-                duration = 5
-                total_mg_day = weight * dose
-                ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * duration
-                bottles = math.ceil(total_ml / bottle_size)
-                reply = f"Cefdinir: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\nใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (30 ml)"
+            elif drug == "Ferrous drop":
+                dose = weight * 3  # 3 mg/kg/day
+                volume = dose / (15/0.6)
+                reply = f"Ferrous fumarate: {dose:.2f} mg ≈ {volume:.2f} ml ต่อวัน"
 
-            elif drug == "Cefixime":
-                dose = 8
-                conc = 100 / 5
-                bottle_size = 30
-                duration = 5
-                total_mg_day = weight * dose
-                ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * duration
-                bottles = math.ceil(total_ml / bottle_size)
-                reply = f"Cefixime: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\nใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (30 ml)"
+            elif drug == "Salbutamol":
+                dose = weight * 0.15  # 0.15 mg/kg/dose
+                volume = dose / (2/5)
+                reply = f"Salbutamol: {dose:.2f} mg ≈ {volume:.2f} ml ต่อครั้ง"
 
-            elif drug == "Augmentin":
-                dose = 90
-                conc = 600 / 5
-                bottle_size = 70
-                duration = 10
-                total_mg_day = weight * dose
-                ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * duration
-                bottles = math.ceil(total_ml / bottle_size)
-                reply = f"Augmentin: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\nใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (70 ml)"
-
-            elif drug == "Azithromycin":
-                dose = 10
-                conc = 200 / 5
-                bottle_size = 15
-                duration = 3
-                total_mg_day = weight * dose
-                ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * duration
-                bottles = math.ceil(total_ml / bottle_size)
-                reply = f"Azithromycin: {total_mg_day:.0f} mg/วัน ≈ {ml_per_day:.1f} ml/วัน\nใช้ {duration} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด (15 ml)"
+            elif drug == "Chlorpheniramine":
+                dose = weight * 0.35  # 0.35 mg/kg/day แบ่งให้ทุก 8 ชม.
+                volume = dose / (2/5)
+                reply = f"Chlorpheniramine: {dose:.2f} mg/day ≈ {volume:.2f} ml/day (แบ่งให้ทุก 8 ชม.)"
 
             else:
                 reply = "ขออภัย ยังไม่รองรับตัวยานี้ครับ"
@@ -169,6 +138,6 @@ def handle_message(event):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
+    
 LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
 LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
