@@ -42,14 +42,15 @@ def callback():
     return 'OK'
 
 def send_drug_selection(event):
-    user_id = event.source.user_id
-
     carousel1 = CarouselTemplate(columns=[
         CarouselColumn(title='Paracetamol', text='10–15 mg/kg/dose', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
         CarouselColumn(title='Cetirizine', text='0.25 mg/kg/day', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Amoxicillin', text='250 mg/5 ml', actions=[MessageAction(label='เลือก Amoxicillin', text='เลือกยา: Amoxicillin')]),
         CarouselColumn(title='Cephalexin', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cephalexin', text='เลือกยา: Cephalexin')]),
-        CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cefdinir', text='เลือกยา: Cefdinir')]),
+        CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cefdinir', text='เลือกยา: Cefdinir')])
+    ])
+
+    carousel2 = CarouselTemplate(columns=[
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Cefixime', text='เลือกยา: Cefixime')]),
         CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก Augmentin', text='เลือกยา: Augmentin')]),
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
@@ -57,20 +58,12 @@ def send_drug_selection(event):
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
     ])
 
-    carousel2 = CarouselTemplate(columns=[
-        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Salbutamol', text='เลือกยา: Salbutamol')]),
-        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Chlorpheniramine', text='เลือกยา: Chlorpheniramine')]),
-        CarouselColumn(title='Domperidone', text='1 mg/ml', actions=[MessageAction(label='เลือก Domperidone', text='เลือกยา: Domperidone')])
-    ])
-
     line_bot_api.reply_message(
         event.reply_token,
-        TemplateSendMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1)
-    )
-
-    line_bot_api.push_message(
-        user_id,
-        TemplateSendMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
+        [
+            TemplateSendMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
+            TemplateSendMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
+        ]
     )
 
 @handler.add(MessageEvent, message=TextMessage)
