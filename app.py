@@ -5,30 +5,54 @@ from linebot.models import *
 import os
 import re
 import math
+import random
 
-# ✅ ควรวาง DRUG_DATABASE ที่นี่ ก่อน app = Flask(...)
 DRUG_DATABASE = {
     "Amoxicillin": {
-        "Pharyngitis": (50, 10, 2),
-        "Otitis Media": (90, 10, 2),
-        "Pneumonia": (90, 7, 2),
-        "Anthrax": (75, 60, 3),
-        "H. pylori": (62.5, 14, 2),
-        "UTI": (75, 7, 3),
-        "Sinusitis": (90, 10, 2),
-        "Endocarditis": (50, 1, 1),
-        "Lyme Disease": (50, 14, 3),
-        "Osteoarticular": (100, 14, 3)
+        "concentration_mg_per_ml": 250 / 5,
+        "bottle_size_ml": 60,
+        "indications": {
+            "Pharyngitis": {"dose_mg_per_kg_per_day": 50, "frequency": 2, "duration_days": 10, "max_mg_per_day": 2000},
+            "Otitis Media": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 10, "max_mg_per_day": 4000},
+            "Pneumonia": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 7, "max_mg_per_day": 4000},
+            "Anthrax": {"dose_mg_per_kg_per_day": 75, "frequency": 3, "duration_days": 60, "max_mg_per_day": 1000},
+            "H. pylori": {"dose_mg_per_kg_per_day": 62.5, "frequency": 2, "duration_days": 14, "max_mg_per_day": 2000},
+            "UTI": {"dose_mg_per_kg_per_day": 75, "frequency": 3, "duration_days": 7, "max_mg_per_day": 500},
+            "Sinusitis": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 10, "max_mg_per_day": 2000},
+            "Endocarditis": {"dose_mg_per_kg_per_day": 50, "frequency": 1, "duration_days": 1, "max_mg_per_day": 2000},
+            "Lyme Disease": {"dose_mg_per_kg_per_day": 50, "frequency": 3, "duration_days": 14, "max_mg_per_day": 500},
+            "Osteoarticular": {"dose_mg_per_kg_per_day": 100, "frequency": 3, "duration_days": 14, "max_mg_per_day": 4000}
+        }
     },
     "Cephalexin": {
-        "SSTI": (50, 7, 4),
-        "Pharyngitis": (50, 10, 2),
-        "UTI": (100, 7, 4)
+        "concentration_mg_per_ml": 125 / 5,
+        "bottle_size_ml": 60,
+        "indications": {
+            "SSTI": {"dose_mg_per_kg_per_day": 50, "frequency": 4, "duration_days": 7, "max_mg_per_day": None},
+            "Pharyngitis": {"dose_mg_per_kg_per_day": 50, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
+            "UTI": {"dose_mg_per_kg_per_day": 100, "frequency": 4, "duration_days": 7, "max_mg_per_day": None}
+        }
     },
     "Cefdinir": {
-        "Otitis Media": (14, 10, 2),
-        "Pharyngitis": (14, 10, 2),
-        "Rhinosinusitis": (14, 10, 2)
+        "concentration_mg_per_ml": 125 / 5,
+        "bottle_size_ml": 60,
+        "indications": {
+            "Otitis Media": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600},
+            "Pharyngitis": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600},
+            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600}
+        }
+    },
+    "Cefixime": {
+        "concentration_mg_per_ml": 100 / 5,
+        "bottle_size_ml": 50,
+        "indications": {
+            "Febrile Neutropenia": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
+            "Otitis Media": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
+            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
+            "Strep Pharyngitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 10, "max_mg_per_day": 400},
+            "Typhoid Fever": {"dose_mg_per_kg_per_day": 17.5, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
+            "UTI": {"dose_mg_per_kg_per_day": 8, "frequency": 2, "duration_days": 7, "max_mg_per_day": 400}
+        }
     }
 }
 
@@ -129,9 +153,10 @@ def handle_message(event):
         if drug_name in DRUG_DATABASE:
             send_indication_carousel(event, drug_name)
         else:
+            example_weight = round(random.uniform(5.0, 20.0), 1)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
+                TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")
             )
         return
 
@@ -139,41 +164,47 @@ def handle_message(event):
         indication = text.replace("Indication:", "").strip()
         if user_id in user_drug_selection:
             user_drug_selection[user_id]["indication"] = indication
+            example_weight = round(random.uniform(5.0, 20.0), 1)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น 20")
+                TextSendMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")
             )
         return
 
     if user_id in user_drug_selection:
-        match = re.search(r"(\d+(\.\d+)?)", text)
+        # 🌟 ทำความสะอาดข้อความก่อนจับน้ำหนัก
+        cleaned_text = text.lower()
+        cleaned_text = cleaned_text.replace("กก", "")
+        cleaned_text = cleaned_text.replace("kg", "")
+        cleaned_text = cleaned_text.replace("น้ำหนัก", "")
+        cleaned_text = cleaned_text.replace("หนัก", "")
+        cleaned_text = cleaned_text.replace(" ", "")
+
+        match = re.search(r"(\d+(\.\d+)?)", cleaned_text)
         if match:
             weight = float(match.group(1))
             entry = user_drug_selection[user_id]
             drug = entry.get("drug")
-
             try:
                 if drug in DRUG_DATABASE:
                     indication = entry.get("indication")
-                    dose_info = DRUG_DATABASE[drug].get(indication)
+                    drug_info = DRUG_DATABASE[drug]
+                    dose_info = drug_info["indications"].get(indication)
                     
                     if not dose_info:
                       reply = f"ยังไม่มีข้อมูลการคำนวณสำหรับ {drug} - {indication}"
                     else:
-                        dose_per_kg, days, freq = dose_info
-                        # ใช้ค่าเฉพาะของยา (mg/ml)
-                        if drug == "Amoxicillin":
-                            conc = 250 / 5  # 50 mg/ml
-                        elif drug == "Cephalexin":
-                            conc = 125 / 5  # 25 mg/ml
-                        elif drug == "Cefdinir":
-                            conc = 125 / 5  # 25 mg/ml
-                        else:
-                            conc = 250 / 5  # default fallback
-                        
-                        bottle_size = 60  # ml
+                        dose_per_kg = dose_info["dose_mg_per_kg_per_day"]
+                        freq = dose_info["frequency"]
+                        days = dose_info["duration_days"]
+                        max_mg_day = dose_info.get("max_mg_per_day")
+                        conc = drug_info["concentration_mg_per_ml"]
+                        bottle_size = drug_info["bottle_size_ml"]
 
                         total_mg_day = weight * dose_per_kg
+                        if max_mg_day is not None:
+                            total_mg_day = min(total_mg_day, max_mg_day)
+
                         ml_per_day = total_mg_day / conc
                         ml_per_dose = ml_per_day / freq
                         total_ml = ml_per_day * days
@@ -184,7 +215,7 @@ def handle_message(event):
                             f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/วัน\n"
                             f"≈ {ml_per_day:.1f} ml/วัน, ครั้งละ ~{ml_per_dose:.1f} ml วันละ {freq} ครั้ง\n"
                             f"ใช้ {days} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
-                    )
+                        )
                 else:
                     reply = f"ยังไม่รองรับยา {drug}"
 
