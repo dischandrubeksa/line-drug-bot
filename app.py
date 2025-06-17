@@ -35,6 +35,8 @@ def callback():
     return 'OK'
 
 def send_drug_selection(event):
+    user_id = event.source.user_id
+
     carousel1 = CarouselTemplate(columns=[
         CarouselColumn(title='Paracetamol', text='10–15 mg/kg/dose', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
         CarouselColumn(title='Cetirizine', text='0.25 mg/kg/day', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
@@ -56,10 +58,12 @@ def send_drug_selection(event):
 
     line_bot_api.reply_message(
         event.reply_token,
-        [
-            TemplateSendMessage(alt_text="เลือกตัวยา ชุดที่ 1", template=carousel1),
-            TemplateSendMessage(alt_text="เลือกตัวยา ชุดที่ 2", template=carousel2)
-        ]
+        TemplateSendMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1)
+    )
+
+    line_bot_api.push_message(
+        user_id,
+        TemplateSendMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
     )
 
 @handler.add(MessageEvent, message=TextMessage)
