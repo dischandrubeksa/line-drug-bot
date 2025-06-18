@@ -227,27 +227,11 @@ def handle_message(event: MessageEvent):
         return
     user_id = event.source.user_id
     text = event.message.text.strip()
-
-    if text.lower() in ['คำนวณยา warfarin', 'warfarin']:
-        user_sessions.pop(user_id, None)           # จบ warfarin หรือ flow อื่น
-    user_drug_selection.pop(user_id, None)     # จบ flow เด็ก (ถ้ามี)
-    user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text="🧪 กรุณาใส่ค่า INR (เช่น 2.5)")]
-        )
-    )
-    return
-
-    if text.lower() in ['คำนวณขนาดยาเด็ก', 'คำนวณยาเด็ก']:
-        user_sessions.pop(user_id, None)           # จบ warfarin หรือ flow อื่น
-    user_drug_selection.pop(user_id, None)     # รีเซ็ตข้อมูลเด็กเดิม
-    send_drug_selection(event)
-    return
-
-        # เริ่ม Warfarin flow
-    if text.lower() == "คำนวณยา warfarin":
+    text_lower = text.lower()
+    
+    if text_lower in ['คำนวณยา warfarin', 'warfarin']:
+        user_sessions.pop(user_id, None)
+        user_drug_selection.pop(user_id, None)
         user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
         messaging_api.reply_message(
             ReplyMessageRequest(
@@ -255,6 +239,12 @@ def handle_message(event: MessageEvent):
                 messages=[TextMessage(text="🧪 กรุณาใส่ค่า INR (เช่น 2.5)")]
             )
         )
+        return
+
+    elif text_lower in ['คำนวณขนาดยาเด็ก', 'คำนวณยาเด็ก']:
+        user_sessions.pop(user_id, None)
+        user_drug_selection.pop(user_id, None)
+        send_drug_selection(event)
         return
 
     # ดำเนิน Warfarin flow
@@ -304,11 +294,6 @@ def handle_message(event: MessageEvent):
                     )
                 )
                 return
-
-
-    if text.lower() in ['คำนวณขนาดยาเด็ก']:
-        send_drug_selection(event)
-        return
 
     if text == "เลือกยาใหม่":
         user_drug_selection.pop(user_id, None)
@@ -413,6 +398,16 @@ def handle_message(event: MessageEvent):
                 messages=[TextMessage(text=reply)]
             )
         )
+    if user_id not in user_sessions and user_id not in user_drug_selection:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[
+                    TextMessage(text="❓ พิมพ์ 'คำนวณยา warfarin' หรือ 'คำนวณยาเด็ก' เพื่อเริ่มต้นใช้งาน")
+                ]
+            )
+        )
+        
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
