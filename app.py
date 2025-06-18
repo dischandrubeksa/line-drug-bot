@@ -556,7 +556,7 @@ def calculate_dose(drug, indication, weight):
     reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
     return "\n".join(reply_lines)
 
-def calculate_special_drug(drug, weight, age):
+def calculate_special_drug(user_id, drug, weight, age):
     info = SPECIAL_DRUGS[drug]
     indication = user_drug_selection.get(user_id, {}).get("indication")
 
@@ -924,7 +924,7 @@ def handle_message(event: MessageEvent):
                         return  # หยุดการทำงานที่นี่เลย
                     else:
                         try:
-                            reply = calculate_special_drug(drug, weight, age)
+                            reply = calculate_special_drug(user_id, drug, weight, age)
                         except Exception as e:
                             logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
                             reply = "เกิดข้อผิดพลาดในการคำนวณยา"
