@@ -228,17 +228,21 @@ def send_indication_carousel(event, drug_name):
     columns = []
     for name in indications:
     # ✅ สร้าง label ที่ไม่เกิน 20 ตัวอักษร (รวมคำว่า "เลือก ")
-        prefix = "เลือก "
-        available_len = 20 - len(prefix)
-        label_trimmed = name[:available_len] if len(name) > available_len else name
-        label = f"{prefix}{label_trimmed}"
+        label = "เลือก"
 
         # ✅ title ใช้ชื่อเต็ม แสดงบน carousel
         title = name[:40] if len(name) > 40 else name
 
         actions = [MessageAction(label=label, text=f"Indication: {name}")]
         try:
-            columns.append(CarouselColumn(title=title, text="เลือกรายการ", actions=actions))
+            # ✅ ดึงค่า dose_mg_per_kg_per_day
+            indication_info = indications[name]
+            if isinstance(indication_info, list):
+                dose_preview = f"{indication_info[0]['dose_mg_per_kg_per_day']} mg/kg/day"
+            else:
+                dose_preview = f"{indication_info['dose_mg_per_kg_per_day']} mg/kg/day"
+
+            columns.append(CarouselColumn(title=title, text=dose_preview, actions=actions))
         except Exception as e:
             logging.info(f"⚠️ ผิดพลาดตอนสร้าง CarouselColumn สำหรับ {name}: {e}")
 
