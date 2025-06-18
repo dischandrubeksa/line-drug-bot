@@ -215,6 +215,66 @@ def handle_message(event: MessageEvent):
     user_id = event.source.user_id
     text = event.message.text.strip()
 
+        # เริ่ม Warfarin flow
+    if text.lower() == "คำนวณยา warfarin":
+        user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text="🧪 กรุณาใส่ค่า INR (เช่น 2.5)")]
+            )
+        )
+        return
+
+    # ดำเนิน Warfarin flow
+    if user_id in user_sessions:
+        session = user_sessions[user_id]
+        if session.get("flow") == "warfarin":
+            step = session.get("step")
+            if step == "ask_inr":
+                try:
+                    session["inr"] = float(text)
+                    session["step"] = "ask_twd"
+                    reply = "📈 ใส่ Total Weekly Dose (TWD) เช่น 28"
+                except:
+                    reply = "❌ กรุณาใส่ค่า INR เป็นตัวเลข เช่น 2.5"
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply)]
+                    )
+                )
+                return
+            elif step == "ask_twd":
+                try:
+                    session["twd"] = float(text)
+                    session["step"] = "ask_bleeding"
+                    reply = "🩸 มี major bleeding หรือไม่? (yes/no)"
+                except:
+                    reply = "❌ กรุณาใส่ค่า TWD เป็นตัวเลข เช่น 28"
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply)]
+                    )
+                )
+                return
+            elif step == "ask_bleeding":
+                if text.lower() not in ["yes", "no"]:
+                    reply = "❌ ตอบว่า yes หรือ no เท่านั้น"
+                else:
+                    result = calculate_warfarin(session["inr"], session["twd"], text.lower())
+                    user_sessions.pop(user_id, None)  # จบ session
+                    reply = result
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply)]
+                    )
+                )
+                return
+
+
     if text.lower() in ['คำนวณยา', 'dose', 'เริ่ม']:
         send_drug_selection(event)
         return
