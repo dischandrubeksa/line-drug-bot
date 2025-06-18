@@ -83,6 +83,7 @@ messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 user_drug_selection = {}
+user_sessions = {}
 
 @app.route('/')
 def home():
@@ -275,7 +276,7 @@ def handle_message(event: MessageEvent):
                 return
 
 
-    if text.lower() in ['คำนวณยา', 'dose', 'เริ่ม']:
+    if text.lower() in ['คำนวณขนาดยาเด็ก']:
         send_drug_selection(event)
         return
 
