@@ -222,24 +222,26 @@ def send_indication_carousel(event, drug_name, show_all=False):
         names_to_show = [name for name in all_names if name != "Other"]
 
     columns = []
+
     for name in names_to_show:
         label = "เลือก"
-        # ✅ title ใช้ชื่อเต็ม แสดงบน carousel
         title = name[:40] if len(name) > 40 else name
 
-        actions = [MessageAction(label=label, text=f"Indication: {name}")]
-        try:
-            # ✅ ดึงค่า dose_mg_per_kg_per_day
+        if name != "Indication อื่นๆ":
             indication_info = indications[name]
             if isinstance(indication_info, list):
-                dose_preview = f"{indication_info[0]['dose_mg_per_kg_per_day']} mg/kg/day"
+                text = f"{indication_info[0]['dose_mg_per_kg_per_day']} mg/kg/day"
             else:
-                dose_preview = f"{indication_info['dose_mg_per_kg_per_day']} mg/kg/day"
+                text = f"{indication_info['dose_mg_per_kg_per_day']} mg/kg/day"
+            action_text = f"Indication: {name}"
+        else:
+            text = "ดูข้อบ่งใช้อื่นทั้งหมด"
+            action_text = f"MoreIndication: {drug_name}"
 
-            columns.append(CarouselColumn(title=title, text=dose_preview, actions=actions))
-        except Exception as e:
-            logging.info(f"⚠️ ผิดพลาดตอนสร้าง CarouselColumn สำหรับ {name}: {e}")
-        
+        actions = [MessageAction(label=label, text=action_text)]
+        columns.append(CarouselColumn(title=title, text=text, actions=actions))
+
+    # 🛠️ ตัดเฉพาะ 5 แถวแรก (แต่ต้องรวม "Indication อื่นๆ" ด้วยก่อน)
     carousel = CarouselTemplate(columns=columns[:5])
     messaging_api.reply_message(
         ReplyMessageRequest(
