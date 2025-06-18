@@ -214,12 +214,12 @@ def send_indication_carousel(event, drug_name, show_all=False):
         return
 
     indications = drug_info["indications"]
-    all_names = list(indications.keys())
     common = drug_info.get("common_indications", [])
+
     if not show_all and common:
         names_to_show = common + ["Indication อื่นๆ"]
     else:
-        names_to_show = [name for name in all_names if name != "Other"]
+        names_to_show = [name for name in indications.keys() if name not in common and name != "Other"]
 
     columns = []
 
@@ -241,16 +241,6 @@ def send_indication_carousel(event, drug_name, show_all=False):
         actions = [MessageAction(label=label, text=action_text)]
         columns.append(CarouselColumn(title=title, text=text, actions=actions))
 
-    # 🛠️ ตัดเฉพาะ 5 แถวแรก (แต่ต้องรวม "Indication อื่นๆ" ด้วยก่อน)
-    carousel = CarouselTemplate(columns=columns[:5])
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TemplateMessage(alt_text=f"ข้อบ่งใช้ {drug_name}", template=carousel)]
-        )
-    )
-
-    # แบ่งออกเป็นชุดละ 5
     carousel_chunks = [columns[i:i + 5] for i in range(0, len(columns), 5)]
     messages = []
 
@@ -265,12 +255,6 @@ def send_indication_carousel(event, drug_name, show_all=False):
         except Exception as e:
             logging.info(f"⚠️ ผิดพลาดตอนสร้าง TemplateMessage: {e}")
 
-    # ✅ จำกัดจำนวน messages ไม่เกิน 5
-    if len(messages) > 5:
-        logging.info(f"⚠️ จำนวน carousel ({len(messages)}) เกิน 5 — ตัดให้เหลือ 5")
-        messages = messages[:5]
-
-    
     logging.info(f"📤 ส่ง carousel ทั้งหมด: {len(messages)} ชุด")
     try:
         messaging_api.reply_message(
@@ -282,6 +266,7 @@ def send_indication_carousel(event, drug_name, show_all=False):
     except Exception as e:
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
+        
 def calculate_warfarin(inr, twd, bleeding):
     if bleeding == "yes":
         return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1"
