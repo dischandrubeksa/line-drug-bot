@@ -128,10 +128,13 @@ DRUG_DATABASE = {
             },
             "Asthma (Adjunct)": {
                 "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
-            }
-        }
+            },
+            "Other": "INDICATION_OTHERS"
+        },
+        "common_indications": ["Pneumonia (Atypical)", "Strep Pharyngitis","Rhinosinusitis","Chlamydia" ]
     }
 }
+
 
 logging.basicConfig(
     level=logging.INFO,  # เปลี่ยนเป็น DEBUG ถ้าต้องการ log ละเอียด
@@ -177,16 +180,16 @@ def callback():
 
 def send_drug_selection(event):
     carousel1 = CarouselTemplate(columns=[
-        CarouselColumn(title='Paracetamol', text='10–15 mg/kg/dose', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
-        CarouselColumn(title='Cetirizine', text='0.25 mg/kg/day', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Amoxicillin', text='250 mg/5 ml', actions=[MessageAction(label='เลือก Amoxicillin', text='เลือกยา: Amoxicillin')]),
         CarouselColumn(title='Cephalexin', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cephalexin', text='เลือกยา: Cephalexin')]),
-        CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cefdinir', text='เลือกยา: Cefdinir')])
-    ])
-    carousel2 = CarouselTemplate(columns=[
+        CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก Cefdinir', text='เลือกยา: Cefdinir')]),
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Cefixime', text='เลือกยา: Cefixime')]),
         CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก Augmentin', text='เลือกยา: Augmentin')]),
+    ])
+    carousel2 = CarouselTemplate(columns=[
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
+        CarouselColumn(title='Paracetamol', text='10–15 mg/kg/dose', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
+        CarouselColumn(title='Cetirizine', text='0.25 mg/kg/day', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
     ])
@@ -199,11 +202,9 @@ def send_drug_selection(event):
         ]
     ))
 
-def send_indication_carousel(event, drug_name):
-    logging.info(f"\n\U0001F4E6 เรียกดู indication สำหรับยา: {drug_name}")
+def send_indication_carousel(event, drug_name, show_all=False):
     drug_info = DRUG_DATABASE.get(drug_name)
-    if not drug_info:
-        logging.info(f"❌ ไม่พบ {drug_name} ใน DRUG_DATABASE")
+    if not drug_info or "indications" not in drug_info:
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
@@ -212,24 +213,17 @@ def send_indication_carousel(event, drug_name):
         )
         return
 
-    if "indications" not in drug_info:
-        logging.info(f"❌ ไม่พบ 'indications' ในข้อมูลของ {drug_name}")
-        messaging_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=f"ยังไม่มีข้อบ่งใช้สำหรับ {drug_name}")]
-            )
-        )
-        return
-
     indications = drug_info["indications"]
-    logging.info(f"✅ พบข้อบ่งใช้: {list(indications.keys())}")
+    all_names = list(indications.keys())
+    common = drug_info.get("common_indications", [])
+    if not show_all and common:
+        names_to_show = common + ["Indication อื่นๆ"]
+    else:
+        names_to_show = [name for name in all_names if name != "Other"]
 
     columns = []
-    for name in indications:
-    # ✅ สร้าง label ที่ไม่เกิน 20 ตัวอักษร (รวมคำว่า "เลือก ")
+    for name in names_to_show:
         label = "เลือก"
-
         # ✅ title ใช้ชื่อเต็ม แสดงบน carousel
         title = name[:40] if len(name) > 40 else name
 
@@ -245,17 +239,14 @@ def send_indication_carousel(event, drug_name):
             columns.append(CarouselColumn(title=title, text=dose_preview, actions=actions))
         except Exception as e:
             logging.info(f"⚠️ ผิดพลาดตอนสร้าง CarouselColumn สำหรับ {name}: {e}")
-
-    if not columns:
-        logging.info("❌ ไม่มี column ให้แสดง")
-        messaging_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ที่สามารถแสดงได้สำหรับ {drug_name}")]
-            )
+        
+    carousel = CarouselTemplate(columns=columns[:5])
+    messaging_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TemplateMessage(alt_text=f"ข้อบ่งใช้ {drug_name}", template=carousel)]
         )
-        return
-    
+    )
 
     # แบ่งออกเป็นชุดละ 5
     carousel_chunks = [columns[i:i + 5] for i in range(0, len(columns), 5)]
@@ -368,7 +359,7 @@ def handle_message(event: MessageEvent):
     text = event.message.text.strip()
     text_lower = text.lower()
     
-    if text_lower in ['คำนวณยา warfarin', 'warfarin']:
+    if text_lower in ['คำนวณยา warfarin']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
         user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
@@ -437,6 +428,11 @@ def handle_message(event: MessageEvent):
     if text == "เลือกยาใหม่":
         user_drug_selection.pop(user_id, None)
         send_drug_selection(event)
+        return
+    # กดปุ่ม "Indication อื่นๆ"
+    if text.startswith("MoreIndication:"):
+        drug_name = text.replace("MoreIndication:", "").strip()
+        send_indication_carousel(event, drug_name, show_all=True)
         return
 
     if text.startswith("เลือกยา:"):
