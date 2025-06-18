@@ -159,6 +159,35 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 user_drug_selection = {}
 user_sessions = {}
+user_ages = {}
+
+
+SPECIAL_DRUGS = {
+    "Paracetamol": {
+    "concentration_mg_per_ml": 160 / 5,
+    "bottle_size_ml": 60,
+    "indications": {
+        "Fever": [
+            {
+                "min_age_years": 0,
+                "max_age_years": 6,
+                "dose_mg_per_kg_per_day": 60,
+                "frequency": 4,
+                "duration_days": 3,
+                "max_mg_per_dose": 250
+            },
+            {
+                "min_age_years": 6,
+                "max_age_years": 18,
+                "dose_mg_per_kg_per_day": 60,
+                "frequency": 4,
+                "duration_days": 3,
+                "max_mg_per_dose": 500
+            }
+        ]
+    },
+    "common_indications": ["Fever"]
+}}
 
 @app.route('/')
 def home():
@@ -201,6 +230,7 @@ def send_drug_selection(event):
             TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
         ]
     ))
+    return
 
 def send_indication_carousel(event, drug_name, show_all=False):
     drug_info = DRUG_DATABASE.get(drug_name)
@@ -263,10 +293,11 @@ def send_indication_carousel(event, drug_name, show_all=False):
                 messages=messages
             )
         )
+        return
     except Exception as e:
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
-        
+
 def calculate_warfarin(inr, twd, bleeding):
     if bleeding == "yes":
         return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1"
@@ -337,15 +368,47 @@ def calculate_dose(drug, indication, weight):
     reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
     return "\n".join(reply_lines)
 
+def calculate_special_drug(drug, weight, age):
+    info = SPECIAL_DRUGS[drug]
+    indication_info = next(iter(info["indications"].values()))  # ดึง indication เดียวที่มี
+
+    for entry in indication_info:
+        if entry["min_age_years"] <= age < entry["max_age_years"]:
+            dose_per_kg = entry["dose_mg_per_kg_per_day"]
+            freq = entry["frequency"]
+            duration = entry["duration_days"]
+            max_dose = entry["max_mg_per_dose"]
+
+            total_mg_day = weight * dose_per_kg
+            dose_per_time = min(total_mg_day / freq, max_dose)
+
+            return (
+                f"{drug} (อายุ {age} ปี, น้ำหนัก {weight} kg):\n"
+                f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day\n"
+                f"แบ่ง {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg เป็นเวลา {duration} วัน"
+            )
+
+    return f"❌ ไม่พบขนาดยาที่เหมาะสมสำหรับอายุ {age} ปีใน {drug}"
+
+def send_special_indication_carousel(event, drug_name):
+    drug_info = SPECIAL_DRUGS.get(drug_name)
+    if not drug_info or "indications" not in drug_info:
+        messaging_api.reply_message(
+    ReplyMessageRequest(
+    reply_token=event.reply_token,
+    messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ของ {drug_name}")]
+    )
+    )
+    return
+
 @handler.add(MessageEvent)
 def handle_message(event: MessageEvent):
-# ✅ ตรวจสอบว่าเป็นข้อความข้อความก่อน
     if not isinstance(event.message, TextMessageContent):
         return
     user_id = event.source.user_id
     text = event.message.text.strip()
     text_lower = text.lower()
-    
+
     if text_lower in ['คำนวณยา warfarin']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
@@ -361,9 +424,10 @@ def handle_message(event: MessageEvent):
     elif text_lower in ['คำนวณขนาดยาเด็ก', 'คำนวณยาเด็ก']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
+        user_ages.pop(user_id, None)
         send_drug_selection(event)
         return
-
+    
     # ดำเนิน Warfarin flow
     if user_id in user_sessions:
         session = user_sessions[user_id]
@@ -414,9 +478,10 @@ def handle_message(event: MessageEvent):
 
     if text == "เลือกยาใหม่":
         user_drug_selection.pop(user_id, None)
+        user_ages.pop(user_id, None)
         send_drug_selection(event)
         return
-    # กดปุ่ม "Indication อื่นๆ"
+
     if text.startswith("MoreIndication:"):
         drug_name = text.replace("MoreIndication:", "").strip()
         send_indication_carousel(event, drug_name, show_all=True)
@@ -429,49 +494,68 @@ def handle_message(event: MessageEvent):
         if drug_name in DRUG_DATABASE:
             send_indication_carousel(event, drug_name)
         else:
-            example_weight = round(random.uniform(5.0, 20.0), 1)
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
-                )
-            )
+            send_special_indication_carousel(event, drug_name)
         return
 
     if text.startswith("Indication:"):
         indication = text.replace("Indication:", "").strip()
         if user_id in user_drug_selection:
             user_drug_selection[user_id]["indication"] = indication
+            drug = user_drug_selection[user_id].get("drug")
+            if drug in SPECIAL_DRUGS:
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็ก เช่น 5 ปี")]
+                    )
+                )
+                return
+            else:
+                example_weight = round(random.uniform(5.0, 20.0), 1)
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
+                    )
+                )
+                return
+
+    if user_id in user_drug_selection:
+        cleaned_text = text.lower().replace("กก", "").replace("kg", "").replace("น้ำหนัก", "").replace("หนัก", "").replace(" ", "")
+        age_match = re.match(r"(\d+)(\.?\d*)\s*ปี", text)
+
+        if age_match:
+            age_years = float(age_match.group(1) + age_match.group(2))
+            user_ages[user_id] = age_years
             example_weight = round(random.uniform(5.0, 20.0), 1)
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
+                    messages=[TextMessage(text=f"🎯 อายุ {age_years} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
                 )
             )
-        return
-
-    if user_id in user_drug_selection:
-    # 🌟 ทำความสะอาดข้อความก่อนจับน้ำหนัก
-        cleaned_text = text.lower()
-        cleaned_text = cleaned_text.replace("กก", "")
-        cleaned_text = cleaned_text.replace("kg", "")
-        cleaned_text = cleaned_text.replace("น้ำหนัก", "")
-        cleaned_text = cleaned_text.replace("หนัก", "")
-        cleaned_text = cleaned_text.replace(" ", "")
+            return
 
         match = re.search(r"(\d+(\.\d+)?)", cleaned_text)
         if match:
             weight = float(match.group(1))
             entry = user_drug_selection[user_id]
             drug = entry.get("drug")
-            indication = entry.get("indication")
 
-            try:
-                reply = calculate_dose(drug, indication, weight)
-            except Exception as e:
-                logging.info(f"❌ คำนวณผิดพลาด: {e}")
-                reply = "เกิดข้อผิดพลาดในการคำนวณ"
+            if drug in SPECIAL_DRUGS:
+                age = user_ages.get(user_id)
+                try:
+                    reply = calculate_special_drug(drug, weight, age)
+                except Exception as e:
+                    logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
+                    reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+            else:
+                indication = entry.get("indication")
+                try:
+                    reply = calculate_dose(drug, indication, weight)
+                except Exception as e:
+                    logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
+                    reply = "เกิดข้อผิดพลาดในการคำนวณยา"
         else:
             reply = "กรุณาพิมพ์น้ำหนัก เช่น 20 กก"
 
@@ -481,6 +565,7 @@ def handle_message(event: MessageEvent):
                 messages=[TextMessage(text=reply)]
             )
         )
+        return
 
     if user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
@@ -491,6 +576,7 @@ def handle_message(event: MessageEvent):
                 ]
             )
         )
+        return
         
 
 if __name__ == "__main__":
