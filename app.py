@@ -560,23 +560,54 @@ def handle_message(event: MessageEvent):
     
     if user_id in user_drug_selection:
         cleaned_text = text.lower().replace("กก", "").replace("kg", "").replace("น้ำหนัก", "").replace("หนัก", "").replace(" ", "")
+
+        # 🛠 แก้การจับอายุ: ใช้ .group(0) และใส่ try-except
         age_match = re.search(r"(\d+(\.\d+)?)", text)
-
         if age_match:
-            age_years = float(age_match.group(1) + age_match.group(2))
-            user_ages[user_id] = age_years
-            example_weight = round(random.uniform(5.0, 20.0), 1)
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"🎯 อายุ {age_years} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
+            try:
+                age_years = float(age_match.group(0))  # ✅ ใช้ group(0) เพื่อความปลอดภัย
+                if 0 <= age_years <= 18:
+                    user_ages[user_id] = age_years
+                    example_weight = round(random.uniform(5.0, 20.0), 1)
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text=f"🎯 อายุ {age_years} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
+                        )
+                    )
+                    return
+                else:
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี")]
+                        )
+                    )
+                    return
+            except ValueError:
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="❌ กรุณาพิมพ์อายุให้ถูกต้อง เช่น 3 หรือ 5.5 ปี")]
+                    )
                 )
-            )
-            return
+                return
 
+        # 🔍 จับน้ำหนัก
         match = re.search(r"(\d+(\.\d+)?)", cleaned_text)
         if match:
-            weight = float(match.group(1))
+            try:
+                weight = float(match.group(1))
+            except ValueError:
+                reply = "❌ กรุณาพิมพ์น้ำหนักให้ถูกต้อง เช่น 20 กก"
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply)]
+                    )
+                )
+                return
+
             entry = user_drug_selection[user_id]
             drug = entry.get("drug")
 
