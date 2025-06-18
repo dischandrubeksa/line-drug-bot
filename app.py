@@ -71,6 +71,65 @@ DRUG_DATABASE = {
             "Strep Carriage": { "dose_mg_per_kg_per_day": 40, "frequency": 3, "duration_days": 10,"max_mg_per_day": 2000 },
             "UTI": { "dose_mg_per_kg_per_day": 35, "frequency": 2, "duration_days": 7, "max_mg_per_day": 1750 }
         }
+    },
+    "Azithromycin": {
+        "concentration_mg_per_ml": 200 / 5,
+        "bottle_size_ml": 15,
+        "indications": {
+            "Pertussis": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            ],
+            "Pneumonia (Atypical)": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            ],
+            "Strep Pharyngitis": {
+                "dose_mg_per_kg_per_day": 12, "frequency": 1, "duration_days": 5, "max_mg_per_dose": 500
+            },
+            "Typhoid Fever": {
+                "dose_mg_per_kg_per_day": 15, "frequency": 1, "duration_days": 7, "max_mg_per_dose": 1000
+            },
+            "UTI (Off-label)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
+            },
+            "Rhinosinusitis": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
+            },
+            "Chlamydia": {
+                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 1, "max_mg_per_dose": 1000
+            },
+            "Diarrhea (Campylobacter)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
+            },
+            "Diarrhea (Shigella)": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 12, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            ],
+            "Cholera": {
+                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 1, "max_mg_per_dose": 1000
+            },
+            "Babesiosis": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            ],
+            "Cat Scratch Disease": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            ],
+            "MAC (Mycobacterium avium, prophylaxis)": {
+                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 7, "max_mg_per_dose": 1200
+            },
+            "NTM Pulmonary Infection": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 14, "max_mg_per_dose": 500
+            },
+            "Cystic Fibrosis (maintenance)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
+            },
+            "Asthma (Adjunct)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
+            }
+        }
     }
 }
 
@@ -240,6 +299,62 @@ def calculate_warfarin(inr, twd, bleeding):
     else:
         return "🚨 INR ≥ 5.0 → หยุดยา และพิจารณาให้ Vitamin K"
 
+def calculate_dose(drug, indication, weight):
+    drug_info = DRUG_DATABASE.get(drug)
+    if not drug_info:
+        return f"❌ ไม่พบข้อมูลยา {drug}"
+
+    indication_info = drug_info["indications"].get(indication)
+    if not indication_info:
+        return f"❌ ไม่พบ indication {indication} ใน {drug}"
+
+    conc = drug_info["concentration_mg_per_ml"]
+    bottle_size = drug_info["bottle_size_ml"]
+    total_ml = 0
+    reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
+
+    # ✅ รองรับหลายช่วงวัน (list)
+    if isinstance(indication_info, list):
+        for phase in indication_info:
+            dose_per_kg = phase["dose_mg_per_kg_per_day"]
+            freq = phase["frequency"]
+            days = phase["duration_days"]
+            max_mg_day = phase.get("max_mg_per_day")
+
+            total_mg_day = weight * dose_per_kg
+            if max_mg_day:
+                total_mg_day = min(total_mg_day, max_mg_day)
+
+            ml_per_day = total_mg_day / conc
+            ml_per_dose = ml_per_day / freq
+            ml_phase = ml_per_day * days
+            total_ml += ml_phase
+
+            reply_lines.append(
+                f"📆 {phase['day_range']}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+            )
+    else:
+        dose_per_kg = indication_info["dose_mg_per_kg_per_day"]
+        freq = indication_info["frequency"]
+        days = indication_info["duration_days"]
+        max_mg_day = indication_info.get("max_mg_per_day")
+
+        total_mg_day = weight * dose_per_kg
+        if max_mg_day:
+            total_mg_day = min(total_mg_day, max_mg_day)
+
+        ml_per_day = total_mg_day / conc
+        ml_per_dose = ml_per_day / freq
+        total_ml = ml_per_day * days
+
+        reply_lines.append(
+            f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+        )
+
+    bottles = math.ceil(total_ml / bottle_size)
+    reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
+    return "\n".join(reply_lines)
+
 @handler.add(MessageEvent)
 def handle_message(event: MessageEvent):
 # ✅ ตรวจสอบว่าเป็นข้อความข้อความก่อน
@@ -350,7 +465,7 @@ def handle_message(event: MessageEvent):
         return
 
     if user_id in user_drug_selection:
-        # 🌟 ทำความสะอาดข้อความก่อนจับน้ำหนัก
+    # 🌟 ทำความสะอาดข้อความก่อนจับน้ำหนัก
         cleaned_text = text.lower()
         cleaned_text = cleaned_text.replace("กก", "")
         cleaned_text = cleaned_text.replace("kg", "")
@@ -363,49 +478,10 @@ def handle_message(event: MessageEvent):
             weight = float(match.group(1))
             entry = user_drug_selection[user_id]
             drug = entry.get("drug")
+            indication = entry.get("indication")
+
             try:
-                if drug in DRUG_DATABASE:
-                    drug_info = DRUG_DATABASE[drug]
-                    indication = entry.get("indication")
-
-                    if not indication or indication not in drug_info["indications"]:
-                        reply = f"❌ ไม่พบข้อมูลข้อบ่งใช้ '{indication}' สำหรับยา {drug} กรุณาเลือกใหม่"
-                        messaging_api.reply_message(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[TextMessage(text=reply)]
-                            )
-                        )
-                        return
-                    dose_info = drug_info["indications"][indication]
-
-                    if not dose_info:
-                      reply = f"ยังไม่มีข้อมูลการคำนวณสำหรับ {drug} - {indication}"
-                    else:
-                        dose_per_kg = dose_info["dose_mg_per_kg_per_day"]
-                        freq = dose_info["frequency"]
-                        days = dose_info["duration_days"]
-                        max_mg_day = dose_info.get("max_mg_per_day")
-                        conc = drug_info["concentration_mg_per_ml"]
-                        bottle_size = drug_info["bottle_size_ml"]
-
-                        total_mg_day = weight * dose_per_kg
-                        if max_mg_day is not None:
-                            total_mg_day = min(total_mg_day, max_mg_day)
-
-                        ml_per_day = total_mg_day / conc
-                        ml_per_dose = ml_per_day / freq
-                        total_ml = ml_per_day * days
-                        bottles = math.ceil(total_ml / bottle_size)
-
-                        reply = (
-                            f"{drug} - {indication} (น้ำหนัก {weight} kg):\n"
-                            f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/วัน\n"
-                            f"≈ {ml_per_day:.1f} ml/วัน, ครั้งละ ~{ml_per_dose:.1f} ml วันละ {freq} ครั้ง\n"
-                            f"ใช้ {days} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
-                        )
-                else:
-                    reply = f"❌ ไม่พบข้อมูลยา {drug}"
+                reply = calculate_dose(drug, indication, weight)
             except Exception as e:
                 logging.info(f"❌ คำนวณผิดพลาด: {e}")
                 reply = "เกิดข้อผิดพลาดในการคำนวณ"
@@ -418,6 +494,7 @@ def handle_message(event: MessageEvent):
                 messages=[TextMessage(text=reply)]
             )
         )
+
     if user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
             ReplyMessageRequest(
