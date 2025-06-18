@@ -340,6 +340,8 @@ def calculate_dose(drug, indication, weight):
 
             ml_per_day = total_mg_day / conc
             ml_per_dose = ml_per_day / freq
+            if "max_mg_per_dose" in phase:
+                ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
             ml_phase = ml_per_day * days
             total_ml += ml_phase
 
@@ -358,6 +360,8 @@ def calculate_dose(drug, indication, weight):
 
         ml_per_day = total_mg_day / conc
         ml_per_dose = ml_per_day / freq
+        if "max_mg_per_dose" in indication_info:
+            ml_per_dose = min(ml_per_dose, indication_info["max_mg_per_dose"] / conc)
         total_ml = ml_per_day * days
 
         reply_lines.append(
@@ -561,44 +565,84 @@ def handle_message(event: MessageEvent):
     if user_id in user_drug_selection:
 
         # 🛠 แก้การจับอายุ: ใช้ .group(0) และใส่ try-except
-        age_match = re.search(r"(\d+(\.\d+)?)", text)
-        if age_match:
-            try:
-                age_years = float(age_match.group(0))  # ✅ ใช้ group(0) เพื่อความปลอดภัย
-                if 0 <= age_years <= 18:
-                    user_ages[user_id] = age_years
-                    example_weight = round(random.uniform(5.0, 20.0), 1)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text=f"🎯 อายุ {age_years} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
-                        )
-                    )
-                    return
-                else:
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี")]
-                        )
-                    )
-                    return
-            except ValueError:
-                messaging_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text="❌ กรุณาพิมพ์อายุให้ถูกต้อง เช่น 3 หรือ 5.5 ปี")]
-                    )
-                )
-                return
+        text_lower = text.lower()
 
-        # 🔍 จับน้ำหนัก
-        match = re.search(r"(\d+(\.\d+)?)", text)
-        if match:
-            try:
-                weight = float(match.group(1))
-            except ValueError:
-                reply = "❌ กรุณาพิมพ์น้ำหนักให้ถูกต้อง เช่น 20 กก"
+        if any(kw in text_lower for kw in ["อายุ", "ปี", "y", "ขวบ"]):
+            age_match = re.search(r"(\d+(\.\d+)?)", text)
+            if age_match:
+                try:
+                    age_years = float(age_match.group(0))
+                    if 0 <= age_years <= 18:
+                        user_ages[user_id] = age_years
+                        example_weight = round(random.uniform(5.0, 20.0), 1)
+                        messaging_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[TextMessage(text=f"🎯 อายุ {age_years} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
+                            )
+                        )
+                        return
+                    else:
+                        messaging_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี")]
+                            )
+                        )
+                        return
+                except ValueError:
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text="❌ กรุณาพิมพ์อายุให้ถูกต้อง เช่น 3 หรือ 5.5 ปี")]
+                        )
+                    )
+                    return
+
+        if any(kw in text_lower for kw in ["น้ำหนัก", "กก", "kg"]) or text.replace(".", "", 1).isdigit():
+            weight_match = re.search(r"(\d+(\.\d+)?)", text)
+            if weight_match:
+                try:
+                    weight = float(weight_match.group(1))
+                except ValueError:
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text="❌ กรุณาพิมพ์น้ำหนักให้ถูกต้อง เช่น 20 กก")]
+                        )
+                    )
+
+                entry = user_drug_selection[user_id]
+                drug = entry.get("drug")
+
+                if drug in SPECIAL_DRUGS:
+                    age = user_ages.get(user_id)
+                    if age is None:
+                        # แจ้งให้ใส่อายุก่อน แล้วค่อยพิมพ์น้ำหนักอีกครั้ง
+                        messaging_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี\nจากนั้นพิมพ์น้ำหนักอีกครั้ง")]
+                            )
+                        )
+                        return  # หยุดการทำงานที่นี่เลย
+                    else:
+                        try:
+                            reply = calculate_special_drug(drug, weight, age)
+                        except Exception as e:
+                            logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
+                            reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+                else:
+                    if "indication" not in entry:
+                        reply = "❗️ กรุณาเลือกข้อบ่งใช้ก่อน เช่น 'Indication: Fever'"
+                    else:
+                        indication = entry["indication"]
+                        try:
+                            reply = calculate_dose(drug, indication, weight)
+                        except Exception as e:
+                            logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
+                            reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+
                 messaging_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
@@ -607,39 +651,15 @@ def handle_message(event: MessageEvent):
                 )
                 return
 
-            entry = user_drug_selection[user_id]
-            drug = entry.get("drug")
-
-            if drug in SPECIAL_DRUGS:
-                age = user_ages.get(user_id)
-                if age is None:
-                    reply = "❗️ กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี"
-                else:
-                    try:
-                        reply = calculate_special_drug(drug, weight, age)
-                    except Exception as e:
-                        logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
-                        reply = "เกิดข้อผิดพลาดในการคำนวณยา"
-            else:
-                if "indication" not in entry:
-                    reply = "❗️ กรุณาเลือกข้อบ่งใช้ก่อน เช่น 'Indication: Fever'"
-                else:
-                    indication = entry["indication"]
-                    try:
-                        reply = calculate_dose(drug, indication, weight)
-                    except Exception as e:
-                        logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
-                        reply = "เกิดข้อผิดพลาดในการคำนวณยา"
         else:
-            reply = "กรุณาพิมพ์น้ำหนัก เช่น 20 กก"
-
-        messaging_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=reply)]
+            # ถ้าไม่มีคำว่า "อายุ" หรือ "น้ำหนัก" ให้แจ้งเตือน
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
+                )
             )
-        )
-        return
+            return
 
     if user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
