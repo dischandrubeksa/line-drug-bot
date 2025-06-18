@@ -559,7 +559,6 @@ def handle_message(event: MessageEvent):
         return
     
     if user_id in user_drug_selection:
-        cleaned_text = text.lower().replace("กก", "").replace("kg", "").replace("น้ำหนัก", "").replace("หนัก", "").replace(" ", "")
 
         # 🛠 แก้การจับอายุ: ใช้ .group(0) และใส่ try-except
         age_match = re.search(r"(\d+(\.\d+)?)", text)
@@ -594,7 +593,7 @@ def handle_message(event: MessageEvent):
                 return
 
         # 🔍 จับน้ำหนัก
-        match = re.search(r"(\d+(\.\d+)?)", cleaned_text)
+        match = re.search(r"(\d+(\.\d+)?)", text)
         if match:
             try:
                 weight = float(match.group(1))
@@ -613,11 +612,14 @@ def handle_message(event: MessageEvent):
 
             if drug in SPECIAL_DRUGS:
                 age = user_ages.get(user_id)
-                try:
-                    reply = calculate_special_drug(drug, weight, age)
-                except Exception as e:
-                    logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
-                    reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+                if age is None:
+                    reply = "❗️ กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี"
+                else:
+                    try:
+                        reply = calculate_special_drug(drug, weight, age)
+                    except Exception as e:
+                        logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
+                        reply = "เกิดข้อผิดพลาดในการคำนวณยา"
             else:
                 if "indication" not in entry:
                     reply = "❗️ กรุณาเลือกข้อบ่งใช้ก่อน เช่น 'Indication: Fever'"
