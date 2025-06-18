@@ -182,8 +182,11 @@ def send_indication_carousel(event, drug_name):
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
 
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
+@handler.add(MessageEvent)
+def handle_message(event: MessageEvent):
+# ✅ ตรวจสอบว่าเป็นข้อความข้อความก่อน
+    if not isinstance(event.message, TextMessageContent):
+        return
     user_id = event.source.user_id
     text = event.message.text.strip()
 
