@@ -1,11 +1,16 @@
 from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import *
+from linebot.v3.messaging import (
+    MessagingApi, Configuration, ApiClient,
+    TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage
+)
+from linebot.v3.webhook import WebhookHandler
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
 import os
 import re
 import math
 import random
+import logging
 
 DRUG_DATABASE = {
     "Amoxicillin": {
@@ -56,6 +61,14 @@ DRUG_DATABASE = {
     }
 }
 
+logging.basicConfig(
+    level=logging.INFO,  # เปลี่ยนเป็น DEBUG ถ้าต้องการ log ละเอียด
+    format='[%(asctime)s] %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # พิมพ์ log ไปยัง stdout (เช่น Render, Cloud Run จะเห็น)
+    ]
+)
+
 app = Flask(__name__)
 
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
@@ -64,7 +77,9 @@ LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
 if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
     raise ValueError("Missing LINE_CHANNEL_ACCESS_TOKEN or LINE_CHANNEL_SECRET")
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+api_client = ApiClient(configuration)
+messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 user_drug_selection = {}
@@ -83,7 +98,7 @@ def callback():
     except InvalidSignatureError:
         abort(400)
     except Exception as e:
-        print(f"❌ Exception occurred: {e}")
+        logging.info(f"❌ Exception occurred: {e}")
         abort(400)
     return 'OK'
 
@@ -102,37 +117,70 @@ def send_drug_selection(event):
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
     ])
-    line_bot_api.reply_message(
-        event.reply_token,
-        [
-            TemplateSendMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
-            TemplateSendMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
-        ]
-    )
+    messaging_api.reply_message(reply_token=event.reply_token, messages=[
+        TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
+        TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
+    ])  
 
 def send_indication_carousel(event, drug_name):
+    logging.info(f"\n\U0001F4E6 เรียกดู indication สำหรับยา: {drug_name}")
+
     drug_info = DRUG_DATABASE.get(drug_name)
-    if not drug_info or "indications" not in drug_info:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=f"ยังไม่มีข้อบ่งใช้สำหรับ {drug_name}")
-        )
+    if not drug_info:
+        logging.info(f"❌ ไม่พบ {drug_name} ใน DRUG_DATABASE")
+        messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"ไม่พบข้อมูลสำหรับยา {drug_name}")] )
+        return
+
+    if "indications" not in drug_info:
+        logging.info(f"❌ ไม่พบ 'indications' ในข้อมูลของ {drug_name}")
+        messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"ยังไม่มีข้อบ่งใช้สำหรับ {drug_name}")] )
         return
 
     indications = drug_info["indications"]
+    logging.info(f"✅ พบข้อบ่งใช้: {list(indications.keys())}")
 
     columns = []
     for name in indications:
-        actions = [MessageAction(label=f"เลือก {name}", text=f"Indication: {name}")]
-        columns.append(CarouselColumn(title=name[:40], text=f"{drug_name} indication", actions=actions))
+        label = name[:20] if len(name) > 20 else name
+        title = name[:40] if len(name) > 40 else name
+        actions = [MessageAction(label=f"เลือก {label}", text=f"Indication: {name}")]
+        try:
+            columns.append(CarouselColumn(title=title, text="เลือกรายการ", actions=actions))
+        except Exception as e:
+            logging.info(f"⚠️ ผิดพลาดตอนสร้าง CarouselColumn สำหรับ {name}: {e}")
 
-    carousels = [columns[i:i+5] for i in range(0, len(columns), 5)]
-    messages = [TemplateSendMessage(
-        alt_text=f"ข้อบ่งใช้ {drug_name}",
-        template=CarouselTemplate(columns=chunk)
-    ) for chunk in carousels]
+    if not columns:
+        logging.info("❌ ไม่มี column ให้แสดง")
+        messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ที่สามารถแสดงได้สำหรับ {drug_name}")] )
+        return
+    
 
-    line_bot_api.reply_message(event.reply_token, messages)
+    # แบ่งออกเป็นชุดละ 5
+    carousel_chunks = [columns[i:i + 5] for i in range(0, len(columns), 5)]
+    messages = []
+
+    for chunk in carousel_chunks:
+        try:
+            messages.append(
+                TemplateMessage(
+                    alt_text=f"ข้อบ่งใช้ {drug_name}",
+                    template=CarouselTemplate(columns=chunk)
+                )
+            )
+        except Exception as e:
+            logging.info(f"⚠️ ผิดพลาดตอนสร้าง TemplateMessage: {e}")
+
+    # ✅ จำกัดจำนวน messages ไม่เกิน 5
+    if len(messages) > 5:
+        logging.info(f"⚠️ จำนวน carousel ({len(messages)}) เกิน 5 — ตัดให้เหลือ 5")
+        messages = messages[:5]
+
+    logging.info(f"📤 ส่ง carousel ทั้งหมด: {len(messages)} ชุด")
+    try:
+        messaging_api.reply_message(reply_token=event.reply_token, messages=messages)
+    except Exception as e:
+        logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -156,10 +204,8 @@ def handle_message(event):
             send_indication_carousel(event, drug_name)
         else:
             example_weight = round(random.uniform(5.0, 20.0), 1)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")
-            )
+            messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")] )
+
         return
 
     if text.startswith("Indication:"):
@@ -167,10 +213,7 @@ def handle_message(event):
         if user_id in user_drug_selection:
             user_drug_selection[user_id]["indication"] = indication
             example_weight = round(random.uniform(5.0, 20.0), 1)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")
-            )
+            messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")] )
         return
 
     if user_id in user_drug_selection:
@@ -189,10 +232,18 @@ def handle_message(event):
             drug = entry.get("drug")
             try:
                 if drug in DRUG_DATABASE:
-                    indication = entry.get("indication")
                     drug_info = DRUG_DATABASE[drug]
-                    dose_info = drug_info["indications"].get(indication)
-                    
+                    indication = entry.get("indication")
+
+                    if not indication or indication not in drug_info["indications"]:
+                        reply = f"❌ ไม่พบข้อมูลข้อบ่งใช้ '{indication}' สำหรับยา {drug} กรุณาเลือกใหม่"
+                        messaging_api.reply_message(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text=reply)]
+                        )
+                        return
+                    dose_info = drug_info["indications"][indication]
+
                     if not dose_info:
                       reply = f"ยังไม่มีข้อมูลการคำนวณสำหรับ {drug} - {indication}"
                     else:
@@ -221,16 +272,13 @@ def handle_message(event):
                 else:
                     reply = f"ยังไม่รองรับยา {drug}"
 
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-
+                messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=reply)] )
             except Exception as e:
-                print(f"❌ Error in calculation: {e}")
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="เกิดข้อผิดพลาดในการคำนวณ"))
+                logging.info(f"❌ Error in calculation: {e}")
+                messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text="เกิดข้อผิดพลาดในการคำนวณ")] )
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")
-            )
+            messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")] )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
