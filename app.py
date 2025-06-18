@@ -187,7 +187,191 @@ SPECIAL_DRUGS = {
         ]
     },
     "common_indications": ["Fever"]
-}}
+    },
+    "Cetirizine": {
+    "concentration_mg_per_ml": 1 / 1,
+    "bottle_size_ml": 60,
+    "indications": {
+      "Allergic rhinitis, perennial": {
+        "6_to_11_months": {
+          "dose_mg": 2.5,
+          "frequency": 1,
+          "max_mg_per_day": 2.5
+        },
+        "12_to_23_months": {
+          "initial_dose_mg": 2.5,
+          "frequency": 1,
+          "max_frequency": 2,
+          "max_mg_per_day": 5
+        }
+      },
+      "Allergic symptoms, hay fever": {
+        "2_to_5_years": {
+          "initial_dose_mg": 2.5,
+          "frequency": 1,
+          "options": [
+            {"dose_mg": 2.5, "frequency": 2},
+            {"dose_mg": 5, "frequency": 1}
+          ],
+          "max_mg_per_day": 5
+        },
+        "above_or_equal_6": {
+          "dose_mg_range": [5, 10],
+          "frequency": 1,
+          "max_mg_per_day": 10
+        }
+      },
+      "Anaphylaxis (adjunctive only)": {
+        "6_to_23_months": {
+          "dose_mg": 2.5,
+          "frequency": 1,
+          "max_mg_per_day": 2.5
+        },
+        "2_to_5_years": {
+          "dose_range_mg": [2.5, 5],
+          "frequency": 1,
+          "max_mg_per_day": 5
+        },
+        "above_5": {
+          "dose_range_mg": [5, 10],
+          "frequency": 1,
+          "max_mg_per_day": 10
+        }
+      },
+      "Urticaria, acute": {
+        "6_to_23_months": {
+          "dose_mg": 2.5,
+          "frequency": 1
+        },
+        "2_to_5_years": {
+          "dose_range_mg": [2.5, 5],
+          "frequency": 1
+        },
+        "above_5": {
+          "dose_range_mg": [5, 10],
+          "frequency": 1
+        }
+      },
+      "Urticaria, chronic spontaneous": {
+        "6_to_11_months": {
+          "dose_mg": 2.5,
+          "frequency": 1
+        },
+        "12_to_23_months": {
+          "initial_dose_mg": 2.5,
+          "frequency": 1,
+          "max_frequency": 2,
+          "max_mg_per_day": 5
+        },
+        "2_to_5_years": {
+          "initial_dose_mg": 2.5,
+          "frequency": 1,
+          "options": [
+            {"dose_mg": 2.5, "frequency": 2},
+            {"dose_mg": 5, "frequency": 1}
+          ],
+          "max_mg_per_day": 5
+        },
+        "6_to_11_years": {
+          "dose_mg": 5,
+          "frequency_options": [1, 2]
+        },
+        "above_or_equal_12": {
+          "dose_mg": 10,
+          "frequency": 1
+        }
+      }
+    },
+    "common_indications": [
+      "Allergic rhinitis, perennial",
+      "Allergic symptoms, hay fever",
+      "Anaphylaxis (adjunctive only)",
+      "Urticaria, acute",
+      "Urticaria, chronic spontaneous"
+    ]
+    },
+    "Hydroxyzine": {
+        "concentration_mg_per_ml": 10 / 5 ,
+        "bottle_size_ml": 60,
+        "indications": {
+        "Anxiety": {
+            "under_6": {
+            "dose_mg": 12.5,
+            "frequency": 4,
+            "max_mg_per_dose": 12.5
+            },
+            "above_or_equal_6": {
+            "dose_mg_range": [12.5, 25],
+            "frequency": 4,
+            "max_mg_per_dose": 25
+            }
+        },
+        "Pruritus (age-based)": {
+            "under_6": {
+            "dose_mg": 12.5,
+            "frequency": [3, 4],
+            "max_mg_per_dose": 12.5
+            },
+            "above_or_equal_6": {
+            "dose_mg_range": [12.5, 25],
+            "frequency": [3, 4],
+            "max_mg_per_dose": 25
+            }
+        },
+        "Pruritus (weight_based)": {
+            "≤40kg": {
+                "dose_mg_per_kg_per_day": 2,
+                "frequency": [6, 8],
+                "max_mg_per_dose": 25
+            },
+            ">40kg": {
+                "dose_mg_range": [25, 50],
+                "frequency": [1, 2],
+                "max_mg_per_dose": 50
+            }
+        },
+        "Pruritus from opioid": {
+            "all_ages": {
+            "dose_mg_per_kg_per_dose": 0.5,
+            "frequency": 6,
+            "max_mg_per_dose": 50
+            }
+        },
+        "Sedation": {
+            "all_ages": {
+            "dose_mg_per_kg": 0.6,
+            "max_mg_per_dose": 100
+            }
+        }
+        },
+        "common_indications": [
+        "Anxiety",
+        "Pruritus (age-based)",
+        "Pruritus (weight_based)",
+        "Pruritus from opioid",
+        "Sedation"
+        ]
+    },
+    "Ferrous drop": {
+        "concentration_mg_per_ml": 15 / 0.6 ,
+        "bottle_size_ml": 60,
+        "indications": {
+        "Iron deficiency, treatment": {
+            "all_ages": {
+            "initial_dose_mg_per_kg_per_day": 3,
+            "max_dose_range_mg_per_day": [60, 120],
+            "usual_max_mg_per_day": 150,
+            "absolute_max_mg_per_day": 200,
+            "frequency": [1, 3],
+            "note": "ให้ครั้งเดียว หรือแบ่งวันละ 1–3 ครั้งได้; การให้วันเว้นวันอาจช่วยดูดซึมดีขึ้น"
+            }
+        }
+        },
+        "common_indications": [
+        "Iron deficiency, treatment"
+        ]
+    }
+    }
 
 @app.route('/')
 def home():
@@ -374,8 +558,105 @@ def calculate_dose(drug, indication, weight):
 
 def calculate_special_drug(drug, weight, age):
     info = SPECIAL_DRUGS[drug]
-    indication_info = next(iter(info["indications"].values()))  # ดึง indication เดียวที่มี
+    indication = user_drug_selection.get(user_id, {}).get("indication")
 
+    if drug == "Hydroxyzine" and indication == "Pruritus (weight_based)":
+        data = info["indications"][indication]
+        if weight <= 40:
+            profile = data["\u226440kg"]  # ≤ = less than or equal to
+            dose_per_kg = profile["dose_mg_per_kg_per_day"]
+            freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+            max_dose = profile["max_mg_per_dose"]
+
+            total_mg_day = weight * dose_per_kg
+            reply_lines = [f"{drug} - {indication} (\u226440kg):"]
+            for freq in freqs:
+                dose_per_time = min(total_mg_day / freq, max_dose)
+                reply_lines.append(f"💊 {total_mg_day:.1f} mg/day → {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg")
+            return "\n".join(reply_lines)
+
+        else:
+            profile = data[">40kg"]
+            dose_range = profile["dose_mg_range"]
+            freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+            max_dose = profile["max_mg_per_dose"]
+
+            reply_lines = [f"{drug} - {indication} (>40kg):"]
+            for freq in freqs:
+                for dose in dose_range:
+                    dose_per_time = min(dose, max_dose)
+                    reply_lines.append(f"💊 {dose_per_time:.1f} mg × {freq} ครั้ง/วัน")
+            return "\n".join(reply_lines)
+    
+    if drug == "Cetirizine":
+        indication_info = info["indications"].get(indication)
+        if not indication_info:
+            return f"❌ ไม่พบข้อบ่งใช้ {indication}"
+
+        age_group = None
+        if age < 1:
+            age_group = "6_to_11_months"
+        elif 1 <= age < 2:
+            age_group = "12_to_23_months"
+        elif 2 <= age <= 5:
+            age_group = "2_to_5_years"
+        elif 6 <= age <= 11:
+            age_group = "6_to_11_years"
+        elif age >= 12:
+            age_group = "above_or_equal_12"
+        elif age > 5:
+            age_group = "above_5"
+
+        group_data = indication_info.get(age_group)
+        if not group_data:
+            return f"❌ ไม่พบข้อมูลกลุ่มอายุ {age_group}"
+
+        lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
+        if "dose_mg" in group_data:
+            lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
+        elif "initial_dose_mg" in group_data:
+            options = group_data.get("options", [])
+            lines.append(f"💊 เริ่มต้น {group_data['initial_dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
+            for opt in options:
+                lines.append(f"หรือ: {opt['dose_mg']} mg × {opt['frequency']} ครั้ง/วัน")
+        elif "dose_range_mg" in group_data:
+            for dose in group_data["dose_range_mg"]:
+                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+        elif "dose_mg_range" in group_data:
+            for dose in group_data["dose_mg_range"]:
+                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+        elif "dose_mg" in group_data and "frequency_options" in group_data:
+            for freq in group_data["frequency_options"]:
+                lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
+
+        return "\n".join(lines)
+    
+    if drug == "Ferrous drop":
+        indication_info = info["indications"][indication]["all_ages"]
+        dose_per_kg = indication_info["initial_dose_mg_per_kg_per_day"]
+        freqs = indication_info["frequency"]
+        max_range = indication_info["max_dose_range_mg_per_day"]
+        usual_max = indication_info.get("usual_max_mg_per_day")
+        absolute_max = indication_info.get("absolute_max_mg_per_day")
+
+        total_mg_day = weight * dose_per_kg
+        total_mg_day = min(max(total_mg_day, max_range[0]), max_range[1])
+        if absolute_max:
+            total_mg_day = min(total_mg_day, absolute_max)
+
+        reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
+        reply_lines.append(f"💊 {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day")
+
+        for freq in freqs:
+            reply_lines.append(f"→ {freq} ครั้ง/วัน → ครั้งละ ~{(total_mg_day / freq):.1f} mg")
+
+        if "note" in indication_info:
+            reply_lines.append(f"\n📌 หมายเหตุ: {indication_info['note']}")
+
+        return "\n".join(reply_lines)
+
+    # กรณีพิเศษอื่น ๆ เช่น Paracetamol (ใช้แบบเดิม)
+    indication_info = next(iter(info["indications"].values()))
     for entry in indication_info:
         if entry["min_age_years"] <= age < entry["max_age_years"]:
             dose_per_kg = entry["dose_mg_per_kg_per_day"]
@@ -393,6 +674,7 @@ def calculate_special_drug(drug, weight, age):
             )
 
     return f"❌ ไม่พบขนาดยาที่เหมาะสมสำหรับอายุ {age} ปีใน {drug}"
+
 
 def send_special_indication_carousel(event, drug_name):
     drug_info = SPECIAL_DRUGS.get(drug_name)
@@ -567,37 +849,51 @@ def handle_message(event: MessageEvent):
         # 🛠 แก้การจับอายุ: ใช้ .group(0) และใส่ try-except
         text_lower = text.lower()
 
-        if any(kw in text_lower for kw in ["อายุ", "ปี", "y", "ขวบ"]):
-            age_match = re.search(r"(\d+(\.\d+)?)", text)
-            if age_match:
-                try:
-                    age_years = float(age_match.group(0))
-                    if 0 <= age_years <= 18:
-                        user_ages[user_id] = age_years
-                        example_weight = round(random.uniform(5.0, 20.0), 1)
-                        messaging_api.reply_message(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[TextMessage(text=f"🎯 อายุ {age_years} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
-                            )
-                        )
-                        return
-                    else:
-                        messaging_api.reply_message(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี")]
-                            )
-                        )
-                        return
-                except ValueError:
+        if any(kw in text_lower for kw in ["อายุ", "ปี", "y", "ขวบ", "เดือน", "mo"]):
+            try:
+                # ตรวจจับปีและเดือน
+                years = 0
+                months = 0
+
+                year_match = re.search(r"(\d+(?:\.\d+)?)\s*(ปี|y|ขวบ)", text_lower)
+                if year_match:
+                    years = float(year_match.group(1))
+
+                month_match = re.search(r"(\d+(?:\.\d+)?)\s*(เดือน|mo)", text_lower)
+                if month_match:
+                    months = float(month_match.group(1))
+
+                if not year_match and not month_match:
+                    raise ValueError("ไม่พบปีหรือเดือน")
+
+                age_years = round(years + months / 12, 2)
+
+                if 0 <= age_years <= 18:
+                    user_ages[user_id] = age_years
+                    example_weight = round(random.uniform(5.0, 20.0), 1)
                     messaging_api.reply_message(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
-                            messages=[TextMessage(text="❌ กรุณาพิมพ์อายุให้ถูกต้อง เช่น 3 หรือ 5.5 ปี")]
+                            messages=[TextMessage(text=f"🎯 อายุ {age_years:.2f} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
                         )
                     )
-                    return
+                else:
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี (หรือเป็นเดือนก็ได้)")]
+                        )
+                    )
+                return
+
+            except:
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="❌ กรุณาพิมพ์อายุให้ถูกต้อง เช่น 6 เดือน หรือ 1 ปี 6 เดือน หรือ 2 ขวบ")]
+                    )
+                )
+                return
 
         if any(kw in text_lower for kw in ["น้ำหนัก", "กก", "kg"]) or text.replace(".", "", 1).isdigit():
             weight_match = re.search(r"(\d+(\.\d+)?)", text)
