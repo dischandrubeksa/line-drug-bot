@@ -394,12 +394,48 @@ def send_special_indication_carousel(event, drug_name):
     drug_info = SPECIAL_DRUGS.get(drug_name)
     if not drug_info or "indications" not in drug_info:
         messaging_api.reply_message(
-    ReplyMessageRequest(
-    reply_token=event.reply_token,
-    messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ของ {drug_name}")]
-    )
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ของ {drug_name}")]
+            )
+        )
+        return
+
+    indications = drug_info["indications"]
+    common = drug_info.get("common_indications", [])
+
+    names_to_show = common
+    columns = []
+
+    for name in names_to_show:
+        title = name[:40]
+        indication_info = indications[name]
+
+        if isinstance(indication_info, list):
+            dose = indication_info[0]["dose_mg_per_kg_per_day"]
+        else:
+            dose = indication_info["dose_mg_per_kg_per_day"]
+
+        columns.append(CarouselColumn(
+            title=title,
+            text=f"{dose} mg/kg/day",
+            actions=[MessageAction(label="เลือก", text=f"Indication: {name}")]
+        ))
+
+    carousel_template = CarouselTemplate(columns=columns)
+    messages = [TemplateMessage(
+        alt_text=f"ข้อบ่งใช้ {drug_name}",
+        template=carousel_template
+    )]
+
+    messaging_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=messages
+        )
     )
     return
+
 
 @handler.add(MessageEvent)
 def handle_message(event: MessageEvent):
