@@ -533,18 +533,15 @@ def handle_message(event: MessageEvent):
             send_special_indication_carousel(event, drug_name)
         return
 
-    if text.startswith("Indication:"):
+    if text.startswith("Indication:") and user_id in user_drug_selection:
         indication = text.replace("Indication:", "").strip()
-    if user_id in user_drug_selection:
         user_drug_selection[user_id]["indication"] = indication
         drug = user_drug_selection[user_id].get("drug")
 
-        # 🔁 เคลียร์อายุเดิม (ถ้ามี) เมื่อเลือก indication ใหม่
         if user_id in user_ages:
             user_ages.pop(user_id)
 
         if drug in SPECIAL_DRUGS:
-            # ❗️ ถ้าเป็นยาที่ต้องใช้อายุ ให้ขออายุ
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -552,7 +549,6 @@ def handle_message(event: MessageEvent):
                 )
             )
         else:
-            # 💬 ถ้าเป็นยาใน DRUG_DATABASE ให้ถามน้ำหนักเลย
             example_weight = round(random.uniform(5.0, 20.0), 1)
             messaging_api.reply_message(
                 ReplyMessageRequest(
@@ -592,12 +588,15 @@ def handle_message(event: MessageEvent):
                     logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
                     reply = "เกิดข้อผิดพลาดในการคำนวณยา"
             else:
-                indication = entry.get("indication")
-                try:
-                    reply = calculate_dose(drug, indication, weight)
-                except Exception as e:
-                    logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
-                    reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+                if "indication" not in entry:
+                    reply = "❗️ กรุณาเลือกข้อบ่งใช้ก่อน เช่น 'Indication: Fever'"
+                else:
+                    indication = entry["indication"]
+                    try:
+                        reply = calculate_dose(drug, indication, weight)
+                    except Exception as e:
+                        logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
+                        reply = "เกิดข้อผิดพลาดในการคำนวณยา"
         else:
             reply = "กรุณาพิมพ์น้ำหนัก เช่น 20 กก"
 
