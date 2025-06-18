@@ -1,7 +1,7 @@
 from flask import Flask, request, abort
 from linebot.v3.messaging import (
     MessagingApi, Configuration, ApiClient,
-    TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage
+    TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage, ReplyMessageRequest
 )
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -117,10 +117,14 @@ def send_drug_selection(event):
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
     ])
-    messaging_api.reply_message(reply_token=event.reply_token, messages=[
-        TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
-        TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
-    ])  
+    messaging_api.reply_message(
+    ReplyMessageRequest(
+        reply_token=event.reply_token,
+        messages=[
+            TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
+            TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
+        ]
+    ))
 
 def send_indication_carousel(event, drug_name):
     logging.info(f"\n\U0001F4E6 เรียกดู indication สำหรับยา: {drug_name}")
@@ -128,12 +132,22 @@ def send_indication_carousel(event, drug_name):
     drug_info = DRUG_DATABASE.get(drug_name)
     if not drug_info:
         logging.info(f"❌ ไม่พบ {drug_name} ใน DRUG_DATABASE")
-        messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"ไม่พบข้อมูลสำหรับยา {drug_name}")] )
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"ไม่พบข้อมูลสำหรับยา {drug_name}")]
+            )
+        )
         return
 
     if "indications" not in drug_info:
         logging.info(f"❌ ไม่พบ 'indications' ในข้อมูลของ {drug_name}")
-        messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"ยังไม่มีข้อบ่งใช้สำหรับ {drug_name}")] )
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"ยังไม่มีข้อบ่งใช้สำหรับ {drug_name}")]
+            )
+        )
         return
 
     indications = drug_info["indications"]
@@ -151,7 +165,12 @@ def send_indication_carousel(event, drug_name):
 
     if not columns:
         logging.info("❌ ไม่มี column ให้แสดง")
-        messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ที่สามารถแสดงได้สำหรับ {drug_name}")] )
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"ไม่พบข้อบ่งใช้ที่สามารถแสดงได้สำหรับ {drug_name}")]
+            )
+        )
         return
     
 
@@ -175,9 +194,15 @@ def send_indication_carousel(event, drug_name):
         logging.info(f"⚠️ จำนวน carousel ({len(messages)}) เกิน 5 — ตัดให้เหลือ 5")
         messages = messages[:5]
 
+    
     logging.info(f"📤 ส่ง carousel ทั้งหมด: {len(messages)} ชุด")
     try:
-        messaging_api.reply_message(reply_token=event.reply_token, messages=messages)
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=messages
+            )
+        )
     except Exception as e:
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
@@ -207,8 +232,12 @@ def handle_message(event: MessageEvent):
             send_indication_carousel(event, drug_name)
         else:
             example_weight = round(random.uniform(5.0, 20.0), 1)
-            messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")] )
-
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=f"คุณเลือก {drug_name} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
+                )
+            )
         return
 
     if text.startswith("Indication:"):
@@ -216,7 +245,12 @@ def handle_message(event: MessageEvent):
         if user_id in user_drug_selection:
             user_drug_selection[user_id]["indication"] = indication
             example_weight = round(random.uniform(5.0, 20.0), 1)
-            messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")] )
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
+                )
+            )
         return
 
     if user_id in user_drug_selection:
@@ -241,8 +275,10 @@ def handle_message(event: MessageEvent):
                     if not indication or indication not in drug_info["indications"]:
                         reply = f"❌ ไม่พบข้อมูลข้อบ่งใช้ '{indication}' สำหรับยา {drug} กรุณาเลือกใหม่"
                         messaging_api.reply_message(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text=reply)]
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[TextMessage(text=reply)]
+                            )
                         )
                         return
                     dose_info = drug_info["indications"][indication]
@@ -273,15 +309,19 @@ def handle_message(event: MessageEvent):
                             f"ใช้ {days} วัน รวม {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
                         )
                 else:
-                    reply = f"ยังไม่รองรับยา {drug}"
-
-                messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text=reply)] )
+                    reply = f"❌ ไม่พบข้อมูลยา {drug}"
             except Exception as e:
-                logging.info(f"❌ Error in calculation: {e}")
-                messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text="เกิดข้อผิดพลาดในการคำนวณ")] )
+                logging.info(f"❌ คำนวณผิดพลาด: {e}")
+                reply = "เกิดข้อผิดพลาดในการคำนวณ"
         else:
-            messaging_api.reply_message(reply_token=event.reply_token, messages=[TextMessage(text="กรุณาพิมพ์น้ำหนัก เช่น 20")] )
+            reply = "กรุณาพิมพ์น้ำหนัก เช่น 20 กก"
 
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=reply)]
+            )
+        )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
