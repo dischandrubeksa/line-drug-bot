@@ -129,7 +129,6 @@ def send_drug_selection(event):
 
 def send_indication_carousel(event, drug_name):
     logging.info(f"\n\U0001F4E6 เรียกดู indication สำหรับยา: {drug_name}")
-
     drug_info = DRUG_DATABASE.get(drug_name)
     if not drug_info:
         logging.info(f"❌ ไม่พบ {drug_name} ใน DRUG_DATABASE")
@@ -209,7 +208,7 @@ def send_indication_carousel(event, drug_name):
 
 def calculate_warfarin(inr, twd, bleeding):
     if bleeding == "yes":
-        return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K และส่งโรงพยาบาลทันที!"
+        return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1"
     if inr < 1.5:
         return f"🔹 INR < 1.5 → เพิ่มขนาดยา 10–20%\nขนาดยาใหม่: {twd * 1.1:.1f} – {twd * 1.2:.1f} mg/สัปดาห์"
     elif 1.5 <= inr <= 1.9:
@@ -228,6 +227,24 @@ def handle_message(event: MessageEvent):
         return
     user_id = event.source.user_id
     text = event.message.text.strip()
+
+    if text.lower() in ['คำนวณยา warfarin', 'warfarin']:
+        user_sessions.pop(user_id, None)           # จบ warfarin หรือ flow อื่น
+    user_drug_selection.pop(user_id, None)     # จบ flow เด็ก (ถ้ามี)
+    user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
+    messaging_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextMessage(text="🧪 กรุณาใส่ค่า INR (เช่น 2.5)")]
+        )
+    )
+    return
+
+    if text.lower() in ['คำนวณขนาดยาเด็ก', 'คำนวณยาเด็ก']:
+        user_sessions.pop(user_id, None)           # จบ warfarin หรือ flow อื่น
+    user_drug_selection.pop(user_id, None)     # รีเซ็ตข้อมูลเด็กเดิม
+    send_drug_selection(event)
+    return
 
         # เริ่ม Warfarin flow
     if text.lower() == "คำนวณยา warfarin":
