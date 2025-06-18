@@ -1,6 +1,3 @@
-ทำให้ยา prn ไม่ใส่ระยะเวลา ใช้กี่ขวด จัดการคำที่ชอบขึ้นมาพร้อม autoresponse
-
-
 from flask import Flask, request, abort
 from linebot.v3.messaging import (
     MessagingApi, Configuration, ApiClient,
