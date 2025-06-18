@@ -1,3 +1,6 @@
+ทำให้ยา prn ไม่ใส่ระยะเวลา ใช้กี่ขวด จัดการคำที่ชอบขึ้นมาพร้อม autoresponse
+
+
 from flask import Flask, request, abort
 from linebot.v3.messaging import (
     MessagingApi, Configuration, ApiClient,
@@ -697,16 +700,29 @@ def send_special_indication_carousel(event, drug_name):
         title = name[:40]
         indication_info = indications[name]
 
-        if isinstance(indication_info, list):
-            dose = indication_info[0]["dose_mg_per_kg_per_day"]
-        else:
-            dose = indication_info["dose_mg_per_kg_per_day"]
+        try:
+            if isinstance(indication_info, list):
+                dose = indication_info[0].get("dose_mg_per_kg_per_day") or "?"
+            elif isinstance(indication_info, dict):
+                # หา dose แบบยืดหยุ่น
+                sample_group = next(iter(indication_info.values()))
+                if isinstance(sample_group, dict):
+                    dose = sample_group.get("dose_mg") or sample_group.get("initial_dose_mg") \
+                        or sample_group.get("dose_mg_range", ["?"])[0] \
+                        or sample_group.get("dose_range_mg", ["?"])[0]
+                else:
+                    dose = "?"
+            else:
+                dose = "?"
+        except Exception as e:
+            dose = "?"
 
         columns.append(CarouselColumn(
             title=title,
-            text=f"{dose} mg/kg/day",
+            text=f"{dose} mg",
             actions=[MessageAction(label="เลือก", text=f"Indication: {name}")]
         ))
+
 
     carousel_template = CarouselTemplate(columns=columns)
     messages = [TemplateMessage(
