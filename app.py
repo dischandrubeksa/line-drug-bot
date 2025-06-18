@@ -111,13 +111,15 @@ def send_drug_selection(event):
     )
 
 def send_indication_carousel(event, drug_name):
-    indications = DRUG_DATABASE.get(drug_name, {})
-    if not indications:
+    drug_info = DRUG_DATABASE.get(drug_name)
+    if not drug_info or "indications" not in drug_info:
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=f"ยังไม่มีข้อบ่งใช้สำหรับ {drug_name}")
         )
         return
+
+    indications = drug_info["indications"]
 
     columns = []
     for name in indications:
