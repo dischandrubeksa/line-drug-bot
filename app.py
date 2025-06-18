@@ -535,30 +535,36 @@ def handle_message(event: MessageEvent):
 
     if text.startswith("Indication:"):
         indication = text.replace("Indication:", "").strip()
-        if user_id in user_drug_selection:
-            user_drug_selection[user_id]["indication"] = indication
-            drug = user_drug_selection[user_id].get("drug")
-            if drug in SPECIAL_DRUGS:
-                messaging_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็ก เช่น 5 ปี")]
-                    )
-                )
-                return
-            else:
-                example_weight = round(random.uniform(5.0, 20.0), 1)
-                messaging_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
-                    )
-                )
-                return
+    if user_id in user_drug_selection:
+        user_drug_selection[user_id]["indication"] = indication
+        drug = user_drug_selection[user_id].get("drug")
 
+        # 🔁 เคลียร์อายุเดิม (ถ้ามี) เมื่อเลือก indication ใหม่
+        if user_id in user_ages:
+            user_ages.pop(user_id)
+
+        if drug in SPECIAL_DRUGS:
+            # ❗️ ถ้าเป็นยาที่ต้องใช้อายุ ให้ขออายุ
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็ก เช่น 5 ปี")]
+                )
+            )
+        else:
+            # 💬 ถ้าเป็นยาใน DRUG_DATABASE ให้ถามน้ำหนักเลย
+            example_weight = round(random.uniform(5.0, 20.0), 1)
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
+                )
+            )
+        return
+    
     if user_id in user_drug_selection:
         cleaned_text = text.lower().replace("กก", "").replace("kg", "").replace("น้ำหนัก", "").replace("หนัก", "").replace(" ", "")
-        age_match = re.match(r"(\d+)(\.?\d*)\s*ปี", text)
+        age_match = re.search(r"(\d+(\.\d+)?)", text)
 
         if age_match:
             age_years = float(age_match.group(1) + age_match.group(2))
