@@ -155,9 +155,16 @@ def send_indication_carousel(event, drug_name):
 
     columns = []
     for name in indications:
-        label = name[:20] if len(name) > 20 else name
+    # ✅ สร้าง label ที่ไม่เกิน 20 ตัวอักษร (รวมคำว่า "เลือก ")
+        prefix = "เลือก "
+        available_len = 20 - len(prefix)
+        label_trimmed = name[:available_len] if len(name) > available_len else name
+        label = f"{prefix}{label_trimmed}"
+
+        # ✅ title ใช้ชื่อเต็ม แสดงบน carousel
         title = name[:40] if len(name) > 40 else name
-        actions = [MessageAction(label=f"เลือก {label}", text=f"Indication: {name}")]
+
+        actions = [MessageAction(label=label, text=f"Indication: {name}")]
         try:
             columns.append(CarouselColumn(title=title, text="เลือกรายการ", actions=actions))
         except Exception as e:
