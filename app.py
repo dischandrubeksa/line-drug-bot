@@ -798,15 +798,31 @@ def calculate_dose(drug, indication, weight):
                 ml_per_dose = ml_per_day / freq
                 if "max_mg_per_dose" in phase:
                     ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
+                day_label = phase.get("day_range")
+                if day_label:
+                    prefix = f"📆 {day_label}:"
+                else:
+                    prefix = "📌"
+                
+                if "day_range" in phase:
+                    day_label = f"📆 {phase['day_range']}:"
+                else:
+                    day_label = "📌"
+
                 reply_lines.append(
-                    f"📆 {phase['day_range']}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"{day_label} {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                     f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
                 )
             else:
                 min_freq = min(freqs)
                 max_freq = max(freqs)
+                if "day_range" in phase:
+                    day_label = f"📆 {phase['day_range']}:"
+                else:
+                    day_label = "📌"
+
                 reply_lines.append(
-                    f"📆 {phase['day_range']}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"{day_label} {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                     f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                 )
 
