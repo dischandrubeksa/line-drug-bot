@@ -17,10 +17,45 @@ DRUG_DATABASE = {
         "concentration_mg_per_ml": 250 / 5,
         "bottle_size_ml": 60,
         "indications": {
-            "Pharyngitis": {"dose_mg_per_kg_per_day": 50, "frequency": 2, "duration_days": 10, "max_mg_per_day": 2000},
-            "Otitis Media": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 10, "max_mg_per_day": 4000},
+            "Pharyngitis": {
+                "dose_mg_per_kg_per_day": 50,
+                "frequency": [1, 2],
+                "duration_days": 10,
+                "max_mg_per_day": 1000
+            },
+            "Otitis media": {
+                "dose_mg_per_kg_per_day": [80, 90],  # ใส่เป็น list
+                "frequency": 2,
+                "duration_days": 10,
+                "max_mg_per_day": 4000,
+                "note": "📌 ใช้ในเด็กอายุมากกว่าเท่ากับ 3 ปีขึ้นไป"
+            },
             "Pneumonia": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 7, "max_mg_per_day": 4000},
-            "Anthrax": {"dose_mg_per_kg_per_day": 75, "frequency": 3, "duration_days": 60, "max_mg_per_day": 1000},
+            "Anthrax": [
+                {
+                    "title": "Postexposure prophylaxis, exposure to aerosolized spores",
+                    "dose_mg_per_kg_per_day": 75,
+                    "frequency": 3,
+                    "duration_days": 60,
+                    "max_mg_per_dose": 1000
+                },
+                {
+                    "title": "Cutaneous, without systemic involvement",
+                    "dose_mg_per_kg_per_day": 75,
+                    "frequency": 3,
+                    "duration_days_range": [7, 10],
+                    "max_mg_per_dose": 1000,
+                    "note": "ใช้ในกรณี naturally acquired infection"
+                },
+                {
+                    "title": "Systemic, oral step-down therapy",
+                    "dose_mg_per_kg_per_day": 75,
+                    "frequency": 3,
+                    "duration_days": 60,
+                    "max_mg_per_dose": 1000,
+                    "note": "เป็นส่วนหนึ่งของ combination therapy เพื่อให้ครบ 60 วัน"
+                }
+            ],
             "H. pylori": {"dose_mg_per_kg_per_day": 62.5, "frequency": 2, "duration_days": 14, "max_mg_per_day": 2000},
             "UTI": {"dose_mg_per_kg_per_day": 75, "frequency": 3, "duration_days": 7, "max_mg_per_day": 500},
             "Sinusitis": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 10, "max_mg_per_day": 2000},
@@ -40,7 +75,7 @@ DRUG_DATABASE = {
     },
     "Cefdinir": {
         "concentration_mg_per_ml": 125 / 5,
-        "bottle_size_ml": 60,
+        "bottle_size_ml": 30,
         "indications": {
             "Otitis Media": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600},
             "Pharyngitis": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600},
@@ -49,7 +84,7 @@ DRUG_DATABASE = {
     },
     "Cefixime": {
         "concentration_mg_per_ml": 100 / 5,
-        "bottle_size_ml": 50,
+        "bottle_size_ml": 30,
         "indications": {
             "Febrile Neutropenia": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
             "Otitis Media": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
@@ -60,7 +95,7 @@ DRUG_DATABASE = {
         }
     },
     "Augmentin": {
-        "concentration_mg_per_ml": 400 / 5,
+        "concentration_mg_per_ml": 600 / 5,
         "bottle_size_ml": 70,
         "indications": {
             "Impetigo": {"dose_mg_per_kg_per_day": 35, "frequency": 2, "duration_days": 7, "max_mg_per_day": 500},
@@ -164,7 +199,7 @@ user_ages = {}
 
 SPECIAL_DRUGS = {
     "Paracetamol": {
-    "concentration_mg_per_ml": 160 / 5,
+    "concentration_mg_per_ml": 120 / 5,
     "bottle_size_ml": 60,
     "indications": {
         "Fever": [
@@ -189,7 +224,7 @@ SPECIAL_DRUGS = {
     "common_indications": ["Fever"]
     },
     "Cetirizine": {
-    "concentration_mg_per_ml": 1 / 1,
+    "concentration_mg_per_ml": 5 / 5,
     "bottle_size_ml": 60,
     "indications": {
       "Allergic rhinitis, perennial": {
@@ -354,7 +389,7 @@ SPECIAL_DRUGS = {
     },
     "Ferrous drop": {
         "concentration_mg_per_ml": 15 / 0.6 ,
-        "bottle_size_ml": 60,
+        "bottle_size_ml": 15,
         "indications": {
         "Iron deficiency, treatment": {
             "all_ages": {
@@ -510,11 +545,70 @@ def calculate_dose(drug, indication, weight):
     total_ml = 0
     reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
 
+    # ✅ รองรับกรณี indication เป็น dict ซ้อน (sub-indications)
+    if all(isinstance(v, dict) for v in indication_info.values()):
+        for sub_ind, sub_info in indication_info.items():
+            dose_per_kg = sub_info["dose_mg_per_kg_per_day"]
+            freqs = sub_info["frequency"] if isinstance(sub_info["frequency"], list) else [sub_info["frequency"]]
+            days = sub_info["duration_days"]
+            max_mg_day = sub_info.get("max_mg_per_day")
+            max_mg_per_dose = sub_info.get("max_mg_per_dose")
+            note = sub_info.get("note")
+
+            if isinstance(dose_per_kg, list):
+                min_dose, max_dose = dose_per_kg
+                min_total_mg_day = weight * min_dose
+                max_total_mg_day = weight * max_dose
+
+                if max_mg_day:
+                    min_total_mg_day = min(min_total_mg_day, max_mg_day)
+                    max_total_mg_day = min(max_total_mg_day, max_mg_day)
+
+                ml_per_day_min = min_total_mg_day / conc
+                ml_per_day_max = max_total_mg_day / conc
+                ml_total = ml_per_day_max * days
+                total_ml += ml_total
+
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+                reply_lines.append(
+                    f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
+                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                )
+            else:
+                total_mg_day = weight * dose_per_kg
+                if max_mg_day:
+                    total_mg_day = min(total_mg_day, max_mg_day)
+                ml_per_day = total_mg_day / conc
+                ml_total = ml_per_day * days
+                total_ml += ml_total
+
+                if len(freqs) == 1:
+                    freq = freqs[0]
+                    ml_per_dose = ml_per_day / freq
+                    if max_mg_per_dose:
+                        ml_per_dose = min(ml_per_dose, max_mg_per_dose / conc)
+                    reply_lines.append(
+                        f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                        f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+                    )
+                else:
+                    min_freq = min(freqs)
+                    max_freq = max(freqs)
+                    reply_lines.append(
+                        f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                    )
+
+            if note:
+                reply_lines.append(f"📝 หมายเหตุ: {note}")
+
     # ✅ รองรับหลายช่วงวัน (list)
-    if isinstance(indication_info, list):
+    elif isinstance(indication_info, list):
         for phase in indication_info:
             dose_per_kg = phase["dose_mg_per_kg_per_day"]
-            freq = phase["frequency"]
+            freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
             days = phase["duration_days"]
             max_mg_day = phase.get("max_mg_per_day")
 
@@ -523,34 +617,80 @@ def calculate_dose(drug, indication, weight):
                 total_mg_day = min(total_mg_day, max_mg_day)
 
             ml_per_day = total_mg_day / conc
-            ml_per_dose = ml_per_day / freq
-            if "max_mg_per_dose" in phase:
-                ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
             ml_phase = ml_per_day * days
             total_ml += ml_phase
 
-            reply_lines.append(
-                f"📆 {phase['day_range']}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
-            )
+            if len(freqs) == 1:
+                freq = freqs[0]
+                ml_per_dose = ml_per_day / freq
+                if "max_mg_per_dose" in phase:
+                    ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
+                reply_lines.append(
+                    f"📆 {phase['day_range']}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+                )
+            else:
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+                reply_lines.append(
+                    f"📆 {phase['day_range']}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                )
+
+    # ✅ กรณี indication เป็น dict ธรรมดา
     else:
         dose_per_kg = indication_info["dose_mg_per_kg_per_day"]
-        freq = indication_info["frequency"]
+        freqs = indication_info["frequency"] if isinstance(indication_info["frequency"], list) else [indication_info["frequency"]]
         days = indication_info["duration_days"]
         max_mg_day = indication_info.get("max_mg_per_day")
 
-        total_mg_day = weight * dose_per_kg
-        if max_mg_day:
-            total_mg_day = min(total_mg_day, max_mg_day)
+        if isinstance(dose_per_kg, list):
+            min_dose, max_dose = dose_per_kg
+            min_total_mg_day = weight * min_dose
+            max_total_mg_day = weight * max_dose
 
-        ml_per_day = total_mg_day / conc
-        ml_per_dose = ml_per_day / freq
-        if "max_mg_per_dose" in indication_info:
-            ml_per_dose = min(ml_per_dose, indication_info["max_mg_per_dose"] / conc)
-        total_ml = ml_per_day * days
+            if max_mg_day:
+                min_total_mg_day = min(min_total_mg_day, max_mg_day)
+                max_total_mg_day = min(max_total_mg_day, max_mg_day)
 
-        reply_lines.append(
-            f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
-        )
+            ml_per_day_min = min_total_mg_day / conc
+            ml_per_day_max = max_total_mg_day / conc
+            total_ml = ml_per_day_max * days
+
+            min_freq = min(freqs)
+            max_freq = max(freqs)
+            reply_lines.append(
+                f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
+                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+            )
+        else:
+            total_mg_day = weight * dose_per_kg
+            if max_mg_day:
+                total_mg_day = min(total_mg_day, max_mg_day)
+
+            ml_per_day = total_mg_day / conc
+            total_ml = ml_per_day * days
+
+            if len(freqs) == 1:
+                freq = freqs[0]
+                ml_per_dose = ml_per_day / freq
+                if "max_mg_per_dose" in indication_info:
+                    ml_per_dose = min(ml_per_dose, indication_info["max_mg_per_dose"] / conc)
+                reply_lines.append(
+                    f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+                )
+            else:
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+                reply_lines.append(
+                    f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                )
+
+        note = indication_info.get("note")
+        if note:
+            reply_lines.append(f"\n📝 หมายเหตุ: {note}")
 
     bottles = math.ceil(total_ml / bottle_size)
     reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
@@ -593,23 +733,26 @@ def calculate_special_drug(user_id, drug, weight, age):
         if not indication_info:
             return f"❌ ไม่พบข้อบ่งใช้ {indication}"
 
+        # ตรวจสอบ age_group ที่มีอยู่จริง
+        possible_groups = indication_info.keys()
+        
         age_group = None
         if age < 1:
             age_group = "6_to_11_months"
         elif 1 <= age < 2:
             age_group = "12_to_23_months"
-        elif 2 <= age <= 5:
+        elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
             age_group = "2_to_5_years"
-        elif 6 <= age <= 11:
+        elif 6 <= age <= 11 and "6_to_11_years" in possible_groups:
             age_group = "6_to_11_years"
-        elif age >= 12:
+        elif age >= 12 and "above_or_equal_12" in possible_groups:
             age_group = "above_or_equal_12"
-        elif age > 5:
+        elif age > 5 and "above_5" in possible_groups:
             age_group = "above_5"
 
         group_data = indication_info.get(age_group)
         if not group_data:
-            return f"❌ ไม่พบข้อมูลกลุ่มอายุ {age_group}"
+            return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
 
         lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
         if "dose_mg" in group_data:
@@ -841,10 +984,11 @@ def handle_message(event: MessageEvent):
             user_ages.pop(user_id)
 
         if drug in SPECIAL_DRUGS:
+            example_age = round(random.uniform(1, 18), 1)
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็ก เช่น 5 ปี")]
+                    messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
                 )
             )
         else:
