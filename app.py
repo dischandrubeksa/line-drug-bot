@@ -17,20 +17,73 @@ DRUG_DATABASE = {
         "concentration_mg_per_ml": 250 / 5,
         "bottle_size_ml": 60,
         "indications": {
-            "Pharyngitis": {
-                "dose_mg_per_kg_per_day": 50,
-                "frequency": [1, 2],
-                "duration_days": 10,
-                "max_mg_per_day": 1000
-            },
-            "Otitis media": {
-                "dose_mg_per_kg_per_day": [80, 90],  # ใส่เป็น list
-                "frequency": 2,
-                "duration_days": 10,
-                "max_mg_per_day": 4000,
-                "note": "📌 ใช้ในเด็กอายุมากกว่าเท่ากับ 3 ปีขึ้นไป"
-            },
-            "Pneumonia": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 7, "max_mg_per_day": 4000},
+            "Pharyngitis/Tonsillitis": [
+                {
+                    "sub_indication": "Group A Streptococcus",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": [1, 2],
+                    "duration_days": 10,
+                    "max_mg_per_day": 1000,
+                    "note": "📌 ใช้ได้ทั้งแบบวันละครั้งหรือแบ่งวันละ 2 ครั้ง × 10 วัน ตามความสะดวก"
+                }
+            ],
+            "Otitis media, acute (AOM)": [
+                {
+                    "label": "High-dose regimen",
+                    "dose_mg_per_kg_per_day": [80, 90],
+                    "frequency": 2,
+                    "duration_days": 10,
+                    "max_mg_per_day": 4000,
+                    "note": "เหมาะในสหรัฐอเมริกา หรือเมื่อมี S. pneumoniae ดื้อเพนนิซิลลิน"
+                },
+                {
+                    "label": "Standard-dose regimen",
+                    "dose_mg_per_kg_per_day": [40, 50],
+                    "frequency": 2,
+                    "duration_days": 7,
+                    "max_mg_per_day": 1500,
+                    "note": "ใช้ได้เฉพาะในพื้นที่ที่เชื้อ S. pneumoniae ดื้อต่อ penicillin < 10% เท่านั้น"
+                }
+            ],
+            "Pneumonia, community acquired": [
+                {
+                    "label": "Empiric therapy (bacterial pneumonia)",
+                    "dose_mg_per_kg_per_day": 90,
+                    "frequency": 2,
+                    "duration_days": 5,
+                    "max_mg_per_day": 4000
+                },
+                {
+                    "label": "Group A Streptococcus, mild",
+                    "dose_mg_per_kg_per_day": [50, 75],
+                    "frequency": 2,
+                    "duration_days": 7,
+                    "max_mg_per_day": 4000
+                },
+                {
+                    "label": "H. influenzae, mild",
+                    "dose_mg_per_kg_per_day": [75, 100],
+                    "frequency": 3,
+                    "duration_days": 7,
+                    "max_mg_per_day": 4000
+                },
+                {
+                    "label": "S. pneumoniae, MIC ≤2",
+                    "dose_mg_per_kg_per_day": 90,
+                    "frequency": [2, 3],
+                    "duration_days": 7,
+                    "max_mg_per_day": 4000,
+                    "note": "เลือกความถี่ตาม MIC: 12 ชม หรือ 8 ชม"
+                },
+                {
+                    "label": "S. pneumoniae, MIC = 2 mcg/mL",
+                    "dose_mg_per_kg_per_day": [90, 100],
+                    "frequency": 3,
+                    "duration_days": 7,
+                    "max_mg_per_day": 4000,
+                    "note": "ใช้เพื่อให้ time > MIC ได้ตามเป้าหมาย"
+                }
+            ],
             "Anthrax": [
                 {
                     "title": "Postexposure prophylaxis, exposure to aerosolized spores",
@@ -56,12 +109,128 @@ DRUG_DATABASE = {
                     "note": "เป็นส่วนหนึ่งของ combination therapy เพื่อให้ครบ 60 วัน"
                 }
             ],
-            "H. pylori": {"dose_mg_per_kg_per_day": 62.5, "frequency": 2, "duration_days": 14, "max_mg_per_day": 2000},
-            "UTI": {"dose_mg_per_kg_per_day": 75, "frequency": 3, "duration_days": 7, "max_mg_per_day": 500},
-            "Sinusitis": {"dose_mg_per_kg_per_day": 90, "frequency": 2, "duration_days": 10, "max_mg_per_day": 2000},
-            "Endocarditis": {"dose_mg_per_kg_per_day": 50, "frequency": 1, "duration_days": 1, "max_mg_per_day": 2000},
-            "Lyme Disease": {"dose_mg_per_kg_per_day": 50, "frequency": 3, "duration_days": 14, "max_mg_per_day": 500},
-            "Osteoarticular": {"dose_mg_per_kg_per_day": 100, "frequency": 3, "duration_days": 14, "max_mg_per_day": 4000}
+            "Helicobacter pylori eradication": [
+                {
+                    "name": "Standard-dose (weight-based)",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 2,
+                    "duration_days": 14,
+                    "max_mg_per_dose": 1000,
+                    "note": "ใช้ร่วมกับยาฆ่าเชื้อชนิดอื่นตาม guideline"
+                },
+                {
+                    "name": "Standard-dose (fixed dosing)",
+                    "fixed_dose_by_weight": [
+                        {"min_weight": 15, "max_weight": 24.9, "dose_mg": 500},
+                        {"min_weight": 25, "max_weight": 34.9, "dose_mg": 750},
+                        {"min_weight": 35, "max_weight": 999, "dose_mg": 1000}
+                    ],
+                    "frequency": 2,
+                    "duration_days": 14,
+                    "note": "Fixed dosing ตามน้ำหนักช่วง (twice daily × 14 วัน)"
+                },
+                {
+                    "name": "High-dose (fixed dosing)",
+                    "fixed_dose_by_weight": [
+                        {"min_weight": 15, "max_weight": 24.9, "dose_mg": 750},
+                        {"min_weight": 25, "max_weight": 34.9, "dose_mg": 1000},
+                        {"min_weight": 35, "max_weight": 999, "dose_mg": 1500}
+                    ],
+                    "frequency": 2,
+                    "duration_days": 14,
+                    "note": "ใช้กรณีดื้อ clarithromycin และ metronidazole"
+                }
+            ],
+            "Lyme disease (Borrelia spp. infection)": [
+                {
+                    "name": "Erythema migrans / Borrelial lymphocytoma",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 3,
+                    "duration_days": 14,
+                    "max_mg_per_dose": 500,
+                    "note": "รักษานาน 14 วัน"
+                },
+                {
+                    "name": "Carditis",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 3,
+                    "duration_days": 21,
+                    "max_mg_per_dose": 500,
+                    "note": "รักษานาน 14–21 วัน"
+                },
+                {
+                    "name": "Arthritis (initial, recurrent, or refractory)",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 3,
+                    "duration_days": 28,
+                    "max_mg_per_dose": 500,
+                    "note": "รักษานาน 28 วัน"
+                },
+                {
+                    "name": "Acrodermatitis chronica atrophicans",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 3,
+                    "duration_days": 28,
+                    "max_mg_per_dose": 500,
+                    "note": "รักษานาน 21–28 วัน"
+                }
+            ],
+            "Urinary tract infection": [
+                {
+                    "sub_indication": "Infants",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 2,
+                    "duration_days": 7,
+                    "note": "📌 แนะนำใช้เฉพาะในกรณีที่เชื้อไวต่อ amoxicillin"
+                },
+                {
+                    "sub_indication": "Infants (severe)",
+                    "dose_mg_per_kg_per_day": 100,
+                    "frequency": 2,
+                    "duration_days": 10,
+                    "note": "📌 อาจใช้ในกรณี moderate/severe infection"
+                },
+                {
+                    "sub_indication": "Children and Adolescents",
+                    "dose_mg_per_kg_per_day": 50,
+                    "frequency": 3,
+                    "duration_days": 7,
+                    "max_mg_per_dose": 500,
+                    "note": "📌 แนะนำระยะเวลา 7–14 วัน หรือ 3–5 วันใน cystitis ที่ไม่ซับซ้อน (≥2 ปี)"
+                },
+                {
+                    "sub_indication": "Children and Adolescents (high dose)",
+                    "dose_mg_per_kg_per_day": 100,
+                    "frequency": 3,
+                    "duration_days": 10,
+                    "max_mg_per_dose": 500,
+                    "note": "📌 สำหรับ moderate/severe infection ที่ตอบสนองช้า"
+                },
+                {
+                    "sub_indication": "Children (uncomplicated cystitis)",
+                    "dose_mg_per_kg_per_day": 30,
+                    "frequency": 3,
+                    "duration_days": 3,
+                    "note": "📌 ใช้ได้ในเด็ก ≥2 ปี ที่มี uncomplicated cystitis"
+                }
+            ],
+            "Rhinosinusitis": [
+                {
+                    "sub_indication": "Standard-dose regimen (พื้นที่ที่ S. pneumoniae ไวต่อ penicillin)",
+                    "dose_mg_per_kg_per_day": 45,
+                    "frequency": 2,
+                    "duration_days": 10,
+                    "note": "📌 สำหรับผู้ป่วยที่ไม่ได้รับยาปฏิชีวนะใน 30 วันที่ผ่านมา และไม่ได้ไปศูนย์ดูแลเด็ก (AAP guideline)"
+                },
+                {
+                    "sub_indication": "High-dose regimen (พื้นที่ที่ S. pneumoniae ดื้อต่อ penicillin ≥10%)",
+                    "dose_mg_per_kg_per_day": 80,
+                    "frequency": 2,
+                    "duration_days": 10,
+                    "max_mg_per_dose": 2000,
+                    "note": "📌 แนะนำโดย IDSA และใช้ในพื้นที่ที่มีเชื้อดื้อมาก"
+                }
+            ]
         }
     },
     "Cephalexin": {
@@ -607,6 +776,9 @@ def calculate_dose(drug, indication, weight):
     # ✅ รองรับหลายช่วงวัน (list)
     elif isinstance(indication_info, list):
         for phase in indication_info:
+            title = get_indication_title(phase)
+            if title:
+                reply_lines.append(f"\n🔹 {title}")
             dose_per_kg = phase["dose_mg_per_kg_per_day"]
             freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
             days = phase["duration_days"]
@@ -878,6 +1050,11 @@ def send_special_indication_carousel(event, drug_name):
     )
     return
 
+def get_indication_title(ind_obj):
+    for key in ["sub_indication", "label", "title", "name"]:
+        if key in ind_obj:
+            return ind_obj[key]
+    return None
 
 @handler.add(MessageEvent)
 def handle_message(event: MessageEvent):
