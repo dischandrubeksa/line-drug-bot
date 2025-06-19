@@ -6,6 +6,7 @@ from linebot.v3.messaging import (
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.models import QuickReplyButton, PostbackAction
 import os
 import re
 import math
@@ -1050,11 +1051,49 @@ def send_special_indication_carousel(event, drug_name):
     )
     return
 
-def get_indication_title(ind_obj):
-    for key in ["sub_indication", "label", "title", "name"]:
-        if key in ind_obj:
-            return ind_obj[key]
+def get_indication_title(indication_dict):
+    """
+    คืนค่าชื่อย่อยของ indication จาก key ที่เหมาะสม เช่น label, sub_indication, title, name
+    """
+    for key in ["label", "sub_indication", "title", "name"]:
+        if key in indication_dict:
+            return indication_dict[key]
     return None
+
+def create_quick_reply_items(drug, drug_info):
+    items = []
+
+    for indication_name, entry in drug_info["indications"].items():
+        if isinstance(entry, list):
+            for idx, sub in enumerate(entry):
+                title = get_indication_title(sub) or f"{indication_name} #{idx+1}"
+                label = title[:20]  # LINE จำกัด label ไม่เกิน 20 ตัวอักษร
+                items.append(
+                    QuickReplyButton(
+                        action=PostbackAction(
+                            label=label,
+                            data=f"{drug}|{indication_name}|{idx}"
+                        )
+                    )
+                )
+        else:
+            label = indication_name[:20]
+            items.append(
+                QuickReplyButton(
+                    action=PostbackAction(
+                        label=label,
+                        data=f"{drug}|{indication_name}|0"
+                    )
+                )
+            )
+    return items
+
+
+def get_indication_entry(drug, indication_name, entry_index=0):
+    entries = DRUG_DATABASE[drug]["indications"][indication_name]
+    if isinstance(entries, list):
+        return entries[int(entry_index)]
+    return entries
 
 @handler.add(MessageEvent)
 def handle_message(event: MessageEvent):
