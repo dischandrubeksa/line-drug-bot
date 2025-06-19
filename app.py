@@ -790,7 +790,7 @@ def calculate_dose(drug, indication, weight):
                         max_freq = max(freqs)
                         reply_lines.append(
                             f"{min_dose} – {max_dose} mg/kg/day → {min_mg:.0f} – {max_mg:.0f} mg/day ≈ "
-                            f"{ml_day_min:.1f} – {ml_day_max:.1f} ml/day,  {ml_day_max:.1f} ml/day, \u41aảể chia {min_freq} – {max_freq} ครั้ง × {day_str} วัน "
+                            f"{ml_day_min:.1f} – {ml_day_max:.1f} ml/day,  {ml_day_max:.1f} ml/day, {min_freq} – {max_freq} ครั้ง × {day_str} วัน "
                             f"(ครั้งละ ~{ml_day_max / max_freq:.1f} – {ml_day_min / min_freq:.1f} ml)"
                         )
                 else:
@@ -813,7 +813,7 @@ def calculate_dose(drug, indication, weight):
                         max_freq = max(freqs)
                         reply_lines.append(
                             f"{dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                            f"\u41aảể chia {min_freq} – {max_freq} ครั้ง × {day_str} วัน "
+                            f"{min_freq} – {max_freq} ครั้ง × {day_str} วัน "
                             f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                         )
 
