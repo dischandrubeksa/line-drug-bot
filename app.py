@@ -28,7 +28,7 @@ DRUG_DATABASE = {
                     "note": "📌 ใช้ได้ทั้งแบบวันละครั้งหรือแบ่งวันละ 2 ครั้ง × 10 วัน ตามความสะดวก"
                 }
             ],
-            "Otitis media, acute (AOM)": [
+            "Acute Otitis Media (AOM)": [
                 {
                     "label": "High-dose regimen",
                     "dose_mg_per_kg_per_day": [80, 90],
@@ -46,7 +46,7 @@ DRUG_DATABASE = {
                     "note": "ใช้ได้เฉพาะในพื้นที่ที่เชื้อ S. pneumoniae ดื้อต่อ penicillin < 10% เท่านั้น"
                 }
             ],
-            "Pneumonia, community acquired": [
+            "Pneumonia (community acquired)": [
                 {
                     "label": "Empiric therapy (bacterial pneumonia)",
                     "dose_mg_per_kg_per_day": 90,
@@ -110,7 +110,7 @@ DRUG_DATABASE = {
                     "note": "เป็นส่วนหนึ่งของ combination therapy เพื่อให้ครบ 60 วัน"
                 }
             ],
-            "Helicobacter pylori eradication": [
+            "H. pylori eradication": [
                 {
                     "name": "Standard-dose (weight-based)",
                     "dose_mg_per_kg_per_day": 50,
@@ -142,7 +142,7 @@ DRUG_DATABASE = {
                     "note": "ใช้กรณีดื้อ clarithromycin และ metronidazole"
                 }
             ],
-            "Lyme disease (Borrelia spp. infection)": [
+            "Lyme disease": [
                 {
                     "name": "Erythema migrans / Borrelial lymphocytoma",
                     "dose_mg_per_kg_per_day": 50,
@@ -716,7 +716,7 @@ def calculate_dose(drug, indication, weight):
     reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
 
     # ✅ รองรับกรณี indication เป็น dict ซ้อน (sub-indications)
-    if all(isinstance(v, dict) for v in indication_info.values()):
+    if isinstance(indication_info, dict) and all(isinstance(v, dict) for v in indication_info.values()):
         for sub_ind, sub_info in indication_info.items():
             dose_per_kg = sub_info["dose_mg_per_kg_per_day"]
             freqs = sub_info["frequency"] if isinstance(sub_info["frequency"], list) else [sub_info["frequency"]]
@@ -1204,7 +1204,7 @@ def handle_message(event: MessageEvent):
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
+                    messages=[TextMessage(text=f"📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
                 )
             )
         else:
