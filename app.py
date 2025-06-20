@@ -688,6 +688,8 @@ def send_indication_carousel(event, drug_name, show_all=False):
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
 
+# คำนวณขนาดยา Warfarin
+# --------------------------
 def calculate_warfarin(inr, twd, bleeding, supplement=None):
     if bleeding == "yes":
         return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
@@ -748,47 +750,38 @@ def get_followup_text(inr):
 # ส่ง flex เลือกสมุนไพร
 # --------------------------
 def send_supplement_flex(event):
+    global messaging_api 
     flex_contents = {
         "type": "bubble",
         "size": "mega",
         "header": {
             "type": "box",
             "layout": "vertical",
-            "contents": [{"type": "text", "text": "🌿 สมุนไพร/อาหารเสริม", "weight": "bold", "size": "lg"}]
+            "contents": [
+                {"type": "text", "text": "🌿 สมุนไพร/อาหารเสริม", "weight": "bold", "size": "lg"}
+            ]
         },
         "body": {
             "type": "box",
             "layout": "vertical",
-            "spacing": "md",
             "contents": [
-                {
-                    "type": "text",
-                    "text": "ผู้ป่วยใช้สิ่งใดบ้าง?",
-                    "wrap": True,
-                    "size": "md"
-                },
+                {"type": "text", "text": "ผู้ป่วยใช้สิ่งใดบ้าง?", "wrap": True, "size": "md"},
                 {
                     "type": "box",
                     "layout": "vertical",
                     "spacing": "sm",
                     "contents": [
-                        *[
-                            {
-                                "type": "button",
-                                "style": "primary",
-                                "height": "sm",
-                                "action": {
-                                    "type": "message",
-                                    "label": label,
-                                    "text": label
-                                },
-                                "color": "#84C1FF" if label in ["ไม่ได้ใช้"] else "#AEC6CF"
-                            }
-                            for label in [
-                                "ไม่ได้ใช้", "กระเทียม", "ใบแปะก๊วย",
-                                "โสม", "ขมิ้น", "น้ำมันปลา",
-                                "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"
-                            ]
+                        {
+                            "type": "button",
+                            "action": {"type": "message", "label": label, "text": label},
+                            "style": "primary",
+                            "height": "sm",
+                            "color": "#84C1FF" if label == "ไม่ได้ใช้" else "#AEC6CF"
+                        }
+                        for label in [
+                            "ไม่ได้ใช้", "กระเทียม", "ใบแปะก๊วย",
+                            "โสม", "ขมิ้น", "น้ำมันปลา",
+                            "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"
                         ]
                     ]
                 }
