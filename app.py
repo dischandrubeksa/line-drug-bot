@@ -828,7 +828,7 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
                 reply_lines.append(
                     f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน "
                     f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
                 )
             else:
@@ -857,7 +857,7 @@ def calculate_dose(drug, indication, weight):
                         freq_text = f"{min_freq} – {max_freq} ครั้ง"
                     reply_lines.append(
                         f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                        f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                     )
 
             if note:
@@ -895,7 +895,7 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
                 reply_lines.append(
                     f"📆 {phase.get('day_range', '')}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน "
                     f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
                 )
             else:
@@ -924,7 +924,7 @@ def calculate_dose(drug, indication, weight):
                         freq_text = f"{min_freq} – {max_freq} ครั้ง"
                     reply_lines.append(
                         f"📆 {phase.get('day_range', '')}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                        f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                     )
 
     # ✅ กรณี indication เป็น dict ธรรมดา
@@ -955,7 +955,7 @@ def calculate_dose(drug, indication, weight):
                 freq_text = f"{min_freq} – {max_freq} ครั้ง"
             reply_lines.append(
                 f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
             )
         else:
             total_mg_day = weight * dose_per_kg
@@ -983,7 +983,7 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
                 reply_lines.append(
                     f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                    f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                 )
 
         note = indication_info.get("note")
