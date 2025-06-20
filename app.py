@@ -857,10 +857,6 @@ def calculate_dose(drug, indication, weight):
                     dose_1x = ml_per_day  # วันละครั้ง
                     dose_2x = ml_per_day / 2  # วันละ 2 ครั้ง
                     dose_text = f"(ครั้งละ ~{dose_1x:.1f} ml (วันละครั้ง) หรือ ~{dose_2x:.1f} ml (วันละ 2 ครั้ง))"
-                elif min_freq == 2 and max_freq == 3:
-                    dose_2x = ml_per_day /2  # วันละ 2 ครั้ง
-                    dose_3x = ml_per_day / 3  # วันละ 3 ครั้ง
-                    dose_text = f"(ครั้งละ ~{dose_1x:.1f} ml (วันละ 2 ครั้ง) หรือ ~{dose_2x:.1f} ml (วันละ 3 ครั้ง))"
                 else:
                     dose_min = ml_per_day / max_freq
                     dose_max = ml_per_day / min_freq
@@ -936,10 +932,6 @@ def calculate_dose(drug, indication, weight):
                     dose_1x = ml_per_day  # วันละครั้ง
                     dose_2x = ml_per_day / 2  # วันละ 2 ครั้ง
                     dose_text = f"(ครั้งละ ~{dose_1x:.1f} ml (วันละครั้ง) หรือ ~{dose_2x:.1f} ml (วันละ 2 ครั้ง))"
-                elif min_freq == 2 and max_freq == 3:
-                    dose_2x = ml_per_day /2  # วันละ 2 ครั้ง
-                    dose_3x = ml_per_day / 3  # วันละ 3 ครั้ง
-                    dose_text = f"(ครั้งละ ~{dose_1x:.1f} ml (วันละ 2 ครั้ง) หรือ ~{dose_2x:.1f} ml (วันละ 3 ครั้ง))"
                 else:
                     dose_min = ml_per_day / max_freq
                     dose_max = ml_per_day / min_freq
