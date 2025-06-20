@@ -1028,9 +1028,6 @@ def calculate_dose(drug, indication, weight):
         note = indication_info.get("note")
         if note:
             reply_lines.append(f"\n📝 หมายเหตุ: {note}")
-
-    bottles = math.ceil(total_ml / bottle_size)
-    reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
     return "\n".join(reply_lines)
 
 def calculate_special_drug(user_id, drug, weight, age):
