@@ -914,7 +914,8 @@ def calculate_dose(drug, indication, weight):
                 ml_per_day_min = min_total_mg_day / conc
                 ml_per_day_max = max_total_mg_day / conc
                 ml_phase = ml_per_day_max * days
-                bottles = math.ceil(ml_phase / bottle_size)
+                raw_bottles = ml_phase / bottle_size
+                bottles = math.ceil(raw_bottles)
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -930,7 +931,7 @@ def calculate_dose(drug, indication, weight):
                     f"(ครั้งละ ~{dose_min:.1f} – {dose_max:.1f} ml)"
                 )
                 reply_lines.append(
-                    f"รวมทั้งหมด {ml_phase:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
+                    f"รวมทั้งหมด {ml_phase:.1f} ml → ต้องใช้ ~{raw_bottles:.1f} ขวด → จ่าย {bottles} ขวด ({bottle_size} ml)"
                 )
             else:
                 total_mg_day = weight * dose_per_kg
