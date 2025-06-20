@@ -688,8 +688,6 @@ def send_indication_carousel(event, drug_name, show_all=False):
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
 
-# คำนวณขนาดยา Warfarin
-# --------------------------
 def calculate_warfarin(inr, twd, bleeding, supplement=None):
     if bleeding == "yes":
         return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
@@ -750,55 +748,148 @@ def get_followup_text(inr):
 # ส่ง flex เลือกสมุนไพร
 # --------------------------
 def send_supplement_flex(event):
-    global messaging_api 
-    flex_contents = {
-        "type": "bubble",
-        "size": "mega",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {"type": "text", "text": "🌿 สมุนไพร/อาหารเสริม", "weight": "bold", "size": "lg"}
-            ]
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {"type": "text", "text": "ผู้ป่วยใช้สิ่งใดบ้าง?", "wrap": True, "size": "md"},
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "spacing": "sm",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "message", "label": label, "text": label},
-                            "style": "primary",
-                            "height": "sm",
-                            "color": "#84C1FF" if label == "ไม่ได้ใช้" else "#AEC6CF"
-                        }
-                        for label in [
-                            "ไม่ได้ใช้", "กระเทียม", "ใบแปะก๊วย",
-                            "โสม", "ขมิ้น", "น้ำมันปลา",
-                            "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"
-                        ]
-                    ]
-                }
-            ]
-        },
-        "styles": {
-            "body": {"backgroundColor": "#FFFFFF"},
-            "header": {"backgroundColor": "#D0E6FF"}
-        }
+    flex_bubble = {
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "🌿 สมุนไพร/อาหารเสริม",
+        "weight": "bold",
+        "size": "lg"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "contents": [
+      {
+        "type": "text",
+        "text": "ผู้ป่วยใช้สิ่งใดบ้าง?",
+        "wrap": true,
+        "size": "md"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "ไม่ได้ใช้",
+              "text": "ไม่ได้ใช้"
+            },
+            "color": "#84C1FF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "กระเทียม",
+              "text": "กระเทียม"
+            },
+            "color": "#AEC6CF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "ใบแปะก๊วย",
+              "text": "ใบแปะก๊วย"
+            },
+            "color": "#AEC6CF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "โสม",
+              "text": "โสม"
+            },
+            "color": "#AEC6CF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "ขมิ้น",
+              "text": "ขมิ้น"
+            },
+            "color": "#AEC6CF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "น้ำมันปลา",
+              "text": "น้ำมันปลา"
+            },
+            "color": "#AEC6CF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "ใช้หลายชนิด",
+              "text": "ใช้หลายชนิด"
+            },
+            "color": "#AEC6CF"
+          },
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "สมุนไพร/อาหารเสริมชนิดอื่นๆ",
+              "text": "สมุนไพร/อาหารเสริมชนิดอื่นๆ"
+            },
+            "color": "#AEC6CF"
+          }
+        ]
+      }
+    ]
+  },
+  "styles": {
+    "header": {
+      "backgroundColor": "#D0E6FF"
+    },
+    "body": {
+      "backgroundColor": "#FFFFFF"
     }
+  }
+}
+
+    flex_message = FlexMessage(
+        alt_text="เลือกสมุนไพร/อาหารเสริม",
+        contents=flex_bubble
+    )
 
     messaging_api.reply_message(
         ReplyMessageRequest(
             reply_token=event.reply_token,
-            messages=[
-                FlexMessage(alt_text="เลือกสมุนไพร/อาหารเสริม", contents=flex_contents)
-            ]
+            messages=[flex_message]
         )
     )
 
@@ -839,7 +930,8 @@ def calculate_dose(drug, indication, weight):
                 ml_per_day_max = max_total_mg_day / conc
                 ml_total = ml_per_day_max * days
                 total_ml += ml_total
-
+                dose_min = ml_per_day_min / max(freqs)
+                dose_max = ml_per_day_max / min(freqs)
                 min_freq = min(freqs)
                 max_freq = max(freqs)
                 if min_freq == max_freq:
@@ -907,7 +999,8 @@ def calculate_dose(drug, indication, weight):
                 ml_phase = ml_per_day_max * days
                 raw_bottles = ml_phase / bottle_size
                 bottles = math.ceil(raw_bottles)
-
+                dose_min = ml_per_day_min / max(freqs)
+                dose_max = ml_per_day_max / min(freqs)
                 min_freq = min(freqs)
                 max_freq = max(freqs)
                 if min_freq == max_freq:
@@ -1281,6 +1374,7 @@ def handle_message(event: MessageEvent):
         session = user_sessions[user_id]
         if session.get("flow") == "warfarin":
             step = session.get("step")
+            
             if step == "ask_inr":
                 try:
                     session["inr"] = float(text)
@@ -1314,10 +1408,9 @@ def handle_message(event: MessageEvent):
                     return
                 session["bleeding"] = text.lower()
                 session["step"] = "choose_supplement"
+                print("[DEBUG] Sending Flex supplement picker now...")
                 send_supplement_flex(event)
-                return
-            
-            
+                return  # ← ตรงนี้สำคัญ
 
             elif step == "choose_supplement":
                 if text == "ไม่ได้ใช้":
@@ -1348,7 +1441,7 @@ def handle_message(event: MessageEvent):
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=result)])
                 )
                 return
-
+        
     if text == "เลือกยาใหม่":
         user_drug_selection.pop(user_id, None)
         user_ages.pop(user_id, None)
