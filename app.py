@@ -1220,49 +1220,50 @@ def calculate_special_drug(user_id, drug, weight, age):
     
     if drug == "Cetirizine":
         indication_info = info["indications"].get(indication)
-        if not indication_info:
-            return f"❌ ไม่พบข้อบ่งใช้ {indication}"
+    if not indication_info:
+        return f"❌ ไม่พบข้อบ่งใช้ {indication}"
 
-        # ตรวจสอบ age_group ที่มีอยู่จริง
-        possible_groups = indication_info.keys()
-        
-        age_group = None
-        if age < 1:
-            age_group = "6_to_11_months"
-        elif 1 <= age < 2:
-            age_group = "12_to_23_months"
-        elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
-            age_group = "2_to_5_years"
-        elif 6 <= age <= 11 and "6_to_11_years" in possible_groups:
-            age_group = "6_to_11_years"
-        elif age >= 12 and "above_or_equal_12" in possible_groups:
-            age_group = "above_or_equal_12"
-        elif age > 5 and "above_5" in possible_groups:
-            age_group = "above_5"
+    possible_groups = indication_info.keys()
+    age_group = None
 
-        group_data = indication_info.get(age_group)
-        if not group_data:
-            return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
+    if 0.5 <= age < 2 and "6_to_23_months" in possible_groups:
+        age_group = "6_to_23_months"
+    elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
+        age_group = "2_to_5_years"
+    elif age > 5 and "above_5" in possible_groups:
+        age_group = "above_5"
 
-        lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
-        if "dose_mg" in group_data:
-            lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
-        elif "initial_dose_mg" in group_data:
-            options = group_data.get("options", [])
-            lines.append(f"💊 เริ่มต้น {group_data['initial_dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
-            for opt in options:
-                lines.append(f"หรือ: {opt['dose_mg']} mg × {opt['frequency']} ครั้ง/วัน")
-        elif "dose_range_mg" in group_data:
-            for dose in group_data["dose_range_mg"]:
-                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
-        elif "dose_mg_range" in group_data:
-            for dose in group_data["dose_mg_range"]:
-                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
-        elif "dose_mg" in group_data and "frequency_options" in group_data:
-            for freq in group_data["frequency_options"]:
-                lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
+    if not age_group:
+        return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
 
-        return "\n".join(lines)
+    group_data = indication_info.get(age_group)
+    if not group_data:
+        return f"❌ ไม่พบข้อมูลในกลุ่มอายุ '{age_group}'"
+
+    lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
+
+    if "dose_mg" in group_data:
+        lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
+    elif "initial_dose_mg" in group_data:
+        options = group_data.get("options", [])
+        lines.append(f"💊 เริ่มต้น {group_data['initial_dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
+        for opt in options:
+            lines.append(f"หรือ: {opt['dose_mg']} mg × {opt['frequency']} ครั้ง/วัน")
+    elif "dose_range_mg" in group_data:
+        for dose in group_data["dose_range_mg"]:
+            lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+    elif "dose_mg_range" in group_data:
+        for dose in group_data["dose_mg_range"]:
+            lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+    elif "dose_mg" in group_data and "frequency_options" in group_data:
+        for freq in group_data["frequency_options"]:
+            lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
+
+    note = group_data.get("note")
+    if note:
+        lines.append(f"📝 หมายเหตุ: {note}")
+
+    return "\n".join(lines)
     
     if drug == "Ferrous drop":
         indication_info = info["indications"][indication]["all_ages"]
@@ -1289,22 +1290,27 @@ def calculate_special_drug(user_id, drug, weight, age):
         return "\n".join(reply_lines)
 
     # กรณีพิเศษอื่น ๆ เช่น Paracetamol (ใช้แบบเดิม)
-    indication_info = next(iter(info["indications"].values()))
-    for entry in indication_info:
-        if entry["min_age_years"] <= age < entry["max_age_years"]:
-            dose_per_kg = entry["dose_mg_per_kg_per_day"]
-            freq = entry["frequency"]
-            duration = entry["duration_days"]
-            max_dose = entry["max_mg_per_dose"]
+    if drug == "Paracetamol":
+        indication_info = next(iter(info["indications"].values()))
+        for entry in indication_info:
+            if entry["min_age_years"] <= age < entry["max_age_years"]:
+                dose_min_mg = 10 * weight
+                dose_max_mg = 15 * weight
+                concentration = info["concentration_mg_per_ml"]
 
-            total_mg_day = weight * dose_per_kg
-            dose_per_time = min(total_mg_day / freq, max_dose)
+                dose_min_ml = dose_min_mg / concentration
+                dose_max_ml = dose_max_mg / concentration
 
-            return (
-                f"{drug} (อายุ {age} ปี, น้ำหนัก {weight} kg):\n"
-                f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day\n"
-                f"แบ่ง {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg เป็นเวลา {duration} วัน"
-            )
+                freq = entry["frequency"]
+                freq_text = f"{min(freq)}–{max(freq)} ชั่วโมง" if isinstance(freq, list) else f"{freq} ชั่วโมง"
+
+                return (
+                    f"{drug} (อายุ {age} ปี, น้ำหนัก {weight} kg):\n"
+                    f"💊 ขนาดยา: 10–15 mg/kg/dose → {dose_min_mg:.0f} – {dose_max_mg:.0f} mg/dose\n"
+                    f"🥄 ประมาณ {dose_min_ml:.1f} – {dose_max_ml:.1f} ml ต่อครั้ง\n"
+                    f"⏱️ ทุก {freq_text} เมื่อมีอาการ\n\n"
+                    f"📌 หมายเหตุ: maximum daily dose: 75 mg/kg/day (ไม่เกิน 4,000 mg/day)"
+                )
 
     return f"❌ ไม่พบขนาดยาที่เหมาะสมสำหรับอายุ {age} ปีใน {drug}"
 
@@ -1332,7 +1338,10 @@ def send_special_indication_carousel(event, drug_name):
 
         try:
             if isinstance(indication_info, list):
-                dose = indication_info[0].get("dose_mg_per_kg_per_day") or "?"
+                if drug_name == "Paracetamol" and name == "Fever":
+                    dose = "10–15 mg/kg/dose"
+                else:
+                    dose = indication_info[0].get("dose_mg_per_kg_per_day") or "?"
             elif isinstance(indication_info, dict):
                 # หา dose แบบยืดหยุ่น
                 sample_group = next(iter(indication_info.values()))
@@ -1544,7 +1553,7 @@ def handle_message(event: MessageEvent):
             user_ages.pop(user_id)
 
         if drug in SPECIAL_DRUGS:
-            example_age = round(random.uniform(1, 18), 1)
+            example_age = random.randint(1, 18)
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -1566,51 +1575,55 @@ def handle_message(event: MessageEvent):
         # 🛠 แก้การจับอายุ: ใช้ .group(0) และใส่ try-except
         text_lower = text.lower()
 
-        if any(kw in text_lower for kw in ["อายุ", "ปี", "y", "ขวบ", "เดือน", "mo"]):
-            try:
-                # ตรวจจับปีและเดือน
-                years = 0
-                months = 0
+    if any(kw in text_lower for kw in ["ปี", "y", "ขวบ", "เดือน", "mo"]):
+        try:
+            years = 0
+            months = 0
 
-                year_match = re.search(r"(\d+(?:\.\d+)?)\s*(ปี|y|ขวบ)", text_lower)
-                if year_match:
-                    years = float(year_match.group(1))
+            year_match = re.search(r"(\d+(?:\.\d+)?)\s*(ปี|y|ขวบ)", text_lower)
+            if year_match:
+                years = float(year_match.group(1))
 
-                month_match = re.search(r"(\d+(?:\.\d+)?)\s*(เดือน|mo)", text_lower)
-                if month_match:
-                    months = float(month_match.group(1))
+            month_match = re.search(r"(\d+(?:\.\d+)?)\s*(เดือน|mo)", text_lower)
+            if month_match:
+                months = float(month_match.group(1))
 
-                if not year_match and not month_match:
+            if not year_match and not month_match:
+                number_match = re.match(r"^\d+(\.\d+)?$", text)
+                if number_match:
+                    age_years = float(text)
+                else:
                     raise ValueError("ไม่พบปีหรือเดือน")
-
+            else:
                 age_years = round(years + months / 12, 2)
 
-                if 0 <= age_years <= 18:
-                    user_ages[user_id] = age_years
-                    example_weight = round(random.uniform(5.0, 20.0), 1)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text=f"🎯 อายุ {age_years:.2f} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
-                        )
-                    )
-                else:
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี (หรือเป็นเดือนก็ได้)")]
-                        )
-                    )
-                return
-
-            except:
+            if 0 <= age_years <= 18:
+                user_ages[user_id] = age_years
+                example_weight = round(random.uniform(5.0, 20.0), 1)
                 messaging_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
-                        messages=[TextMessage(text="❌ กรุณาพิมพ์อายุให้ถูกต้อง เช่น 6 เดือน หรือ 1 ปี 6 เดือน หรือ 2 ขวบ")]
+                        messages=[TextMessage(text=f"🎯 อายุ {age_years:.2f} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
                     )
                 )
-                return
+            else:
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี (หรือเป็นเดือนก็ได้)")]
+                    )
+                )
+            return
+        except Exception as e:
+            logging.info(f"❌ แปลงอายุไม่ได้: {e}")
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text="❌ กรุณาใส่อายุให้ถูกต้อง เช่น 6 เดือน หรือ 1.2 ปี")]
+                )
+            )
+            return
+
 
         if any(kw in text_lower for kw in ["น้ำหนัก", "กก", "kg"]) or text.replace(".", "", 1).isdigit():
             weight_match = re.search(r"(\d+(\.\d+)?)", text)
