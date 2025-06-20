@@ -1,6 +1,6 @@
 from flask import Flask, request, abort
 from linebot.v3.messaging import (
-    MessagingApi, Configuration, ApiClient,
+    MessagingApi, Configuration, ApiClient,FlexMessage,
     TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage, ReplyMessageRequest
 )
 from linebot.v3.webhook import WebhookHandler
@@ -745,39 +745,66 @@ def get_followup_text(inr):
         return ""
 
 # --------------------------
-# ส่ง carousel เลือกสมุนไพร
+# ส่ง flex เลือกสมุนไพร
 # --------------------------
-def send_supplement_carousel(event):
-    columns = [
-        CarouselColumn(
-            title="เลือกสมุนไพร/อาหารเสริม",
-            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
-            actions=[
-                MessageAction(label="ไม่ได้ใช้", text="ไม่ได้ใช้"),
-                MessageAction(label="กระเทียม", text="กระเทียม"),
-                MessageAction(label="ใบแปะก๊วย", text="ใบแปะก๊วย"),
-                MessageAction(label="โสม", text="โสม")
+def send_supplement_flex(event):
+    flex_contents = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [{"type": "text", "text": "🌿 สมุนไพร/อาหารเสริม", "weight": "bold", "size": "lg"}]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "ผู้ป่วยใช้สิ่งใดบ้าง?",
+                    "wrap": True,
+                    "size": "md"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        *[
+                            {
+                                "type": "button",
+                                "style": "primary",
+                                "height": "sm",
+                                "action": {
+                                    "type": "message",
+                                    "label": label,
+                                    "text": label
+                                },
+                                "color": "#84C1FF" if label in ["ไม่ได้ใช้"] else "#AEC6CF"
+                            }
+                            for label in [
+                                "ไม่ได้ใช้", "กระเทียม", "ใบแปะก๊วย",
+                                "โสม", "ขมิ้น", "น้ำมันปลา",
+                                "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"
+                            ]
+                        ]
+                    ]
+                }
             ]
-        ),
-        CarouselColumn(
-            title="เลือกสมุนไพร/อาหารเสริม",
-            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
-            actions=[
-                MessageAction(label="ขมิ้น", text="ขมิ้น"),
-                MessageAction(label="น้ำมันปลา", text="น้ำมันปลา"),
-                MessageAction(label="อื่นๆ", text="อื่นๆ"),
-                MessageAction(label="ใช้หลายชนิด", text="ใช้หลายชนิด")
-            ]
-        )
-    ]
+        },
+        "styles": {
+            "body": {"backgroundColor": "#FFFFFF"},
+            "header": {"backgroundColor": "#D0E6FF"}
+        }
+    }
+
     messaging_api.reply_message(
         ReplyMessageRequest(
             reply_token=event.reply_token,
             messages=[
-                TemplateMessage(
-                    alt_text="เลือกสมุนไพร/อาหารเสริม",
-                    template=CarouselTemplate(columns=columns)
-                )
+                FlexMessage(alt_text="เลือกสมุนไพร/อาหารเสริม", contents=flex_contents)
             ]
         )
     )
@@ -826,10 +853,12 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} ครั้ง"
                 else:
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
+                dose_min = min(ml_per_day_min / max_freq, ml_per_day_max / max_freq)
+                dose_max = max(ml_per_day_min / min_freq, ml_per_day_max / min_freq)
                 reply_lines.append(
                     f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
                     f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน "
-                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                    f"(ครั้งละ ~{dose_min:.1f} – {dose_max:.1f} ml)"
                 )
             else:
                 total_mg_day = weight * dose_per_kg
@@ -885,7 +914,7 @@ def calculate_dose(drug, indication, weight):
                 ml_per_day_min = min_total_mg_day / conc
                 ml_per_day_max = max_total_mg_day / conc
                 ml_phase = ml_per_day_max * days
-                total_ml += ml_phase
+                bottles = math.ceil(ml_phase / bottle_size)
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -893,10 +922,15 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} ครั้ง"
                 else:
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
+                dose_min = min(ml_per_day_min / max_freq, ml_per_day_max / max_freq)
+                dose_max = max(ml_per_day_min / min_freq, ml_per_day_max / min_freq)
                 reply_lines.append(
                     f"📆 {phase.get('day_range', '')}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
                     f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน "
-                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                    f"(ครั้งละ ~{dose_min:.1f} – {dose_max:.1f} ml)"
+                )
+                reply_lines.append(
+                    f"รวมทั้งหมด {ml_phase:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
                 )
             else:
                 total_mg_day = weight * dose_per_kg
@@ -904,7 +938,7 @@ def calculate_dose(drug, indication, weight):
                     total_mg_day = min(total_mg_day, max_mg_day)
                 ml_per_day = total_mg_day / conc
                 ml_phase = ml_per_day * days
-                total_ml += ml_phase
+                bottles = math.ceil(ml_phase / bottle_size)
 
                 if len(freqs) == 1:
                     freq = freqs[0]
@@ -918,14 +952,17 @@ def calculate_dose(drug, indication, weight):
                 else:
                     min_freq = min(freqs)
                     max_freq = max(freqs)
-                    if min_freq == max_freq:
-                        freq_text = f"{min_freq} ครั้ง"
-                    else:
-                        freq_text = f"{min_freq} – {max_freq} ครั้ง"
+                    freq_text = f"{min_freq} ครั้ง" if min_freq == max_freq else f"{min_freq} – {max_freq} ครั้ง"
+                    dose_min = ml_per_day / max_freq
+                    dose_max = ml_per_day / min_freq
                     reply_lines.append(
                         f"📆 {phase.get('day_range', '')}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                        f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                        f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{dose_min:.1f} – {dose_max:.1f} ml)"
                     )
+
+                reply_lines.append(
+                    f"รวมทั้งหมด {ml_phase:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
+                )
 
     # ✅ กรณี indication เป็น dict ธรรมดา
     else:
@@ -953,9 +990,11 @@ def calculate_dose(drug, indication, weight):
                 freq_text = f"{min_freq} ครั้ง"
             else:
                 freq_text = f"{min_freq} – {max_freq} ครั้ง"
+            dose_min = min(ml_per_day_min / max_freq, ml_per_day_max / max_freq)
+            dose_max = max(ml_per_day_min / min_freq, ml_per_day_max / min_freq)    
             reply_lines.append(
                 f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{dose_min:.1f} – {dose_max:.1f} ml)"
             )
         else:
             total_mg_day = weight * dose_per_kg
@@ -1247,6 +1286,7 @@ def handle_message(event: MessageEvent):
         send_drug_selection(event)
         return
     
+    # --------------------------
     # ดำเนิน Warfarin flow
     # --------------------------
     if user_id in user_sessions:
@@ -1286,8 +1326,10 @@ def handle_message(event: MessageEvent):
                     return
                 session["bleeding"] = text.lower()
                 session["step"] = "choose_supplement"
-                send_supplement_carousel(event)
+                send_supplement_flex(event)
                 return
+            
+            
 
             elif step == "choose_supplement":
                 if text == "ไม่ได้ใช้":
@@ -1296,7 +1338,7 @@ def handle_message(event: MessageEvent):
                     messaging_api.reply_message(
                         ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=result)])
                     )
-                elif text in ["ใช้หลายชนิด", "อื่นๆ"]:
+                elif text in ["ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"]:
                     session["step"] = "ask_supplement"
                     reply = "🌿 โปรดพิมพ์ชื่อสมุนไพรหรืออาหารเสริมที่ใช้อยู่ เช่น กระเทียม, โสม, ขมิ้น"
                     messaging_api.reply_message(
