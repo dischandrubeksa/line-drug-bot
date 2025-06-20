@@ -940,8 +940,7 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
                 reply_lines.append(
                     f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน"
-                    f"(ครั้งละ ~{dose_min:.1f} วันละ {max_freq} – {dose_max:.1f} ml วันละ {min_freq} ml)"
+                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน "
                 )
             else:
                 total_mg_day = weight * dose_per_kg
@@ -969,7 +968,7 @@ def calculate_dose(drug, indication, weight):
                         freq_text = f"{min_freq} – {max_freq} ครั้ง"
                     reply_lines.append(
                         f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                        f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                        f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{dose_min:.1f} วันละ {max_freq} ครั้ง – {dose_max:.1f} ml วันละ {min_freq} ครั้ง)"
                     )
 
             if note:
@@ -1009,8 +1008,8 @@ def calculate_dose(drug, indication, weight):
                     freq_text = f"{min_freq} – {max_freq} ครั้ง"
                 reply_lines.append(
                     f"📆 {phase.get('day_range', '')}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน"
-                    f"(ครั้งละ ~{dose_min:.1f} วันละ {max_freq} – {dose_max:.1f} ml วันละ {min_freq} ml)"
+                    f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {freq_text} × {days} วัน "
+                    f"(ครั้งละ ~{dose_min:.1f} วันละ {max_freq} ครั้ง – {dose_max:.1f} ml วันละ {min_freq} ครั้ง)"
                     
                 )
                 reply_lines.append(
