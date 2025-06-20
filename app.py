@@ -1043,6 +1043,14 @@ def calculate_dose(drug, indication, weight):
             dose_per_kg = phase["dose_mg_per_kg_per_day"]
             freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
             days = phase.get("duration_days")
+            days = phase.get("duration_days")
+            days_range = phase.get("duration_days_range")
+            if not days and days_range:
+                min_days, max_days = days_range
+                days = max_days
+            else:
+                min_days = max_days = days
+
             max_mg_day = phase.get("max_mg_per_day")
             max_mg_per_dose = phase.get("max_mg_per_dose")
 
@@ -1102,10 +1110,15 @@ def calculate_dose(drug, indication, weight):
                         f"📆 {phase.get('day_range', '')}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                         f"แบ่งวันละ {freq_text} × {days} วัน (ครั้งละ ~{dose_min:.1f} – {dose_max:.1f} ml)"
                     )
+                    note = phase.get("note")
+                    if note:
+                        reply_lines.append(f"📝 หมายเหตุ: {note}")
 
                 reply_lines.append(
                     f"รวมทั้งหมด {ml_phase:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)"
                 )
+                
+                
 
     # ✅ กรณี indication เป็น dict ธรรมดา
     else:
