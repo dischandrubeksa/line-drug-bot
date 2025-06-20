@@ -239,9 +239,69 @@ DRUG_DATABASE = {
         "concentration_mg_per_ml": 125 / 5,
         "bottle_size_ml": 60,
         "indications": {
-            "SSTI": {"dose_mg_per_kg_per_day": 50, "frequency": 4, "duration_days": 7, "max_mg_per_day": None},
-            "Pharyngitis": {"dose_mg_per_kg_per_day": 50, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
-            "UTI": {"dose_mg_per_kg_per_day": 100, "frequency": 4, "duration_days": 7, "max_mg_per_day": None}
+            "Acute Otitis Media (AOM)": [
+            {
+                "sub_indication": "Alternative agent",
+                "dose_mg_per_kg_per_day": [75, 100],
+                "frequency": 4,
+                "duration_days": 10,
+                "note": "❗ ไม่แนะนำให้ใช้เป็น empiric therapy; ใช้เฉพาะเมื่อทราบเชื้อที่ไวต่อยา"
+            }
+            ],
+            "Pneumonia (community acquired)": [
+            {
+                "sub_indication": "Step-down therapy for mild infection",
+                "dose_mg_per_kg_per_day": [75, 100],
+                "frequency": [3, 4],
+                "duration_days_range": [5, 10],
+                "max_mg_per_day": 4000,
+                "note": "📝 ใช้เป็น step-down therapy หลัง IV สำหรับ pneumonia ไม่ซับซ้อน"
+            }
+            ],
+            "SSTI": [
+            {
+                "sub_indication": "Cellulitis, erysipelas, purulent/fluctuant SSTI",
+                "dose_mg_per_kg_per_day": [25, 100],
+                "frequency": [3, 4],
+                "duration_days_range": [5, 10],
+                "max_mg_per_dose": 500,
+                "note": "❗ หลีกเลี่ยงการใช้เดี่ยวถ้าสงสัย MRSA; ใช้ dose สูงสุดในกรณีรุนแรงหรือสงสัย MSSA"
+            },
+            {
+                "sub_indication": "Impetigo, ecthyma",
+                "dose_mg_per_kg_per_day": [25, 50],
+                "frequency": [3, 4],
+                "duration_days": 7,
+                "max_mg_per_day": 2000
+            }
+            ],
+            "Pharyngitis/Tonsillitis": [
+            {
+                "sub_indication": "Group A Streptococcus (penicillin allergy)",
+                "dose_mg_per_kg_per_day": 40,
+                "frequency": 2,
+                "duration_days": 10,
+                "max_mg_per_dose": 500
+            }
+            ],
+            "UTI": [
+            {
+                "sub_indication": "Mild to moderate (eg, cystitis)",
+                "dose_mg_per_kg_per_day": [25, 50],
+                "frequency": [2, 4],
+                "duration_days": 5,
+                "max_mg_per_dose": 500,
+                "note": "📝 ระยะเวลาอาจขยายหากการตอบสนองไม่ดี"
+            },
+            {
+                "sub_indication": "Severe (eg, pyelonephritis)",
+                "dose_mg_per_kg_per_day": [50, 100],
+                "frequency": [3, 4],
+                "duration_days_range": [7, 10],
+                "max_mg_per_dose": 1000,
+                "note": "📝 ไม่แนะนำให้เกิน 10 วัน; ใช้ตามการตอบสนองทางคลินิก"
+            }
+            ]
         }
     },
     "Cefdinir": {
