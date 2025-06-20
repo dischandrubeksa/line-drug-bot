@@ -1226,8 +1226,10 @@ def calculate_special_drug(user_id, drug, weight, age):
     possible_groups = indication_info.keys()
     age_group = None
 
-    if 0.5 <= age < 2 and "6_to_23_months" in possible_groups:
-        age_group = "6_to_23_months"
+    if 0.5 <= age < 1 and "6_to_11_months" in possible_groups:
+        age_group = "6_to_11_months"
+    elif 1 <= age < 2 and "12_to_23_months" in possible_groups:
+        age_group = "12_to_23_months"
     elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
         age_group = "2_to_5_years"
     elif age > 5 and "above_5" in possible_groups:
