@@ -1577,54 +1577,55 @@ def handle_message(event: MessageEvent):
         # 🛠 แก้การจับอายุ: ใช้ .group(0) และใส่ try-except
         text_lower = text.lower()
 
-    if any(kw in text_lower for kw in ["ปี", "y", "ขวบ", "เดือน", "mo"]):
-        try:
-            years = 0
-            months = 0
+        if any(kw in text_lower for kw in ["ปี", "y", "ขวบ", "เดือน", "mo"]):
+            try:
+                years = 0
+                months = 0
 
-            year_match = re.search(r"(\d+(?:\.\d+)?)\s*(ปี|y|ขวบ)", text_lower)
-            if year_match:
-                years = float(year_match.group(1))
+                year_match = re.search(r"(\d+(?:\.\d+)?)\s*(ปี|y|ขวบ)", text_lower)
+                if year_match:
+                    years = float(year_match.group(1))
 
-            month_match = re.search(r"(\d+(?:\.\d+)?)\s*(เดือน|mo)", text_lower)
-            if month_match:
-                months = float(month_match.group(1))
+                month_match = re.search(r"(\d+(?:\.\d+)?)\s*(เดือน|mo)", text_lower)
+                if month_match:
+                    months = float(month_match.group(1))
 
-            if not year_match and not month_match:
-                number_match = re.match(r"^\d+(\.\d+)?$", text)
-                if number_match:
-                    age_years = float(text)
+                if not year_match and not month_match:
+                    number_match = re.match(r"^\d+(\.\d+)?$", text)
+                    if number_match:
+                        age_years = float(text)
+                    else:
+                        raise ValueError("ไม่พบปีหรือเดือน")
                 else:
-                    raise ValueError("ไม่พบปีหรือเดือน")
-            else:
-                age_years = round(years + months / 12, 2)
+                    age_years = round(years + months / 12, 2)
 
-            if 0 <= age_years <= 18:
-                user_ages[user_id] = age_years
-                example_weight = round(random.uniform(5.0, 20.0), 1)
+                if 0 <= age_years <= 18:
+                    user_ages[user_id] = age_years
+                    user_sessions[user_id] = {"flow": "ask_weight"}
+                    example_weight = round(random.uniform(5.0, 20.0), 1)
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text=f"🎯 อายุ {age_years:.2f} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
+                        )
+                    )
+                else:
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี (หรือเป็นเดือนก็ได้)")]
+                        )
+                    )
+                return
+            except Exception as e:
+                logging.info(f"❌ แปลงอายุไม่ได้: {e}")
                 messaging_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
-                        messages=[TextMessage(text=f"🎯 อายุ {age_years:.2f} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
+                        messages=[TextMessage(text="❌ กรุณาใส่อายุให้ถูกต้อง เช่น 6 เดือน หรือ 1.2 ปี")]
                     )
                 )
-            else:
-                messaging_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text="❌ กรุณาใส่อายุระหว่าง 0–18 ปี (หรือเป็นเดือนก็ได้)")]
-                    )
-                )
-            return
-        except Exception as e:
-            logging.info(f"❌ แปลงอายุไม่ได้: {e}")
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text="❌ กรุณาใส่อายุให้ถูกต้อง เช่น 6 เดือน หรือ 1.2 ปี")]
-                )
-            )
-            return
+                return
 
 
         if any(kw in text_lower for kw in ["น้ำหนัก", "กก", "kg"]) or text.replace(".", "", 1).isdigit():
