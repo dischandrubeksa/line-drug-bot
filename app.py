@@ -557,15 +557,15 @@ SPECIAL_DRUGS = {
                     "max_mg_per_day": 10
                 }
             }
-        }
+        },
+        "common_indications": [
+        "Allergic rhinitis, perennial",
+        "Allergic symptoms, hay fever",
+        "Anaphylaxis (adjunctive only)",
+        "Urticaria, acute",
+        "Urticaria, chronic spontaneous"
+        ]
     },
-    "common_indications": [
-      "Allergic rhinitis, perennial",
-      "Allergic symptoms, hay fever",
-      "Anaphylaxis (adjunctive only)",
-      "Urticaria, acute",
-      "Urticaria, chronic spontaneous"
-    ],
     "Hydroxyzine": {
         "concentration_mg_per_ml": 10 / 5 ,
         "bottle_size_ml": 60,
