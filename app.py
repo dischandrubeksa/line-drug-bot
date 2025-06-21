@@ -458,95 +458,106 @@ SPECIAL_DRUGS = {
     "concentration_mg_per_ml": 5 / 5,
     "bottle_size_ml": 60,
     "indications": {
-      "Allergic rhinitis, perennial": {
-        "6_to_11_months": {
-          "dose_mg": 2.5,
-          "frequency": 1,
-          "max_mg_per_day": 2.5
-        },
-        "12_to_23_months": {
-          "initial_dose_mg": 2.5,
-          "frequency": 1,
-          "max_frequency": 2,
-          "max_mg_per_day": 5
+            "Allergic rhinitis, perennial": {
+                "6_to_23_months": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "max_frequency": 1,
+                    "max_mg_per_day": 2.5
+                },
+                "2_to_5_years": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "options": [
+                        {"dose_mg": 2.5, "frequency": 2},
+                        {"dose_mg": 5, "frequency": 1}
+                    ],
+                    "max_mg_per_day": 5
+                },
+                "above_5": {
+                    "dose_mg_range": [5, 10],
+                    "frequency": 1,
+                    "max_mg_per_day": 10
+                }
+            },
+            "Allergic symptoms, hay fever": {
+                "2_to_5_years": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "options": [
+                        {"dose_mg": 2.5, "frequency": 2},
+                        {"dose_mg": 5, "frequency": 1}
+                    ],
+                    "max_mg_per_day": 5
+                },
+                "above_5": {
+                    "dose_mg_range": [5, 10],
+                    "frequency": 1,
+                    "max_mg_per_day": 10
+                }
+            },
+            "Anaphylaxis (adjunctive only)": {
+                "6_to_23_months": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "max_mg_per_day": 2.5
+                },
+                "2_to_5_years": {
+                    "dose_mg_range": [2.5, 5],
+                    "frequency": 1,
+                    "max_mg_per_day": 5
+                },
+                "above_5": {
+                    "dose_mg_range": [5, 10],
+                    "frequency": 1,
+                    "max_mg_per_day": 10
+                }
+            },
+            "Urticaria, acute": {
+                "6_to_23_months": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "max_mg_per_day": 2.5
+                },
+                "2_to_5_years": {
+                    "dose_mg_range": [2.5, 5],
+                    "frequency": 1,
+                    "max_mg_per_day": 5
+                },
+                "above_5": {
+                    "dose_mg_range": [5, 10],
+                    "frequency": 1,
+                    "max_mg_per_day": 10
+                }
+            },
+            "Urticaria, chronic spontaneous": {
+                "6_to_23_months": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "max_frequency": 2,
+                    "max_mg_per_day": 5
+                },
+                "2_to_5_years": {
+                    "initial_dose_mg": 2.5,
+                    "frequency": 1,
+                    "options": [
+                        {"dose_mg": 2.5, "frequency": 2},
+                        {"dose_mg": 5, "frequency": 1}
+                    ],
+                    "max_mg_per_day": 5
+                },
+                "6_to_11_years": {
+                    "dose_mg": 5,
+                    "frequency_options": [1, 2],
+                    "max_mg_per_day": 10
+                },
+                "above_or_equal_12": {
+                    "dose_mg": 10,
+                    "frequency": 1,
+                    "max_mg_per_day": 10
+                }
+            }
         }
-      },
-      "Allergic symptoms, hay fever": {
-        "2_to_5_years": {
-          "initial_dose_mg": 2.5,
-          "frequency": 1,
-          "options": [
-            {"dose_mg": 2.5, "frequency": 2},
-            {"dose_mg": 5, "frequency": 1}
-          ],
-          "max_mg_per_day": 5
-        },
-        "above_or_equal_6": {
-          "dose_mg_range": [5, 10],
-          "frequency": 1,
-          "max_mg_per_day": 10
-        }
-      },
-      "Anaphylaxis (adjunctive only)": {
-        "6_to_23_months": {
-          "dose_mg": 2.5,
-          "frequency": 1,
-          "max_mg_per_day": 2.5
-        },
-        "2_to_5_years": {
-          "dose_range_mg": [2.5, 5],
-          "frequency": 1,
-          "max_mg_per_day": 5
-        },
-        "above_5": {
-          "dose_range_mg": [5, 10],
-          "frequency": 1,
-          "max_mg_per_day": 10
-        }
-      },
-      "Urticaria, acute": {
-        "6_to_23_months": {
-          "dose_mg": 2.5,
-          "frequency": 1
-        },
-        "2_to_5_years": {
-          "dose_range_mg": [2.5, 5],
-          "frequency": 1
-        },
-        "above_5": {
-          "dose_range_mg": [5, 10],
-          "frequency": 1
-        }
-      },
-      "Urticaria, chronic spontaneous": {
-        "6_to_11_months": {
-          "dose_mg": 2.5,
-          "frequency": 1
-        },
-        "12_to_23_months": {
-          "initial_dose_mg": 2.5,
-          "frequency": 1,
-          "max_frequency": 2,
-          "max_mg_per_day": 5
-        },
-        "2_to_5_years": {
-          "initial_dose_mg": 2.5,
-          "frequency": 1,
-          "options": [
-            {"dose_mg": 2.5, "frequency": 2},
-            {"dose_mg": 5, "frequency": 1}
-          ],
-          "max_mg_per_day": 5
-        },
-        "6_to_11_years": {
-          "dose_mg": 5,
-          "frequency_options": [1, 2]
-        },
-        "above_or_equal_12": {
-          "dose_mg": 10,
-          "frequency": 1
-        }
-      }
     },
     "common_indications": [
       "Allergic rhinitis, perennial",
@@ -554,8 +565,7 @@ SPECIAL_DRUGS = {
       "Anaphylaxis (adjunctive only)",
       "Urticaria, acute",
       "Urticaria, chronic spontaneous"
-    ]
-    },
+    ],
     "Hydroxyzine": {
         "concentration_mg_per_ml": 10 / 5 ,
         "bottle_size_ml": 60,
@@ -1226,10 +1236,14 @@ def calculate_special_drug(user_id, drug, weight, age):
         possible_groups = indication_info.keys()
         age_group = None
 
-        if 0.5 <= age < 1 and "6_to_11_months" in possible_groups:
-            age_group = "6_to_11_months"
-        elif 1 <= age < 2 and "12_to_23_months" in possible_groups:
-            age_group = "12_to_23_months"
+        # 🔧 รองรับทั้งแบบแยกและรวมช่วงอายุ
+        if 0.5 <= age < 2:
+            if "6_to_11_months" in possible_groups and age < 1:
+                age_group = "6_to_11_months"
+            elif "12_to_23_months" in possible_groups and 1 <= age < 2:
+                age_group = "12_to_23_months"
+            elif "6_to_23_months" in possible_groups:
+                age_group = "6_to_23_months"
         elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
             age_group = "2_to_5_years"
         elif age > 5 and "above_5" in possible_groups:
@@ -1244,7 +1258,8 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
 
-        if "dose_mg" in group_data:
+        # 🔍 รองรับทุกรูปแบบ dose
+        if "dose_mg" in group_data and "frequency" in group_data:
             lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
         elif "initial_dose_mg" in group_data:
             options = group_data.get("options", [])
@@ -1261,6 +1276,7 @@ def calculate_special_drug(user_id, drug, weight, age):
             for freq in group_data["frequency_options"]:
                 lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
 
+        # 🔖 หมายเหตุท้าย
         note = group_data.get("note")
         if note:
             lines.append(f"📝 หมายเหตุ: {note}")
