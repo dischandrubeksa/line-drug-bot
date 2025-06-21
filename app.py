@@ -1220,52 +1220,52 @@ def calculate_special_drug(user_id, drug, weight, age):
     
     if drug == "Cetirizine":
         indication_info = info["indications"].get(indication)
-    if not indication_info:
-        return f"❌ ไม่พบข้อบ่งใช้ {indication}"
+        if not indication_info:
+            return f"❌ ไม่พบข้อบ่งใช้ {indication}"
 
-    possible_groups = indication_info.keys()
-    age_group = None
+        possible_groups = indication_info.keys()
+        age_group = None
 
-    if 0.5 <= age < 1 and "6_to_11_months" in possible_groups:
-        age_group = "6_to_11_months"
-    elif 1 <= age < 2 and "12_to_23_months" in possible_groups:
-        age_group = "12_to_23_months"
-    elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
-        age_group = "2_to_5_years"
-    elif age > 5 and "above_5" in possible_groups:
-        age_group = "above_5"
+        if 0.5 <= age < 1 and "6_to_11_months" in possible_groups:
+            age_group = "6_to_11_months"
+        elif 1 <= age < 2 and "12_to_23_months" in possible_groups:
+            age_group = "12_to_23_months"
+        elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
+            age_group = "2_to_5_years"
+        elif age > 5 and "above_5" in possible_groups:
+            age_group = "above_5"
 
-    if not age_group:
-        return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
+        if not age_group:
+            return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
 
-    group_data = indication_info.get(age_group)
-    if not group_data:
-        return f"❌ ไม่พบข้อมูลในกลุ่มอายุ '{age_group}'"
+        group_data = indication_info.get(age_group)
+        if not group_data:
+            return f"❌ ไม่พบข้อมูลในกลุ่มอายุ '{age_group}'"
 
-    lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
+        lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
 
-    if "dose_mg" in group_data:
-        lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
-    elif "initial_dose_mg" in group_data:
-        options = group_data.get("options", [])
-        lines.append(f"💊 เริ่มต้น {group_data['initial_dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
-        for opt in options:
-            lines.append(f"หรือ: {opt['dose_mg']} mg × {opt['frequency']} ครั้ง/วัน")
-    elif "dose_range_mg" in group_data:
-        for dose in group_data["dose_range_mg"]:
-            lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
-    elif "dose_mg_range" in group_data:
-        for dose in group_data["dose_mg_range"]:
-            lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
-    elif "dose_mg" in group_data and "frequency_options" in group_data:
-        for freq in group_data["frequency_options"]:
-            lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
+        if "dose_mg" in group_data:
+            lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
+        elif "initial_dose_mg" in group_data:
+            options = group_data.get("options", [])
+            lines.append(f"💊 เริ่มต้น {group_data['initial_dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
+            for opt in options:
+                lines.append(f"หรือ: {opt['dose_mg']} mg × {opt['frequency']} ครั้ง/วัน")
+        elif "dose_range_mg" in group_data:
+            for dose in group_data["dose_range_mg"]:
+                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+        elif "dose_mg_range" in group_data:
+            for dose in group_data["dose_mg_range"]:
+                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+        elif "dose_mg" in group_data and "frequency_options" in group_data:
+            for freq in group_data["frequency_options"]:
+                lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
 
-    note = group_data.get("note")
-    if note:
-        lines.append(f"📝 หมายเหตุ: {note}")
+        note = group_data.get("note")
+        if note:
+            lines.append(f"📝 หมายเหตุ: {note}")
 
-    return "\n".join(lines)
+        return "\n".join(lines)
     
     if drug == "Ferrous drop":
         indication_info = info["indications"][indication]["all_ages"]
