@@ -1002,6 +1002,8 @@ def calculate_dose(drug, indication, weight):
     # ✅ รองรับหลายช่วงวัน (list)
     elif isinstance(indication_info, list):
         for phase in indication_info:
+            if "dose_mg_per_kg_per_day" not in phase:
+                continue
             title = get_indication_title(phase)
             if title:
                 reply_lines.append(f"\n🔹 {title}")
