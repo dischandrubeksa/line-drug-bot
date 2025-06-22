@@ -873,10 +873,19 @@ def send_indication_carousel(event, drug_name, show_all=False):
 
         if name != "Indication อื่นๆ":
             indication_info = indications[name]
+            dose = None
+
             if isinstance(indication_info, list):
-                text = f"{indication_info[0]['dose_mg_per_kg_per_day']} mg/kg/day"
+                first_entry = indication_info[0] if indication_info else {}
+                dose = first_entry.get("dose_mg_per_kg_per_day")
             else:
-                text = f"{indication_info['dose_mg_per_kg_per_day']} mg/kg/day"
+                dose = indication_info.get("dose_mg_per_kg_per_day")
+
+            if dose is not None:
+                text = f"{dose} mg/kg/day"
+            else:
+                text = "ไม่มีข้อมูลขนาดยา"
+            
             action_text = f"Indication: {name}"
         else:
             text = "ดูข้อบ่งใช้อื่นทั้งหมด"
@@ -943,7 +952,10 @@ def calculate_dose(drug, indication, weight):
     # ✅ รองรับกรณี indication เป็น dict ซ้อน (sub-indications)
     if isinstance(indication_info, dict) and all(isinstance(v, dict) for v in indication_info.values()):
         for sub_ind, sub_info in indication_info.items():
-            dose_per_kg = sub_info["dose_mg_per_kg_per_day"]
+            dose_per_kg = sub_info.get("dose_mg_per_kg_per_day")
+            if dose_per_kg is None:
+                continue  # ✅ ข้ามถ้าไม่ใช่แบบ weight-based
+
             freqs = sub_info["frequency"] if isinstance(sub_info["frequency"], list) else [sub_info["frequency"]]
             days = sub_info["duration_days"]
             max_mg_day = sub_info.get("max_mg_per_day")
@@ -1010,7 +1022,8 @@ def calculate_dose(drug, indication, weight):
             title = get_indication_title(phase)
             if title:
                 reply_lines.append(f"\n🔹 {title}")
-            dose_per_kg = phase["dose_mg_per_kg_per_day"]
+
+            # ✅ อย่าเรียก phase["dose_mg_per_kg_per_day"] ซ้ำ
             freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
             days = phase["duration_days"]
             max_mg_day = phase.get("max_mg_per_day")
@@ -1052,7 +1065,10 @@ def calculate_dose(drug, indication, weight):
 
     # ✅ กรณี indication เป็น dict ธรรมดา
     else:
-        dose_per_kg = indication_info["dose_mg_per_kg_per_day"]
+        dose_per_kg = indication_info.get("dose_mg_per_kg_per_day")
+        if dose_per_kg is None:
+            return "❌ ไม่พบข้อมูล dose_mg_per_kg_per_day ใน indication นี้"
+
         freqs = indication_info["frequency"] if isinstance(indication_info["frequency"], list) else [indication_info["frequency"]]
         days = indication_info["duration_days"]
         max_mg_day = indication_info.get("max_mg_per_day")
@@ -1074,7 +1090,8 @@ def calculate_dose(drug, indication, weight):
             max_freq = max(freqs)
             reply_lines.append(
                 f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
             )
         else:
             total_mg_day = weight * dose_per_kg
@@ -1098,9 +1115,9 @@ def calculate_dose(drug, indication, weight):
                 max_freq = max(freqs)
                 reply_lines.append(
                     f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                 )
-
         note = indication_info.get("note")
         if note:
             reply_lines.append(f"\n📝 หมายเหตุ: {note}")
@@ -1214,8 +1231,12 @@ def calculate_special_drug(user_id, drug, weight, age):
     # กรณีพิเศษอื่น ๆ เช่น Paracetamol (ใช้แบบเดิม)
     indication_info = next(iter(info["indications"].values()))
     for entry in indication_info:
+        # ✅ ตรวจสอบก่อนว่า entry มี key 'dose_mg_per_kg_per_day'
+        dose_per_kg = entry.get("dose_mg_per_kg_per_day")
+        if dose_per_kg is None:
+            continue  # ข้ามถ้าไม่มี key นี้
+
         if entry["min_age_years"] <= age < entry["max_age_years"]:
-            dose_per_kg = entry["dose_mg_per_kg_per_day"]
             freq = entry["frequency"]
             duration = entry["duration_days"]
             max_dose = entry["max_mg_per_dose"]
@@ -1255,20 +1276,28 @@ def send_special_indication_carousel(event, drug_name):
 
         try:
             if isinstance(indication_info, list):
-                dose = indication_info[0].get("dose_mg_per_kg_per_day") or "?"
+                # ✅ หาด้วย .get() อย่างปลอดภัยจาก list ของ dict
+                dose = next(
+                    (item.get("dose_mg_per_kg_per_day") or item.get("dose_mg")
+                    for item in indication_info if isinstance(item, dict)),
+                    "?"
+                )
             elif isinstance(indication_info, dict):
-                # หา dose แบบยืดหยุ่น
                 sample_group = next(iter(indication_info.values()))
                 if isinstance(sample_group, dict):
-                    dose = sample_group.get("dose_mg") or sample_group.get("initial_dose_mg") \
+                    dose = sample_group.get("dose_mg_per_kg_per_day") \
+                        or sample_group.get("dose_mg") \
+                        or sample_group.get("initial_dose_mg") \
                         or sample_group.get("dose_mg_range", ["?"])[0] \
-                        or sample_group.get("dose_range_mg", ["?"])[0]
+                        or sample_group.get("dose_range_mg", ["?"])[0] \
+                        or "?"
                 else:
                     dose = "?"
             else:
                 dose = "?"
         except Exception as e:
             dose = "?"
+
 
         columns.append(CarouselColumn(
             title=title,
