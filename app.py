@@ -354,7 +354,7 @@ DRUG_DATABASE = {
         "SSTI": [
         {
             "sub_indication": "Uncomplicated",
-            "dose_mg_per_kg_per_dose": 7,
+            "dose_mg_per_kg_per_day": 14,
             "frequency": 2,
             "duration_days": 10,
             "max_mg_per_dose": 300,
@@ -382,7 +382,7 @@ DRUG_DATABASE = {
             "frequency": 2,
             "duration_days": 10
         }
-        ],
+        ]
     },
     "Cefixime": {
         "concentration_mg_per_ml": 100 / 5,
@@ -482,15 +482,6 @@ DRUG_DATABASE = {
             "max_mg_per_day": 1750,
             "note": "📝 ปรับตามความรุนแรง อายุ และ clinical response"
         }
-        ],
-        "common_indications": [
-            "Impetigo",
-            "Osteoarticular infection",
-            "Otitis Media",
-            "Pneumonia (community acquired)",
-            "Rhinosinusitis",
-            "Streptococcus group A carriage",
-            "Urinary Tract Infection"
         ]
     },
     "Azithromycin": {
@@ -1014,21 +1005,25 @@ def calculate_dose(drug, indication, weight):
         for phase in indication_info:
             if not isinstance(phase, dict):
                 continue
-            dose_per_kg = phase.get("dose_mg_per_kg_per_day")
-            if dose_per_kg is None:
-                continue
+
+            # ✅ ตรวจว่าใช้แบบไหน: weight-based หรือ fixed dose
+            if "dose_mg_per_kg_per_day" in phase:
+                dose_per_kg = phase["dose_mg_per_kg_per_day"]
+                total_mg_day = weight * dose_per_kg
+                max_mg_day = phase.get("max_mg_per_day")
+                if max_mg_day:
+                    total_mg_day = min(total_mg_day, max_mg_day)
+            elif "dose_mg" in phase:
+                total_mg_day = phase["dose_mg"]
+            else:
+                continue  # ❌ ข้ามถ้าไม่มี dose ทั้งสองแบบ
+
             title = get_indication_title(phase)
             if title:
                 reply_lines.append(f"\n🔹 {title}")
 
-            # ✅ อย่าเรียก phase["dose_mg_per_kg_per_day"] ซ้ำ
             freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
-            days = phase["duration_days"]
-            max_mg_day = phase.get("max_mg_per_day")
-
-            total_mg_day = weight * dose_per_kg
-            if max_mg_day:
-                total_mg_day = min(total_mg_day, max_mg_day)
+            days = phase.get("duration_days") or phase.get("duration_days_range", [0])[0]
 
             ml_per_day = total_mg_day / conc
             ml_phase = ml_per_day * days
@@ -1039,25 +1034,19 @@ def calculate_dose(drug, indication, weight):
                 ml_per_dose = ml_per_day / freq
                 if "max_mg_per_dose" in phase:
                     ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
-                if "day_range" in phase:
-                    day_label = f"📆 {phase['day_range']}:"
-                else:
-                    day_label = "📌"
+                day_label = f"📆 {phase['day_range']}:" if "day_range" in phase else "📌"
 
                 reply_lines.append(
-                    f"{day_label} {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                     f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
                 )
             else:
                 min_freq = min(freqs)
                 max_freq = max(freqs)
-                if "day_range" in phase:
-                    day_label = f"📆 {phase['day_range']}:"
-                else:
-                    day_label = "📌"
+                day_label = f"📆 {phase['day_range']}:" if "day_range" in phase else "📌"
 
                 reply_lines.append(
-                    f"{day_label} {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                     f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                 )
 
