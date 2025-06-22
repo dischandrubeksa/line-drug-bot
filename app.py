@@ -1,18 +1,21 @@
 from flask import Flask, request, abort
-from linebot.v3.messaging import (
-    MessagingApi, Configuration, ApiClient,FlexMessage,
-    TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage, ReplyMessageRequest
-)
-from linebot.v3.webhook import WebhookHandler
-from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
-from linebot.models import QuickReplyButton, PostbackAction
 import os
 import re
 import math
 import random
 import logging
 from datetime import datetime, timedelta
+
+# LINE SDK Imports
+from linebot.v3 import WebhookHandler
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.messaging import (
+    Configuration, ApiClient, MessagingApi,
+    TextMessage, FlexMessage, ReplyMessageRequest,
+    MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage
+)
+from linebot.v3.messaging.models import FlexContainer
 
 DRUG_DATABASE = {
     "Amoxicillin": {
@@ -314,16 +317,91 @@ DRUG_DATABASE = {
         }
     },
     "Cefixime": {
-        "concentration_mg_per_ml": 100 / 5,
-        "bottle_size_ml": 30,
-        "indications": {
-            "Febrile Neutropenia": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
-            "Otitis Media": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
-            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
-            "Strep Pharyngitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 10, "max_mg_per_day": 400},
-            "Typhoid Fever": {"dose_mg_per_kg_per_day": 17.5, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
-            "UTI": {"dose_mg_per_kg_per_day": 8, "frequency": 2, "duration_days": 7, "max_mg_per_day": 400}
+    "concentration_mg_per_ml": 100 / 5,
+    "bottle_size_ml": 30,
+    "indications": {
+        "Febrile neutropenia": [
+        {
+            "sub_indication": "Low-risk (step-down after IV)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "note": "ใช้แบบ once daily หรือแบ่งวันละ 2 ครั้งหลัง IV antibiotic 48–72 ชม."
         }
+        ],
+        "Gonococcal infection": [
+        {
+            "sub_indication": "Uncomplicated cervix/urethra/rectum (≥45 kg)",
+            "fixed_dose_mg": 800,
+            "frequency": 1,
+            "note": "เฉพาะเมื่อ ceftriaxone ใช้ไม่ได้; ให้ครั้งเดียว 800 mg"
+        }
+        ],
+        "Irinotecan-associated diarrhea (prophylaxis)": [
+        {
+            "sub_indication": "Prophylaxis before irinotecan",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": 1,
+            "max_mg_per_dose": 400,
+            "duration_days_range": [5, 10],
+            "note": "เริ่มก่อน irinotecan 2 วันและให้ต่อเนื่องระหว่างการรักษา"
+        }
+        ],
+        "Otitis media": [
+        {
+            "sub_indication": "Alternative agent (AOM)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days_range": [5, 10],
+            "max_mg_per_day": 400,
+            "note": "ใช้ในกรณีไม่ตอบสนองต่อ first-line หรือร่วมกับ clindamycin"
+        }
+        ],
+        "Rhinosinusitis": [
+        {
+            "sub_indication": "Acute bacterial (alt agent)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days_range": [5, 10],
+            "max_mg_per_day": 400,
+            "note": "ไม่ใช่ first-line; ใช้ร่วมกับยาอื่นหลังล้มเหลวจากการรักษาเบื้องต้น"
+        }
+        ],
+        "Pharyngitis/Tonsillitis": [
+        {
+            "sub_indication": "Group A Strep (penicillin allergy)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days": 10,
+            "max_mg_per_day": 400,
+            "note": "ใช้กรณีแพ้ penicillin; narrow-spectrum cephalosporins เป็นทางเลือกที่ดีกว่า"
+        }
+        ],
+        "Typhoid fever": [
+        {
+            "sub_indication": "Salmonella typhi",
+            "dose_mg_per_kg_per_day": [15, 20],
+            "frequency": 2,
+            "duration_days_range": [7, 14],
+            "note": "ข้อมูลจำกัด; การตอบสนองแตกต่างกันตามพื้นที่และเชื้อ"
+        }
+        ],
+        "Urinary tract infection": [
+        {
+            "sub_indication": "Uncomplicated or complicated UTI",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days_range": [5, 10],
+            "note": "สำหรับ cystitis ใช้ 5 วัน, pyelonephritis ใช้ 7–10 วัน"
+        }
+        ]
+    },
+    "common_indications": [
+        "Febrile neutropenia",
+        "Otitis media",
+        "Rhinosinusitis",
+        "Pharyngitis/Tonsillitis",
+        "UTI"
+    ]
     },
     "Augmentin": {
         "concentration_mg_per_ml": 600 / 5,
@@ -758,12 +836,9 @@ def send_indication_carousel(event, drug_name, show_all=False):
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
 
-# --------------------------
-# คำนวณขนาดยา Warfarin
-# --------------------------
 def calculate_warfarin(inr, twd, bleeding, supplement=None):
     if bleeding == "yes":
-        return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
+        return "\U0001f6a8 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
 
     warning = ""
     if supplement:
@@ -776,26 +851,26 @@ def calculate_warfarin(inr, twd, bleeding, supplement=None):
         matched = [name for name in high_risk if name in supplement]
         if matched:
             herbs = ", ".join(matched)
-            warning = f"\n⚠️ พบว่าสมุนไพร/อาหารเสริมที่อาจมีผลต่อ INR ได้แก่: {herbs}\nโปรดพิจารณาความเสี่ยงต่อการเปลี่ยนแปลง INR อย่างใกล้ชิด"
+            warning = f"\n\u26a0\ufe0f พบว่าสมุนไพร/อาหารเสริมที่อาจมีผลต่อ INR ได้แก่: {herbs}\nโปรดพิจารณาความเสี่ยงต่อการเปลี่ยนแปลง INR อย่างใกล้ชิด"
         else:
-            warning = "\n⚠️ มีการใช้อาหารเสริมหรือสมุนไพร → พิจารณาความเสี่ยงต่อการเปลี่ยนแปลง INR"
+            warning = "\n\u26a0\ufe0f มีการใช้อาหารเสริมหรือสมุนไพร → พิจารณาความเสี่ยงต่อการเปลี่ยนแปลง INR"
 
     followup_text = get_followup_text(inr)
 
     if inr < 1.5:
-        result = f"🔹 INR < 1.5 → เพิ่มขนาดยา 10–20%\nขนาดยาใหม่: {twd * 1.1:.1f} – {twd * 1.2:.1f} mg/สัปดาห์"
+        result = f"\U0001f539 INR < 1.5 → เพิ่มขนาดยา 10–20%\nขนาดยาใหม่: {twd * 1.1:.1f} – {twd * 1.2:.1f} mg/สัปดาห์"
     elif 1.5 <= inr <= 1.9:
-        result = f"🔹 INR 1.5–1.9 → เพิ่มขนาดยา 5–10%\nขนาดยาใหม่: {twd * 1.05:.1f} – {twd * 1.10:.1f} mg/สัปดาห์"
+        result = f"\U0001f539 INR 1.5–1.9 → เพิ่มขนาดยา 5–10%\nขนาดยาใหม่: {twd * 1.05:.1f} – {twd * 1.10:.1f} mg/สัปดาห์"
     elif 2.0 <= inr <= 3.0:
         result = "✅ INR 2.0–3.0 → คงขนาดยาเดิม"
     elif 3.1 <= inr <= 3.9:
-        result = f"🔹 INR 3.1–3.9 → ลดขนาดยา 5–10%\nขนาดยาใหม่: {twd * 0.9:.1f} – {twd * 0.95:.1f} mg/สัปดาห์"
+        result = f"\U0001f539 INR 3.1–3.9 → ลดขนาดยา 5–10%\nขนาดยาใหม่: {twd * 0.9:.1f} – {twd * 0.95:.1f} mg/สัปดาห์"
     elif 4.0 <= inr <= 4.9:
-        result = f"⚠️ INR 4.0–4.9 → หยุดยา 1 วัน และลดขนาดยา 10%\nขนาดยาใหม่: {twd * 0.9:.1f} mg/สัปดาห์"
+        result = f"⚠\ufe0f INR 4.0–4.9 → หยุดยา 1 วัน และลดขนาดยา 10%\nขนาดยาใหม่: {twd * 0.9:.1f} mg/สัปดาห์"
     elif 5.0 <= inr <= 8.9:
-        result = "⚠️ INR 5.0–8.9 → หยุดยา 1–2 วัน และพิจารณาให้ Vitamin K1 1 mg"
+        result = "⚠\ufe0f INR 5.0–8.9 → หยุดยา 1–2 วัน และพิจารณาให้ Vitamin K1 1 mg"
     else:
-        result = "🚨 INR ≥ 9.0 → หยุดยา และพิจารณาให้ Vitamin K1 5–10 mg"
+        result = "\U0001f6a8 INR ≥ 9.0 → หยุดยา และพิจารณาให้ Vitamin K1 5–10 mg"
 
     return f"{result}{warning}\n\n{followup_text}"
 
@@ -813,52 +888,108 @@ def get_followup_text(inr):
     days = get_inr_followup(inr)
     if days:
         date = (datetime.now() + timedelta(days=days)).strftime("%-d %B %Y")
-        return f"📅 คำแนะนำ: ควรตรวจ INR ภายใน {days} วัน\n📌 วันที่ควรตรวจ: {date}"
+        return f"📅  คำแนะนำ: ควรตรวจ INR ภายใน {days} วัน\n📌 วันที่ควรตรวจ: {date}"
     else:
         return ""
 
-# --------------------------
-# ส่ง carousel เลือกสมุนไพร
-# --------------------------
-def send_supplement_carousel(event):
-    columns = [
-        CarouselColumn(
-            title="เลือกสมุนไพร/อาหารเสริม",
-            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
-            actions=[
-                MessageAction(label="ไม่ได้ใช้", text="ไม่ได้ใช้"),
-                MessageAction(label="กระเทียม", text="กระเทียม"),
-                MessageAction(label="ใบแปะก๊วย", text="ใบแปะก๊วย")
+
+
+def send_supplement_flex(reply_token):
+    flex_content = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": "🌿 สมุนไพร/อาหารเสริม", "weight": "bold", "size": "lg"}
             ]
-        ),
-        CarouselColumn(
-            title="เลือกสมุนไพร/อาหารเสริม",
-            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
-            actions=[
-                MessageAction(label="โสม", text="โสม"),
-                MessageAction(label="ขมิ้น", text="ขมิ้น"),
-                MessageAction(label="น้ำมันปลา", text="น้ำมันปลา")
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "ผู้ป่วยใช้สิ่งใดบ้าง?", "wrap": True, "size": "md"},
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#84C1FF",
+                         "action": {"type": "message", "label": "ไม่ได้ใช้", "text": "ไม่ได้ใช้"}},
+                        *[
+                            {"type": "button", "style": "primary", "height": "sm", "color": "#AEC6CF",
+                             "action": {"type": "message", "label": herb, "text": herb}}
+                            for herb in ["กระเทียม", "ใบแปะก๊วย", "โสม", "ขมิ้น", "น้ำมันปลา", "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"]
+                        ]
+                    ]
+                }
             ]
-        ),
-        CarouselColumn(
-            title="เลือกสมุนไพร/อาหารเสริม",
-            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
-            actions=[
-                MessageAction(label="สมุนไพร/อาหารเสริมชนิดอื่นๆ", text="สมุนไพร/อาหารเสริมชนิดอื่นๆ"),
-                MessageAction(label="ใช้หลายชนิด", text="ใช้หลายชนิด")
-            ]
-        )
-        
-    ]
+        },
+        "styles": {
+            "header": {"backgroundColor": "#D0E6FF"},
+            "body": {"backgroundColor": "#FFFFFF"}
+        }
+    }
+
+    flex_container = FlexContainer.from_dict(flex_content)
+
     messaging_api.reply_message(
         ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[
-                TemplateMessage(
-                    alt_text="เลือกสมุนไพร/อาหารเสริม",
-                    template=CarouselTemplate(columns=columns)
-                )
+            reply_token=reply_token,
+            messages=[FlexMessage(alt_text="เลือกสมุนไพร/อาหารเสริม", contents=flex_container)]
+        )
+    )
+def send_interaction_flex(reply_token):
+    interaction_drugs = [
+        "Amiodarone", "Metronidazole", "Trimethoprim/Sulfamethoxazole",
+        "Fluconazole", "Erythromycin", "NSAIDs", "Aspirin"
+    ]
+    flex_content = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [{"type": "text", "text": "💊 ยาที่อาจมีปฏิกิริยารุนแรงกับ Warfarin", "weight": "bold", "size": "lg"}]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "ผู้ป่วยได้รับยาใดบ้าง?", "wrap": True, "size": "md"},
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#84C1FF",
+                         "action": {"type": "message", "label": "ไม่ได้ใช้", "text": "ไม่ได้ใช้"}}
+                    ] + [
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#FFD700",
+                         "action": {"type": "message", "label": drug, "text": drug}}
+                        for drug in interaction_drugs
+                    ] + [
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#FFB6C1",
+                         "action": {"type": "message", "label": "ใช้หลายชนิด", "text": "ใช้หลายชนิด"}},
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#D8BFD8",
+                         "action": {"type": "message", "label": "ยาชนิดอื่นๆ", "text": "ยาชนิดอื่นๆ"}}
+                    ]
+                }
             ]
+        },
+        "styles": {
+            "header": {"backgroundColor": "#F9E79F"},
+            "body": {"backgroundColor": "#FFFFFF"}
+        }
+    }
+    flex_container = FlexContainer.from_dict(flex_content)
+    messaging_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=reply_token,
+            messages=[FlexMessage(alt_text="เลือกยาที่มีปฏิกิริยา", contents=flex_container)]
         )
     )
 
@@ -1388,6 +1519,9 @@ def handle_message(event: MessageEvent):
     user_id = event.source.user_id
     text = event.message.text.strip()
     text_lower = text.lower()
+    reply_token = event.reply_token
+    text = user_text.strip()
+    user_text = event.message.text
 
     if text_lower in ['คำนวณยา warfarin']:
         user_sessions.pop(user_id, None)
@@ -1395,22 +1529,12 @@ def handle_message(event: MessageEvent):
         user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
         messaging_api.reply_message(
             ReplyMessageRequest(
-                reply_token=event.reply_token,
+                reply_token=reply_token,
                 messages=[TextMessage(text="🧪 กรุณาใส่ค่า INR (เช่น 2.5)")]
             )
         )
         return
 
-    elif text_lower in ['คำนวณขนาดยาเด็ก', 'คำนวณยาเด็ก']:
-        user_sessions.pop(user_id, None)
-        user_drug_selection.pop(user_id, None)
-        user_ages.pop(user_id, None)
-        send_drug_selection(event)
-        return
-    
-    # --------------------------
-    # ดำเนิน Warfarin flow
-    # --------------------------
     if user_id in user_sessions:
         session = user_sessions[user_id]
         if session.get("flow") == "warfarin":
@@ -1423,7 +1547,7 @@ def handle_message(event: MessageEvent):
                 except:
                     reply = "❌ กรุณาใส่ค่า INR เป็นตัวเลข เช่น 2.5"
                 messaging_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
+                    ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=reply)])
                 )
                 return
 
@@ -1435,53 +1559,84 @@ def handle_message(event: MessageEvent):
                 except:
                     reply = "❌ กรุณาใส่ค่า TWD เป็นตัวเลข เช่น 28"
                 messaging_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
+                    ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=reply)])
                 )
                 return
 
             elif step == "ask_bleeding":
-                if text.lower() not in ["yes", "no"]:
+                if text.lower().strip(".") not in ["yes", "no"]:
                     reply = "❌ ตอบว่า yes หรือ no เท่านั้น"
                     messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
+                        ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=reply)])
                     )
                     return
                 session["bleeding"] = text.lower()
                 session["step"] = "choose_supplement"
-                send_supplement_carousel(event)
+                send_supplement_flex(reply_token)
                 return
-            
+
             
 
             elif step == "choose_supplement":
                 if text == "ไม่ได้ใช้":
-                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], "")
-                    user_sessions.pop(user_id, None)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=result)])
-                    )
-                elif text in ["ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"]:
-                    session["step"] = "ask_supplement"
-                    reply = "🌿 โปรดพิมพ์ชื่อสมุนไพรหรืออาหารเสริมที่ใช้อยู่ เช่น กระเทียม, โสม, ขมิ้น"
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-                    )
+                    session["supplement"] = ""
                 else:
-                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], text)
-                    user_sessions.pop(user_id, None)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=result)])
-                    )
+                    session["supplement"] = text
+                session["step"] = "choose_interaction"
+                send_interaction_flex(reply_token)
                 return
 
-            elif step == "ask_supplement":
-                supplement = text.strip()
+            elif step == "choose_interaction":
+                if text == "ไม่ได้ใช้":
+                    interaction_note = ""
+                    supplement = session.get("supplement", "")
+                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
+                    final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
+                    user_sessions.pop(user_id, None)
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
+                    )
+                    return
+
+                elif text in ["ใช้หลายชนิด", "ยาชนิดอื่นๆ"]:
+                    session["step"] = "ask_interaction"
+                    reply = "💊 โปรดพิมพ์ชื่อยาที่ใช้อยู่ เช่น Amiodarone, NSAIDs"
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=reply)])
+                    )
+                    return
+
+                else:
+                    interaction_note = f"\n⚠️ พบการใช้ยา: {text} ซึ่งอาจมีปฏิกิริยากับ Warfarin"
+                    supplement = session.get("supplement", "")
+                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
+                    final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
+                    user_sessions.pop(user_id, None)
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
+                    )
+                    return
+
+            elif step == "ask_interaction":
+                interaction_note = f"\n⚠️ พบการใช้ยา: {text.strip()} ซึ่งอาจมีปฏิกิริยากับ Warfarin"
+                supplement = session.get("supplement", "")
                 result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
+                final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
                 user_sessions.pop(user_id, None)
                 messaging_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=result)])
+                    ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
                 )
                 return
+
+
+    if user_id not in user_sessions and user_id not in user_drug_selection:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[TextMessage(text="❓ พิมพ์ 'คำนวณยา warfarin' หรือ 'คำนวณยาเด็ก' เพื่อเริ่มต้นใช้งาน")]
+            )
+        )
+        return
         
     if text == "เลือกยาใหม่":
         user_drug_selection.pop(user_id, None)
