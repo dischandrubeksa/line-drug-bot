@@ -383,14 +383,6 @@ DRUG_DATABASE = {
             "duration_days": 10
         }
         ],
-        "common_indications": [
-            "Chronic bronchitis, acute bacterial exacerbation",
-            "Pneumonia (community acquired)",
-            "Otitis Media",
-            "Pharyngitis/Tonsillitis",
-            "Rhinosinusitis",
-            "SSTI"
-        ]
     },
     "Cefixime": {
         "concentration_mg_per_ml": 100 / 5,
