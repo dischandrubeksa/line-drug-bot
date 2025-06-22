@@ -238,19 +238,152 @@ DRUG_DATABASE = {
         "concentration_mg_per_ml": 125 / 5,
         "bottle_size_ml": 60,
         "indications": {
-            "SSTI": {"dose_mg_per_kg_per_day": 50, "frequency": 4, "duration_days": 7, "max_mg_per_day": None},
-            "Pharyngitis": {"dose_mg_per_kg_per_day": 50, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
-            "UTI": {"dose_mg_per_kg_per_day": 100, "frequency": 4, "duration_days": 7, "max_mg_per_day": None}
+            "Acute Otitis Media (AOM)": [
+            {
+                "sub_indication": "Alternative agent",
+                "dose_mg_per_kg_per_day": [75, 100],
+                "frequency": 4,
+                "duration_days": 10,
+                "note": "❗ ไม่แนะนำให้ใช้เป็น empiric therapy; ใช้เฉพาะเมื่อทราบเชื้อที่ไวต่อยา"
+            }
+            ],
+            "Pneumonia (community acquired)": [
+            {
+                "sub_indication": "Step-down therapy for mild infection",
+                "dose_mg_per_kg_per_day": [75, 100],
+                "frequency": [3, 4],
+                "duration_days_range": [5, 10],
+                "max_mg_per_day": 4000,
+                "note": "📝 ใช้เป็น step-down therapy หลัง IV สำหรับ pneumonia ไม่ซับซ้อน"
+            }
+            ],
+            "SSTI": [
+            {
+                "sub_indication": "Cellulitis, erysipelas, purulent/fluctuant SSTI",
+                "dose_mg_per_kg_per_day": [25, 100],
+                "frequency": [3, 4],
+                "duration_days_range": [5, 10],
+                "max_mg_per_dose": 500,
+                "note": "❗ หลีกเลี่ยงการใช้เดี่ยวถ้าสงสัย MRSA; ใช้ dose สูงสุดในกรณีรุนแรงหรือสงสัย MSSA"
+            },
+            {
+                "sub_indication": "Impetigo, ecthyma",
+                "dose_mg_per_kg_per_day": [25, 50],
+                "frequency": [3, 4],
+                "duration_days": 7,
+                "max_mg_per_day": 2000
+            }
+            ],
+            "Pharyngitis/Tonsillitis": [
+            {
+                "sub_indication": "Group A Streptococcus (penicillin allergy)",
+                "dose_mg_per_kg_per_day": 40,
+                "frequency": 2,
+                "duration_days": 10,
+                "max_mg_per_dose": 500
+            }
+            ],
+            "UTI": [
+            {
+                "sub_indication": "Mild to moderate (eg, cystitis)",
+                "dose_mg_per_kg_per_day": [25, 50],
+                "frequency": [2, 4],
+                "duration_days": 5,
+                "max_mg_per_dose": 500,
+                "note": "📝 ระยะเวลาอาจขยายหากการตอบสนองไม่ดี"
+            },
+            {
+                "sub_indication": "Severe (eg, pyelonephritis)",
+                "dose_mg_per_kg_per_day": [50, 100],
+                "frequency": [3, 4],
+                "duration_days_range": [7, 10],
+                "max_mg_per_dose": 1000,
+                "note": "📝 ไม่แนะนำให้เกิน 10 วัน; ใช้ตามการตอบสนองทางคลินิก"
+            }
+            ]
         }
     },
     "Cefdinir": {
-        "concentration_mg_per_ml": 125 / 5,
-        "bottle_size_ml": 30,
-        "indications": {
-            "Otitis Media": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600},
-            "Pharyngitis": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600},
-            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 14, "frequency": 2, "duration_days": 10, "max_mg_per_day": 600}
+    "concentration_mg_per_ml": 125 / 5,
+    "bottle_size_ml": 60,
+    "indications": {
+        "Chronic bronchitis, acute bacterial exacerbation": [
+        {
+            "sub_indication": "Adolescents",
+            "dose_mg": 300,
+            "frequency": 2,
+            "duration_days_range": [5, 10],
+            "note": "📝 อาจใช้ 600 mg วันละครั้งนาน 10 วันได้"
         }
+        ],
+        "Otitis Media": [
+        {
+            "sub_indication": "Alternative agent for penicillin allergy",
+            "dose_mg_per_kg_per_day": 14,
+            "frequency": [2],  # เน้น BID
+            "duration_days_range": [5, 10],
+            "max_mg_per_day": 600,
+            "note": "📝 ใช้ 10 วันในเด็กอายุน้อยหรือรุนแรง; 5–7 วันถ้าอายุ ≥2 ปี และไม่ซับซ้อน"
+        }
+        ],
+        "Pneumonia (community acquired)": [
+        {
+            "sub_indication": "Adolescents",
+            "dose_mg": 300,
+            "frequency": 2,
+            "duration_days": 10,
+            "note": "📝 ใช้เฉพาะเมื่อไม่มีตัวเลือกอื่น และไม่แนะนำใน S. pneumoniae ดื้อยา"
+        }
+        ],
+        "Rhinosinusitis": [
+        {
+            "sub_indication": "Penicillin allergy (alternative)",
+            "dose_mg_per_kg_per_day": 14,
+            "frequency": [2],
+            "duration_days": 10,
+            "max_mg_per_day": 600,
+            "note": "📝 ตัวเลือกไม่แนะนำ; ใช้เมื่อแพ้ penicillin"
+        },
+        {
+            "sub_indication": "Adolescents",
+            "dose_mg": 300,
+            "frequency": 2,
+            "duration_days": 10
+        }
+        ],
+        "SSTI": [
+        {
+            "sub_indication": "Uncomplicated",
+            "dose_mg_per_kg_per_dose": 7,
+            "frequency": 2,
+            "duration_days": 10,
+            "max_mg_per_dose": 300,
+            "note": "❗ ไม่อยู่ในแนวทาง IDSA แนะนำ; ใช้เมื่อไม่มีทางเลือก"
+        },
+        {
+            "sub_indication": "Adolescents",
+            "dose_mg": 300,
+            "frequency": 2,
+            "duration_days": 10
+        }
+        ],
+        "Pharyngitis/Tonsillitis": [
+        {
+            "sub_indication": "Group A Streptococcus (penicillin allergy)",
+            "dose_mg_per_kg_per_day": 14,
+            "frequency": [1, 2],
+            "duration_days": 10,
+            "max_mg_per_day": 600,
+            "note": "📝 แนะนำใช้ dose BID หากให้แค่ 5 วัน; แต่โดยทั่วไปควรใช้ 10 วัน"
+        },
+        {
+            "sub_indication": "Adolescents",
+            "dose_mg": 300,
+            "frequency": 2,
+            "duration_days": 10
+        }
+        ]
+    }
     },
     "Cefixime": {
         "concentration_mg_per_ml": 100 / 5,
@@ -264,18 +397,94 @@ DRUG_DATABASE = {
             "UTI": {"dose_mg_per_kg_per_day": 8, "frequency": 2, "duration_days": 7, "max_mg_per_day": 400}
         }
     },
-    "Augmentin": {
-        "concentration_mg_per_ml": 600 / 5,
-        "bottle_size_ml": 70,
-        "indications": {
-            "Impetigo": {"dose_mg_per_kg_per_day": 35, "frequency": 2, "duration_days": 7, "max_mg_per_day": 500},
-            "Osteoarticular Infection": {  "dose_mg_per_kg_per_day": 120,"frequency": 3, "duration_days": 21,"max_mg_per_day": 1000 },
-            "Otitis Media": {"dose_mg_per_kg_per_day": 85,"frequency": 2, "duration_days": 10, "max_mg_per_day": 2000 },
-            "Pneumonia": { "dose_mg_per_kg_per_day": 90,"frequency": 2, "duration_days": 7, "max_mg_per_day": 2000 },
-            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 90,"frequency": 2,"duration_days": 10,"max_mg_per_day": 2000 },
-            "Strep Carriage": { "dose_mg_per_kg_per_day": 40, "frequency": 3, "duration_days": 10,"max_mg_per_day": 2000 },
-            "UTI": { "dose_mg_per_kg_per_day": 35, "frequency": 2, "duration_days": 7, "max_mg_per_day": 1750 }
+    "Amoxicillin-clavulanate": {
+    "concentration_mg_per_ml": 400 / 5,  # ตัวอย่าง: 400 mg amoxicillin + 57 mg clavulanate per 5 mL
+    "bottle_size_ml": 60,
+    "indications": {
+        "Impetigo": [
+        {
+            "dose_mg_per_kg_per_day": [25, 45],
+            "frequency": [2, 3],
+            "duration_days": 7,
+            "max_mg_per_dose": 875,
+            "note": "📝 ให้แบ่งทุก 8–12 ชม.; max 500 mg ถ้าให้ทุก 8 ชม., 875 mg ถ้าทุก 12 ชม."
         }
+        ],
+        "Osteoarticular infection": [
+        {
+            "sub_indication": "Step-down therapy",
+            "dose_mg_per_kg_per_day": 120,
+            "frequency": [3, 4],
+            "max_mg_per_day": 3000,
+            "note": "📝 ไม่ควรให้ clavulanate เกิน 125 mg ต่อ dose; IV+PO อย่างน้อย 2–4 สัปดาห์"
+        }
+        ],
+        "Otitis Media": [
+        {
+            "sub_indication": "High-dose regimen",
+            "dose_mg_per_kg_per_day": [80, 90],
+            "frequency": 2,
+            "max_mg_per_day": 4000,
+            "note": "📝 แนะนำในประเทศที่มี S. pneumoniae ดื้อ penicillin"
+        },
+        {
+            "sub_indication": "Standard-dose regimen",
+            "dose_mg_per_kg_per_day": [40, 45],
+            "frequency": [2, 3],
+            "max_mg_per_day": 1750,
+            "note": "📝 ใช้ในพื้นที่ที่เชื้อดื้อ penicillin ต่ำ"
+        }
+        ],
+        "Pneumonia (community acquired)": [
+        {
+            "sub_indication": "Empiric therapy",
+            "dose_mg_per_kg_per_day": 90,
+            "frequency": 2,
+            "max_mg_per_day": 4000,
+            "note": "📝 ใช้ 5 วัน ถ้าดีขึ้นเร็ว; นาน 7–10 วันถ้ารุนแรง/มีโรคร่วม"
+        },
+        {
+            "sub_indication": "H. influenzae (step-down or mild)",
+            "dose_mg_per_kg_per_day": [45, 90],
+            "frequency": [2, 3],
+            "note": "📝 ขึ้นกับความรุนแรงและปัจจัยเสี่ยง"
+        }
+        ],
+        "Rhinosinusitis": [
+        {
+            "sub_indication": "Standard-dose regimen",
+            "dose_mg_per_kg_per_day": [40, 45],
+            "frequency": [2, 3],
+            "max_mg_per_dose": 875,
+            "note": "📝 max 500 mg ถ้าให้ทุก 8 ชม.; หรือ 875 mg ทุก 12 ชม."
+        },
+        {
+            "sub_indication": "High-dose regimen",
+            "dose_mg_per_kg_per_day": [80, 90],
+            "frequency": [2, 3],
+            "max_mg_per_day": 4000,
+            "note": "📝 ใช้เมื่อเสี่ยงสูง เช่น แพทย์เด็ก, อายุน้อย, แพ้ penicillin"
+        }
+        ],
+        "Streptococcus group A carriage": [
+        {
+            "dose_mg_per_kg_per_day": 40,
+            "frequency": 3,
+            "duration_days": 10,
+            "max_mg_per_day": 2000,
+            "note": "📝 ใช้เฉพาะกรณี chronic carriage ที่จำเป็นต้องรักษา"
+        }
+        ],
+        "Urinary Tract Infection": [
+        {
+            "dose_mg_per_kg_per_day": [20, 50],
+            "frequency": [2, 3],
+            "duration_days_range": [3, 14],
+            "max_mg_per_day": 1750,
+            "note": "📝 ปรับตามความรุนแรง อายุ และ clinical response"
+        }
+        ]
+    }
     },
     "Azithromycin": {
         "concentration_mg_per_ml": 200 / 5,
