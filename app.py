@@ -382,8 +382,15 @@ DRUG_DATABASE = {
             "frequency": 2,
             "duration_days": 10
         }
+        ],
+        "common_indications": [
+            "Chronic bronchitis, acute bacterial exacerbation",
+            "Pneumonia (community acquired)",
+            "Otitis Media",
+            "Pharyngitis/Tonsillitis",
+            "Rhinosinusitis",
+            "SSTI"
         ]
-    }
     },
     "Cefixime": {
         "concentration_mg_per_ml": 100 / 5,
@@ -397,7 +404,7 @@ DRUG_DATABASE = {
             "UTI": {"dose_mg_per_kg_per_day": 8, "frequency": 2, "duration_days": 7, "max_mg_per_day": 400}
         }
     },
-    "Amoxicillin-clavulanate": {
+    "Augmentin": {
     "concentration_mg_per_ml": 400 / 5,  # ตัวอย่าง: 400 mg amoxicillin + 57 mg clavulanate per 5 mL
     "bottle_size_ml": 60,
     "indications": {
@@ -483,8 +490,16 @@ DRUG_DATABASE = {
             "max_mg_per_day": 1750,
             "note": "📝 ปรับตามความรุนแรง อายุ และ clinical response"
         }
+        ],
+        "common_indications": [
+            "Impetigo",
+            "Osteoarticular infection",
+            "Otitis Media",
+            "Pneumonia (community acquired)",
+            "Rhinosinusitis",
+            "Streptococcus group A carriage",
+            "Urinary Tract Infection"
         ]
-    }
     },
     "Azithromycin": {
         "concentration_mg_per_ml": 200 / 5,
@@ -548,7 +563,8 @@ DRUG_DATABASE = {
         "common_indications": ["Pneumonia (Atypical)", "Strep Pharyngitis","Rhinosinusitis","Chlamydia" ]
     }
 }
-
+}
+}
 
 logging.basicConfig(
     level=logging.INFO,  # เปลี่ยนเป็น DEBUG ถ้าต้องการ log ละเอียด
