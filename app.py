@@ -1002,7 +1002,10 @@ def calculate_dose(drug, indication, weight):
     # ✅ รองรับหลายช่วงวัน (list)
     elif isinstance(indication_info, list):
         for phase in indication_info:
-            if "dose_mg_per_kg_per_day" not in phase:
+            if not isinstance(phase, dict):
+                continue
+            dose_per_kg = phase.get("dose_mg_per_kg_per_day")
+            if dose_per_kg is None:
                 continue
             title = get_indication_title(phase)
             if title:
@@ -1025,12 +1028,6 @@ def calculate_dose(drug, indication, weight):
                 ml_per_dose = ml_per_day / freq
                 if "max_mg_per_dose" in phase:
                     ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
-                day_label = phase.get("day_range")
-                if day_label:
-                    prefix = f"📆 {day_label}:"
-                else:
-                    prefix = "📌"
-                
                 if "day_range" in phase:
                     day_label = f"📆 {phase['day_range']}:"
                 else:
