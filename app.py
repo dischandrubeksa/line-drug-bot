@@ -853,31 +853,48 @@ def send_indication_carousel(event, drug_name, show_all=False):
     for name in names_to_show:
         label = "เลือก"
         title = name[:40] if len(name) > 40 else name
+        text = "ไม่มีข้อมูลขนาดยา"
+        action_text = f"Indication: {name}"
 
         if name != "Indication อื่นๆ":
             indication_info = indications[name]
             dose = None
+            unit = None
 
             if isinstance(indication_info, list):
-                # list ของช่วงวัน เช่น azithromycin
                 first_entry = indication_info[0] if indication_info and isinstance(indication_info[0], dict) else {}
-                dose = first_entry.get("dose_mg_per_kg_per_day")
+                dose = (
+                    first_entry.get("dose_mg_per_kg_per_day")
+                    or first_entry.get("dose_mg_per_kg_per_dose")
+                    or first_entry.get("dose_mg")
+                )
+                if "dose_mg_per_kg_per_day" in first_entry:
+                    unit = "mg/kg/day"
+                elif "dose_mg_per_kg_per_dose" in first_entry:
+                    unit = "mg/kg/dose"
+                elif "dose_mg" in first_entry:
+                    unit = "mg/day"
 
             elif isinstance(indication_info, dict):
-                # sub-indication หรือ indication ปกติ
-                if "dose_mg_per_kg_per_day" in indication_info:
-                    dose = indication_info.get("dose_mg_per_kg_per_day")
-                else:
-                    for sub in indication_info.values():
-                        if isinstance(sub, dict):
-                            dose = sub.get("dose_mg_per_kg_per_day") or sub.get("dose_mg")
-                            if dose:
-                                break
-            else:
-                dose = None
+                for sub in indication_info.values():
+                    if isinstance(sub, dict):
+                        dose = (
+                            sub.get("dose_mg_per_kg_per_day")
+                            or sub.get("dose_mg_per_kg_per_dose")
+                            or sub.get("dose_mg")
+                        )
+                        if "dose_mg_per_kg_per_day" in sub:
+                            unit = "mg/kg/day"
+                        elif "dose_mg_per_kg_per_dose" in sub:
+                            unit = "mg/kg/dose"
+                        elif "dose_mg" in sub:
+                            unit = "mg/day"
+                        if dose:
+                            break
 
-            text = f"{dose} mg/kg/day" if dose else "ไม่มีข้อมูลขนาดยา"
-            action_text = f"Indication: {name}"
+            if dose is not None and unit:
+                text = f"{dose} {unit}"
+
         else:
             text = "ดูข้อบ่งใช้อื่นทั้งหมด"
             action_text = f"MoreIndication: {drug_name}"
@@ -909,6 +926,7 @@ def send_indication_carousel(event, drug_name, show_all=False):
         )
     except Exception as e:
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
+
 
 def calculate_warfarin(inr, twd, bleeding):
     if bleeding == "yes":
