@@ -758,6 +758,9 @@ def send_indication_carousel(event, drug_name, show_all=False):
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
 
+# --------------------------
+# คำนวณขนาดยา Warfarin
+# --------------------------
 def calculate_warfarin(inr, twd, bleeding, supplement=None):
     if bleeding == "yes":
         return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
@@ -815,151 +818,47 @@ def get_followup_text(inr):
         return ""
 
 # --------------------------
-# ส่ง flex เลือกสมุนไพร
+# ส่ง carousel เลือกสมุนไพร
 # --------------------------
-def send_supplement_flex(event):
-    flex_bubble = {
-  "type": "bubble",
-  "size": "mega",
-  "header": {
-    "type": "box",
-    "layout": "vertical",
-    "contents": [
-      {
-        "type": "text",
-        "text": "🌿 สมุนไพร/อาหารเสริม",
-        "weight": "bold",
-        "size": "lg"
-      }
+def send_supplement_carousel(event):
+    columns = [
+        CarouselColumn(
+            title="เลือกสมุนไพร/อาหารเสริม",
+            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
+            actions=[
+                MessageAction(label="ไม่ได้ใช้", text="ไม่ได้ใช้"),
+                MessageAction(label="กระเทียม", text="กระเทียม"),
+                MessageAction(label="ใบแปะก๊วย", text="ใบแปะก๊วย")
+            ]
+        ),
+        CarouselColumn(
+            title="เลือกสมุนไพร/อาหารเสริม",
+            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
+            actions=[
+                MessageAction(label="โสม", text="โสม"),
+                MessageAction(label="ขมิ้น", text="ขมิ้น"),
+                MessageAction(label="น้ำมันปลา", text="น้ำมันปลา")
+            ]
+        ),
+        CarouselColumn(
+            title="เลือกสมุนไพร/อาหารเสริม",
+            text="ผู้ป่วยใช้สิ่งใดบ้าง?",
+            actions=[
+                MessageAction(label="สมุนไพร/อาหารเสริมชนิดอื่นๆ", text="สมุนไพร/อาหารเสริมชนิดอื่นๆ"),
+                MessageAction(label="ใช้หลายชนิด", text="ใช้หลายชนิด")
+            ]
+        )
+        
     ]
-  },
-  "body": {
-    "type": "box",
-    "layout": "vertical",
-    "spacing": "md",
-    "contents": [
-      {
-        "type": "text",
-        "text": "ผู้ป่วยใช้สิ่งใดบ้าง?",
-        "wrap": true,
-        "size": "md"
-      },
-      {
-        "type": "box",
-        "layout": "vertical",
-        "spacing": "sm",
-        "contents": [
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "ไม่ได้ใช้",
-              "text": "ไม่ได้ใช้"
-            },
-            "color": "#84C1FF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "กระเทียม",
-              "text": "กระเทียม"
-            },
-            "color": "#AEC6CF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "ใบแปะก๊วย",
-              "text": "ใบแปะก๊วย"
-            },
-            "color": "#AEC6CF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "โสม",
-              "text": "โสม"
-            },
-            "color": "#AEC6CF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "ขมิ้น",
-              "text": "ขมิ้น"
-            },
-            "color": "#AEC6CF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "น้ำมันปลา",
-              "text": "น้ำมันปลา"
-            },
-            "color": "#AEC6CF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "ใช้หลายชนิด",
-              "text": "ใช้หลายชนิด"
-            },
-            "color": "#AEC6CF"
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "สมุนไพร/อาหารเสริมชนิดอื่นๆ",
-              "text": "สมุนไพร/อาหารเสริมชนิดอื่นๆ"
-            },
-            "color": "#AEC6CF"
-          }
-        ]
-      }
-    ]
-  },
-  "styles": {
-    "header": {
-      "backgroundColor": "#D0E6FF"
-    },
-    "body": {
-      "backgroundColor": "#FFFFFF"
-    }
-  }
-}
-
-    flex_message = FlexMessage(
-        alt_text="เลือกสมุนไพร/อาหารเสริม",
-        contents=flex_bubble
-    )
-
     messaging_api.reply_message(
         ReplyMessageRequest(
             reply_token=event.reply_token,
-            messages=[flex_message]
+            messages=[
+                TemplateMessage(
+                    alt_text="เลือกสมุนไพร/อาหารเสริม",
+                    template=CarouselTemplate(columns=columns)
+                )
+            ]
         )
     )
 
@@ -1516,7 +1415,6 @@ def handle_message(event: MessageEvent):
         session = user_sessions[user_id]
         if session.get("flow") == "warfarin":
             step = session.get("step")
-            
             if step == "ask_inr":
                 try:
                     session["inr"] = float(text)
@@ -1550,9 +1448,10 @@ def handle_message(event: MessageEvent):
                     return
                 session["bleeding"] = text.lower()
                 session["step"] = "choose_supplement"
-                print("[DEBUG] Sending Flex supplement picker now...")
-                send_supplement_flex(event)
-                return  # ← ตรงนี้สำคัญ
+                send_supplement_carousel(event)
+                return
+            
+            
 
             elif step == "choose_supplement":
                 if text == "ไม่ได้ใช้":
