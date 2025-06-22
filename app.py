@@ -876,16 +876,24 @@ def send_indication_carousel(event, drug_name, show_all=False):
             dose = None
 
             if isinstance(indication_info, list):
-                first_entry = indication_info[0] if indication_info else {}
+                # list ของช่วงวัน เช่น azithromycin
+                first_entry = indication_info[0] if indication_info and isinstance(indication_info[0], dict) else {}
                 dose = first_entry.get("dose_mg_per_kg_per_day")
-            else:
-                dose = indication_info.get("dose_mg_per_kg_per_day")
 
-            if dose is not None:
-                text = f"{dose} mg/kg/day"
+            elif isinstance(indication_info, dict):
+                # sub-indication หรือ indication ปกติ
+                if "dose_mg_per_kg_per_day" in indication_info:
+                    dose = indication_info.get("dose_mg_per_kg_per_day")
+                else:
+                    for sub in indication_info.values():
+                        if isinstance(sub, dict):
+                            dose = sub.get("dose_mg_per_kg_per_day") or sub.get("dose_mg")
+                            if dose:
+                                break
             else:
-                text = "ไม่มีข้อมูลขนาดยา"
-            
+                dose = None
+
+            text = f"{dose} mg/kg/day" if dose else "ไม่มีข้อมูลขนาดยา"
             action_text = f"Indication: {name}"
         else:
             text = "ดูข้อบ่งใช้อื่นทั้งหมด"
@@ -916,10 +924,8 @@ def send_indication_carousel(event, drug_name, show_all=False):
                 messages=messages
             )
         )
-        return
     except Exception as e:
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
-
 
 def calculate_warfarin(inr, twd, bleeding):
     if bleeding == "yes":
