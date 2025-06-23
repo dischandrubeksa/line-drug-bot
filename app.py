@@ -1,14 +1,12 @@
 from flask import Flask, request, abort
 from linebot.v3.messaging import (
     MessagingApi, Configuration, ApiClient,
-    TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage, ReplyMessageRequest, FlexMessage
+    TextMessage, MessageAction, CarouselColumn, CarouselTemplate, TemplateMessage, ReplyMessageRequest
 )
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from linebot.models import QuickReplyButton, PostbackAction
-from linebot.v3.messaging.models import FlexContainer
-from datetime import datetime, timedelta
 import os
 import re
 import math
@@ -385,87 +383,18 @@ DRUG_DATABASE = {
             "duration_days": 10
         }
         ]
-    }
     },
     "Cefixime": {
-    "concentration_mg_per_ml": 100 / 5,
-    "bottle_size_ml": 50,
-    "indications": {
-        "Febrile neutropenia": [
-        {
-            "sub_indication": "Low-risk (step-down after IV)",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": [1, 2],
-            "note": "ใช้แบบ once daily หรือแบ่งวันละ 2 ครั้งหลัง IV antibiotic 48–72 ชม."
+        "concentration_mg_per_ml": 100 / 5,
+        "bottle_size_ml": 30,
+        "indications": {
+            "Febrile Neutropenia": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
+            "Otitis Media": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
+            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
+            "Strep Pharyngitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 10, "max_mg_per_day": 400},
+            "Typhoid Fever": {"dose_mg_per_kg_per_day": 17.5, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
+            "UTI": {"dose_mg_per_kg_per_day": 8, "frequency": 2, "duration_days": 7, "max_mg_per_day": 400}
         }
-        ],
-        "Gonococcal infection": [
-        {
-            "sub_indication": "Uncomplicated cervix/urethra/rectum (≥45 kg)",
-            "fixed_dose_mg": 800,
-            "frequency": 1,
-            "note": "เฉพาะเมื่อ ceftriaxone ใช้ไม่ได้; ให้ครั้งเดียว 800 mg"
-        }
-        ],
-        "Irinotecan-associated diarrhea (prophylaxis)": [
-        {
-            "sub_indication": "Prophylaxis before irinotecan",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": 1,
-            "max_mg_per_dose": 400,
-            "duration_days_range": [5, 10],
-            "note": "เริ่มก่อน irinotecan 2 วันและให้ต่อเนื่องระหว่างการรักษา"
-        }
-        ],
-        "Otitis media": [
-        {
-            "sub_indication": "Alternative agent (AOM)",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": [1, 2],
-            "duration_days_range": [5, 10],
-            "max_mg_per_day": 400,
-            "note": "ใช้ในกรณีไม่ตอบสนองต่อ first-line หรือร่วมกับ clindamycin"
-        }
-        ],
-        "Rhinosinusitis": [
-        {
-            "sub_indication": "Acute bacterial (alt agent)",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": [1, 2],
-            "duration_days_range": [5, 10],
-            "max_mg_per_day": 400,
-            "note": "ไม่ใช่ first-line; ใช้ร่วมกับยาอื่นหลังล้มเหลวจากการรักษาเบื้องต้น"
-        }
-        ],
-        "Pharyngitis/Tonsillitis": [
-        {
-            "sub_indication": "Group A Strep (penicillin allergy)",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": [1, 2],
-            "duration_days": 10,
-            "max_mg_per_day": 400,
-            "note": "ใช้กรณีแพ้ penicillin; narrow-spectrum cephalosporins เป็นทางเลือกที่ดีกว่า"
-        }
-        ],
-        "Typhoid fever": [
-        {
-            "sub_indication": "Salmonella typhi",
-            "dose_mg_per_kg_per_day": [15, 20],
-            "frequency": 2,
-            "duration_days_range": [7, 14],
-            "note": "ข้อมูลจำกัด; การตอบสนองแตกต่างกันตามพื้นที่และเชื้อ"
-        }
-        ],
-        "Urinary tract infection": [
-        {
-            "sub_indication": "Uncomplicated or complicated UTI",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": [1, 2],
-            "duration_days_range": [5, 10],
-            "note": "สำหรับ cystitis ใช้ 5 วัน, pyelonephritis ใช้ 7–10 วัน"
-        }
-        ]
-    }
     },
     "Augmentin": {
     "concentration_mg_per_ml": 400 / 5,  # ตัวอย่าง: 400 mg amoxicillin + 57 mg clavulanate per 5 mL
@@ -554,395 +483,70 @@ DRUG_DATABASE = {
             "note": "📝 ปรับตามความรุนแรง อายุ และ clinical response"
         }
         ]
-    }
     },
     "Azithromycin": {
         "concentration_mg_per_ml": 200 / 5,
         "bottle_size_ml": 15,
         "indications": {
             "Pertussis": [
-                {
-                    "sub_indication": "Infants <6 months",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "max_mg_per_day": None,
-                    "note": "ใช้วันละครั้ง เป็นเวลา 5 วัน"
-                },
-                {
-                    "sub_indication": "Infants ≥6 months, Children, Adolescents",
-                    "dose_by_day": {
-                        "Day 1": {
-                            "dose_mg_per_kg": 10,
-                            "max_mg_per_day": 500
-                        },
-                        "Day 2-5": {
-                            "dose_mg_per_kg": 5,
-                            "max_mg_per_day": 250
-                        }
-                    },
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "note": "เริ่มด้วย 10 mg/kg (max 500 mg) วันที่ 1 แล้วตามด้วย 5 mg/kg (max 250 mg) วันที่ 2-5"
-                }
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
             ],
-            "Pneumonia (community acquired)": [
-                {
-                    "sub_indication": "5-day regimen (mild infection / step-down therapy)",
-                    "dose_mg_per_kg_per_day": [10, 5],
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "max_mg_per_day": [500, 250],
-                    "note": "Day 1: 10 mg/kg (max 500 mg), Day 2–5: 5 mg/kg (max 250 mg)"
-                },
-                {
-                    "sub_indication": "3-day regimen",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "max_mg_per_day": 500,
-                    "note": "ใช้ในผู้ป่วยที่ไม่รุนแรง หรือกรณีมีข้อจำกัด; severe case อาจใช้ 5–7 วัน"
-                }
+            "Pneumonia (Atypical)": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
             ],
-            "Pharyngitis/Tonsillitis": [
-                {
-                    "sub_indication": "5-day regimen",
-                    "dose_mg_per_kg_per_day": 12,
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "max_mg_per_day": 500,
-                    "note": "ใช้ในผู้ที่แพ้ penicillin รุนแรง (severe allergy)"
-                },
-                {
-                    "sub_indication": "3-day regimen",
-                    "dose_mg_per_kg_per_day": 20,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "max_mg_per_day": 1000,
-                    "note": "ข้อมูลจำกัด แต่มีการใช้แบบ 3 วัน; ควรใช้ total ≥60 mg/kg ตลอดคอร์สเพื่อประสิทธิภาพสูง"
-                }
+            "Strep Pharyngitis": {
+                "dose_mg_per_kg_per_day": 12, "frequency": 1, "duration_days": 5, "max_mg_per_dose": 500
+            },
+            "Typhoid Fever": {
+                "dose_mg_per_kg_per_day": 15, "frequency": 1, "duration_days": 7, "max_mg_per_dose": 1000
+            },
+            "UTI (Off-label)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
+            },
+            "Rhinosinusitis": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
+            },
+            "Chlamydia": {
+                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 1, "max_mg_per_dose": 1000
+            },
+            "Diarrhea (Campylobacter)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
+            },
+            "Diarrhea (Shigella)": [
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 12, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
             ],
-            "Typhoid Fever": [
-                {
-                    "sub_indication": "7-day regimen (10 mg/kg/day)",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 7,
-                    "max_mg_per_day": 500,
-                    "note": "💊 ขนาดปานกลาง: 10 mg/kg/day นาน 7 วัน"
-                },
-                {
-                    "sub_indication": "5–7-day regimen (20 mg/kg/day)",
-                    "dose_mg_per_kg_per_day": 20,
-                    "frequency": 1,
-                    "duration_days": [5, 7],
-                    "max_mg_per_day": 1000,
-                    "note": "💊 ขนาดสูง: 20 mg/kg/day นาน 5–7 วัน; พิจารณาในกรณีรุนแรงหรือตอบสนองไม่ดี"
-                }
-            ],
-            "Gonococcal infection": [
-                {
-                    "sub_indication": "uncomplicated infections of the cervix, urethra, or rectum",
-                    "dose_mg": 2000,
-                    "frequency": 1,
-                    "duration_days": 1,
-                    "note": "🍼 Children >45 kg and Adolescents\n💉 ใช้เมื่อไม่สามารถใช้ ceftriaxone ได้; ให้ร่วมกับ gentamicin IM"
-                }
-            ],
-            "Rhinosinusitis": [
-                {
-                    "sub_indication": "Infants ≥6 months, Children, and Adolescents",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "max_mg_per_day": 500,
-                    "note": "📌 ใช้ในกรณีแพ้ยาอื่นหรือจำเป็น; macrolides ไม่แนะนำให้ใช้เป็น empiric therapy เนื่องจากอัตราดื้อยาสูง"
-                }
-            ],
-            "Chlamydia": [
-                {
-                    "sub_indication": "Urogenital/anogenital or oropharyngeal infection",
-                    "age_group": "Children <8 years weighing ≥45 kg or Children ≥8 years and Adolescents",
-                    "dose_mg": 1000,
-                    "frequency": 1,
-                    "duration_days": 1,
-                    "max_mg_per_day": 1000,
-                    "note": "💊 ให้เพียงครั้งเดียว 1,000 mg; พิจารณาร่วมกับยา gonorrhea ถ้ามีความเสี่ยง"
-                }
-            ],
-            "Pneumonia, congenital": [
-                {
-                    "sub_indication": "Infants",
-                    "dose_mg_per_kg_per_day": 20,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "max_mg_per_day": None,
-                    "note": "📌 ใช้ขนาด 20 mg/kg/day วันละครั้ง เป็นเวลา 3 วัน"
-                }
-            ],
-            "Diarrhea (Campylobacter infection)": [
-                {
-                    "sub_indication": "Immunocompetent patients",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "max_mg_per_day": 500,
-                    "note": "📌 โดยทั่วไปไม่แนะนำให้ใช้ในผู้ป่วยภูมิคุ้มกันปกติที่ไม่มีภาวะแทรกซ้อน"
-                },
-                {
-                    "sub_indication": "Patients with HIV",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "max_mg_per_day": 500,
-                    "note": "⚠️ ผู้ติดเชื้อ HIV ควรได้รับยาอย่างน้อย 5 วัน"
-                },
-                {
-                    "sub_indication": "Immunocompromised or complicated infection",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": [7,14],
-                    "max_mg_per_day": 500,
-                    "note": "📌 ระยะเวลาอาจขยายถึง 7–14 วันตามภาวะแทรกซ้อนและระดับภูมิคุ้มกัน"
-                }
-            ],
-            "Diarrhea (Shigellosis infection)": [
-                {
-                    "sub_indication": "Patients without HIV (5-day regimen)",
-                    "dose_by_day": {
-                        "Day 1": {
-                            "dose_mg_per_kg_per_day": 12,
-                            "max_mg_per_day": 500
-                        },
-                        "Day 2-5": {
-                            "dose_mg_per_kg_per_day": 5,
-                            "max_mg_per_day": 250
-                        }
-                    },
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "note": "เริ่มด้วย 12 mg/kg (max 500 mg) วันที่ 1 แล้วตามด้วย 5 mg/kg (max 250 mg) วันที่ 2–5"
-                },
-                {
-                    "sub_indication": "Patients without HIV (3-day regimen)",
-                    "dose_mg_per_kg_per_day": 10,
-                    "max_mg_per_day": 500,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "note": "📌 10 mg/kg/day once daily for 3 days (max 500 mg/day)"
-                },
-                {
-                    "sub_indication": "Patients with HIV",
-                    "dose_mg": 500,
-                    "max_mg_per_day": 500,
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "note": "ผู้ป่วย HIV ให้ 500 mg/day เป็นเวลา 5 วัน"
-                }
-            ],
-            "Diarrhea (Cholera infection)":[
-                {
-                    "sub_indication": "Alternative agent",
-                    "dose_mg": 1000,
-                    "frequency": 1,
-                    "duration_days": 1,
-                    "note": "📌 ให้ 1,000 mg เป็น single dose (off-label use สำหรับ cholera)"
-                }
-            ],
+            "Cholera": {
+                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 1, "max_mg_per_dose": 1000
+            },
             "Babesiosis": [
-                {
-                    "sub_indication": "Mild to moderate disease (oral step-up)",
-                    "dose_by_day": {
-                        "Day 1": {
-                            "dose_mg": 500,
-                            "max_mg_per_day": 500
-                        },
-                        "Day 2+": {
-                            "dose_mg": 250,
-                            "max_mg_per_day": 250
-                        }
-                    },
-                    "frequency": 1,
-                    "duration_days": [7,10],
-                    "note": "เริ่มด้วย 500 mg วันแรก ตามด้วย 250 mg/day ร่วมกับ atovaquone จนครบ 7–10 วัน"
-                },
-                {
-                    "sub_indication": "Severe disease (IV initial)",
-                    "dose_mg": 500,
-                    "max_mg_per_day": 500,
-                    "frequency": 1,
-                    "duration_days": 2,
-                    "note": "IV 500 mg/day + atovaquone อย่างน้อย 2 วัน จากนั้นเปลี่ยนเป็น oral"
-                },
-                {
-                    "sub_indication": "Severe disease (oral step-down)",
-                    "dose_mg": 250,
-                    "max_mg_per_day": 500,
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "note": "หลังจาก IV → เปลี่ยนเป็น oral 250–500 mg/day + atovaquone จนครบคอร์ส"
-                },
-                {
-                    "sub_indication": "Immunocompromised (extended therapy)",
-                    "dose_mg": 500,
-                    "max_mg_per_day": 1000,
-                    "frequency": 1,
-                    "duration_days": 42,
-                    "note": "ในผู้ป่วยภูมิคุ้มกันต่ำ อาจต้องให้ต่อเนื่อง ≥6 สัปดาห์ ร่วมกับ atovaquone"
-                }
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
             ],
             "Cat Scratch Disease": [
-                {
-                    "sub_indication": "Lymphadenitis (Infants, Children, Adolescents)",
-                    "dose_by_day": {
-                        "Day 1": {
-                            "dose_mg_per_kg": 10,
-                            "max_mg_per_day": 500
-                        },
-                        "Day 2-5": {
-                            "dose_mg_per_kg": 5,
-                            "max_mg_per_day": 250
-                        }
-                    },
-                    "frequency": 1,
-                    "duration_days": 5,
-                    "note": "📌 เริ่มด้วย 10 mg/kg (max 500 mg) วันที่ 1 แล้วตามด้วย 5 mg/kg (max 250 mg) วันที่ 2–5"
-                }
+                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
+                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
             ],
-            "Mycobacterium avium complex infection": [
-                {
-                    "sub_indication": "Primary prophylaxis (Infants and Children)",
-                    "dose_mg_per_kg_per_day": 20,
-                    "frequency": 1,
-                    "duration_days": 7,  # weekly
-                    "max_mg_per_day": 1200,
-                    "note": "📌 20 mg/kg once weekly (preferred) (max 1,200 mg/dose)"
-                },
-                {
-                    "sub_indication": "Primary prophylaxis (alternative, Infants and Children)",
-                    "dose_mg_per_kg_per_day": 5,
-                    "frequency": 1,
-                    "duration_days": 7,
-                    "max_mg_per_day": 250,
-                    "note": "📌 5 mg/kg/day once daily (alternative regimen) (max 250 mg/day)"
-                },
-                {
-                    "sub_indication": "Treatment (Infants and Children)",
-                    "dose_mg_per_kg_per_day": 12,
-                    "frequency": 1,
-                    "duration_days": 365,  # ≥12 months
-                    "max_mg_per_day": 500,
-                    "note": "📌 ใช้เป็นส่วนหนึ่งของ combination therapy ต่อเนื่อง ≥12 เดือน"
-                },
-                {
-                    "sub_indication": "Secondary prophylaxis (Infants and Children)",
-                    "dose_mg_per_kg_per_day": 5,
-                    "frequency": 1,
-                    "duration_days": 180,  # ≥6 months
-                    "max_mg_per_day": 250,
-                    "note": "📌 Long-term suppression (secondary prophylaxis) after completion of treatment ≥12 months"
-                },
-                {
-                    "sub_indication": "Primary prophylaxis (Adolescents)",
-                    "dose_mg_per_kg_per_day": 20,
-                    "frequency": 1,
-                    "duration_days": 7,
-                    "max_mg_per_day": 1200,
-                    "note": "📌 1,200 mg once weekly or 600 mg twice weekly for CD4 <50"
-                },
-                {
-                    "sub_indication": "Treatment and secondary prophylaxis (Adolescents)",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 365,
-                    "max_mg_per_day": 600,
-                    "note": "📌 500–600 mg daily as part of appropriate combination regimen ≥12 เดือน"
-                }
-            ],
-            "Nontuberculous mycobacteria (NTM) infection, pulmonary": [
-                {
-                    "sub_indication": "Patients with cystic fibrosis (Children)",
-                    "dose_mg_per_kg_per_day": [10, 12],
-                    "frequency": 1,
-                    "duration_days": 365,
-                    "max_mg_per_day": 500,
-                    "note": "📌 ให้ 10–12 mg/kg/day วันละครั้ง เป็นเวลา ≥12 เดือน หลัง culture conversion"
-                },
-                {
-                    "sub_indication": "Patients with cystic fibrosis (Adolescents)",
-                    "dose_mg": [250, 500],
-                    "frequency": 1,
-                    "duration_days": 365,
-                    "note": "📌 ให้ 250–500 mg/day วันละครั้ง ≥12 เดือน สำหรับ adolescent"
-                },
-                {
-                    "sub_indication": "Patients without cystic fibrosis",
-                    "dose_mg_per_kg_per_day": 10,
-                    "frequency": 1,
-                    "duration_days": 365,
-                    "max_mg_per_day": 500,
-                    "note": "📌 Infants ≥6 เดือน, Children, Adolescents: 10 mg/kg/day (max 500 mg/day) ≥12 เดือน"
-                },
-                {
-                    "sub_indication": "Solid organ transplant recipients",
-                    "dose_mg_per_kg_per_day": [10, 12],
-                    "frequency": 1,
-                    "duration_days": 365,
-                    "max_mg_per_day": 500,
-                    "note": "📌 Infants, Children, Adolescents (oral/IV): 10–12 mg/kg/day once daily ≥12 เดือน"
-                }
-            ],
-            "Cystic Fibrosis (maintenance)": [
-                {
-                    "sub_indication": "Weight-directed dosing (≥3 months)",
-                    "dose_mg_per_kg_per_dose": 10,
-                    "frequency_per_week": 3,
-                    "max_mg_per_dose": 500,
-                    "note": "📌 10 mg/kg/dose สัปดาห์ละ 3 ครั้ง (เช่น Mon/Wed/Fri), max 500 mg/dose"
-                },
-                {
-                    "sub_indication": "Fixed dosing (≥6 years, weight 18–<36 kg)",
-                    "dose_mg": 250,
-                    "frequency_per_week": 3,
-                    "note": "📌 250 mg สัปดาห์ละ 3 ครั้ง (เช่น Mon/Wed/Fri)"
-                },
-                {
-                    "sub_indication": "Fixed dosing (≥6 years, weight ≥36 kg)",
-                    "dose_mg": 500,
-                    "frequency_per_week": 3,
-                    "note": "📌 500 mg สัปดาห์ละ 3 ครั้ง (เช่น Mon/Wed/Fri)"
-                }
-            ],
-            "Asthma, poorly controlled": [
-                {
-                    "sub_indication": "Weight <20 kg",
-                    "dose_mg": 125,
-                    "frequency_per_week": 3,
-                    "note": "📌 125 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนักน้อยกว่า 20 kg)"
-                },
-                {
-                    "sub_indication": "Weight 20–30 kg",
-                    "dose_mg": 250,
-                    "frequency_per_week": 3,
-                    "note": "📌 250 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนัก 20–30 kg)"
-                },
-                {
-                    "sub_indication": "Weight >30–40 kg",
-                    "dose_mg": 375,
-                    "frequency_per_week": 3,
-                    "note": "📌 375 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนักมากกว่า 30–40 kg)"
-                },
-                {
-                    "sub_indication": "Weight >40 kg",
-                    "dose_mg": 500,
-                    "frequency_per_week": 3,
-                    "note": "📌 500 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนักมากกว่า 40 kg)"
-                }
-            ],
+            "MAC (Mycobacterium avium, prophylaxis)": {
+                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 7, "max_mg_per_dose": 1200
+            },
+            "NTM Pulmonary Infection": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 14, "max_mg_per_dose": 500
+            },
+            "Cystic Fibrosis (maintenance)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
+            },
+            "Asthma (Adjunct)": {
+                "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
+            },
             "Other": "INDICATION_OTHERS"
         },
-        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)" ]
+        "common_indications": ["Pneumonia (Atypical)", "Strep Pharyngitis","Rhinosinusitis","Chlamydia" ]
     }
+}
+}
 }
 
 logging.basicConfig(
@@ -1226,19 +830,8 @@ def send_drug_selection(event):
     return
 
 def send_indication_carousel(event, drug_name, show_all=False):
-    # ✅ แก้ไขให้หา drug_name แบบ case-insensitive
-    matched_drug = next((k for k in DRUG_DATABASE if k.lower() == drug_name.lower()), None)
-    drug_info = DRUG_DATABASE.get(matched_drug)
-    
-    logging.info(f"🧪 ตรวจสอบ drug_name: {drug_name}")
-    logging.info(f"🧪 matched_drug: {matched_drug}")
-    logging.info(f"🧪 ใน DRUG_DATABASE: {matched_drug in DRUG_DATABASE if matched_drug else 'ไม่พบ'}")
-    logging.info(f"🧪 drug_info: {drug_info}")
-    logging.info(f"📦 กำลังหา drug: {drug_name}")
-    logging.info(f"🔎 drug_info found: {drug_info is not None}")
-    
+    drug_info = DRUG_DATABASE.get(drug_name)
     if not drug_info or "indications" not in drug_info:
-        logging.info("⛔ ไม่พบข้อมูล indications")
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
@@ -1275,30 +868,12 @@ def send_indication_carousel(event, drug_name, show_all=False):
                     or first_entry.get("dose_mg_per_kg_per_dose")
                     or first_entry.get("dose_mg")
                 )
-
                 if "dose_mg_per_kg_per_day" in first_entry:
                     unit = "mg/kg/day"
                 elif "dose_mg_per_kg_per_dose" in first_entry:
                     unit = "mg/kg/dose"
                 elif "dose_mg" in first_entry:
                     unit = "mg/day"
-
-                # ✅ ลองค้น dose จาก dose_by_day
-                if dose is None and isinstance(first_entry.get("dose_by_day"), dict):
-                    for day_data in first_entry["dose_by_day"].values():
-                        dose = (
-                            day_data.get("dose_mg_per_kg_per_day")
-                            or day_data.get("dose_mg_per_kg")
-                            or day_data.get("dose_mg")
-                        )
-                        if "dose_mg_per_kg_per_day" in day_data:
-                            unit = "mg/kg/day"
-                        elif "dose_mg_per_kg" in day_data:
-                            unit = "mg/kg"
-                        elif "dose_mg" in day_data:
-                            unit = "mg"
-                        if dose:
-                            break
 
             elif isinstance(indication_info, dict):
                 for sub in indication_info.values():
@@ -1319,12 +894,12 @@ def send_indication_carousel(event, drug_name, show_all=False):
 
             if dose is not None and unit:
                 text = f"{dose} {unit}"
+
         else:
             text = "ดูข้อบ่งใช้อื่นทั้งหมด"
-            action_text = f"MoreIndication: {matched_drug or drug_name}"
+            action_text = f"MoreIndication: {drug_name}"
 
         actions = [MessageAction(label=label, text=action_text)]
-        logging.info(f"📄 Adding column: {title} → {text}")
         columns.append(CarouselColumn(title=title, text=text, actions=actions))
 
     carousel_chunks = [columns[i:i + 5] for i in range(0, len(columns), 5)]
@@ -1342,7 +917,6 @@ def send_indication_carousel(event, drug_name, show_all=False):
             logging.info(f"⚠️ ผิดพลาดตอนสร้าง TemplateMessage: {e}")
 
     logging.info(f"📤 ส่ง carousel ทั้งหมด: {len(messages)} ชุด")
-    logging.info(f"📋 จำนวน indication ที่จะแสดง: {len(names_to_show)}")
     try:
         messaging_api.reply_message(
             ReplyMessageRequest(
@@ -1354,162 +928,19 @@ def send_indication_carousel(event, drug_name, show_all=False):
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
 
 
-
-def calculate_warfarin(inr, twd, bleeding, supplement=None):
+def calculate_warfarin(inr, twd, bleeding):
     if bleeding == "yes":
-        return "\U0001f6a8 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
-
-    warning = ""
-    if supplement:
-        herb_map = {
-            "กระเทียม": "garlic", "ใบแปะก๊วย": "ginkgo", "โสม": "ginseng",
-            "ขมิ้น": "turmeric", "น้ำมันปลา": "fish oil", "dong quai": "dong quai", "cranberry": "cranberry",
-            "ตังกุย": "dong quai", "โกจิ": "goji berry", "คาร์โมไมล์": "chamomile", "ขิง": "ginger", "ชะเอมเทศ": "licorice",
-            "ชาเขียว": "green tea", "นมถั่วเหลือง": "soy milk", "คลอโรฟิลล์": "chlorophyll",
-            "วิตามินเค": "vitamin K", "โคเอนไซม์ Q10": "Coenzyme Q10", "St.John’s Wort": "St.John’s Wort"
-        }
-        matched = [name for name in herb_map if name in supplement]
-        if matched:
-            herbs = ", ".join(matched)
-            warning = f"\n⚠️ พบว่าสมุนไพร/อาหารเสริมที่อาจมีผลต่อ INR ได้แก่: {herbs}\nโปรดพิจารณาความเสี่ยงต่อการเปลี่ยนแปลง INR อย่างใกล้ชิด"
-        else:
-            warning = "\n⚠️ มีการใช้อาหารเสริมหรือสมุนไพร → พิจารณาความเสี่ยงต่อการเปลี่ยนแปลง INR"
-
-    followup_text = get_followup_text(inr)
-
+        return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1"
     if inr < 1.5:
-        result = f"🔹 INR < 1.5 → เพิ่มขนาดยา 10–20%\nขนาดยาใหม่: {twd * 1.1:.1f} – {twd * 1.2:.1f} mg/สัปดาห์"
+        return f"🔹 INR < 1.5 → เพิ่มขนาดยา 10–20%\nขนาดยาใหม่: {twd * 1.1:.1f} – {twd * 1.2:.1f} mg/สัปดาห์"
     elif 1.5 <= inr <= 1.9:
-        result = f"🔹 INR 1.5–1.9 → เพิ่มขนาดยา 5–10%\nขนาดยาใหม่: {twd * 1.05:.1f} – {twd * 1.10:.1f} mg/สัปดาห์"
+        return f"🔹 INR 1.5–1.9 → เพิ่มขนาดยา 5–10%\nขนาดยาใหม่: {twd * 1.05:.1f} – {twd * 1.10:.1f} mg/สัปดาห์"
     elif 2.0 <= inr <= 3.0:
-        result = "✅ INR 2.0–3.0 → คงขนาดยาเดิม"
-    elif 3.1 <= inr <= 3.9:
-        result = f"🔹 INR 3.1–3.9 → ลดขนาดยา 5–10%\nขนาดยาใหม่: {twd * 0.9:.1f} – {twd * 0.95:.1f} mg/สัปดาห์"
+        return "✅ INR 2.0–3.0 → คงขนาดยาเดิม"
     elif 4.0 <= inr <= 4.9:
-        result = f"⚠️ INR 4.0–4.9 → หยุดยา 1 วัน และลดขนาดยา 10%\nขนาดยาใหม่: {twd * 0.9:.1f} mg/สัปดาห์"
-    elif 5.0 <= inr <= 8.9:
-        result = "⚠️ INR 5.0–8.9 → หยุดยา 1–2 วัน และพิจารณาให้ Vitamin K1 1 mg"
+        return f"⚠️ INR 4.0–4.9 → หยุดยา 1 วัน และลดขนาดยา 10%\nขนาดยาใหม่: {twd * 0.9:.1f} mg/สัปดาห์"
     else:
-        result = "🚨 INR ≥ 9.0 → หยุดยา และพิจารณาให้ Vitamin K1 5–10 mg"
-
-    return f"{result}{warning}\n\n{followup_text}"
-
-def send_supplement_flex(reply_token):
-    flex_content = {
-        "type": "bubble",
-        "size": "mega",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {"type": "text", "text": "🌿 สมุนไพร/อาหารเสริม", "weight": "bold", "size": "lg"}
-            ]
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
-            "contents": [
-                {"type": "text", "text": "ผู้ป่วยใช้สิ่งใดบ้าง?", "wrap": True, "size": "md"},
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "spacing": "sm",
-                    "contents": [
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#84C1FF",
-                         "action": {"type": "message", "label": "ไม่ได้ใช้", "text": "ไม่ได้ใช้"}},
-                        *[
-                            {"type": "button", "style": "primary", "height": "sm", "color": "#AEC6CF",
-                             "action": {"type": "message", "label": herb, "text": herb}}
-                            for herb in ["กระเทียม", "ใบแปะก๊วย", "โสม", "ขมิ้น", "น้ำมันปลา", "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"]
-                        ]
-                    ]
-                }
-            ]
-        },
-        "styles": {
-            "header": {"backgroundColor": "#D0E6FF"},
-            "body": {"backgroundColor": "#FFFFFF"}
-        }
-    }
-
-    flex_container = FlexContainer.from_dict(flex_content)
-
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=reply_token,
-            messages=[FlexMessage(alt_text="เลือกสมุนไพร/อาหารเสริม", contents=flex_container)]
-        )
-    )
-def send_interaction_flex(reply_token):
-    interaction_drugs = [
-        "Amiodarone", "Gemfibrozil", "Azole antifungal", "Trimethoprim/Sulfamethoxazole",
-        "Macrolides(ex.Erythromycin)", "NSAIDs", "Quinolones(ex.Ciprofloxacin)"
-    ]
-    flex_content = {
-        "type": "bubble",
-        "size": "mega",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [{"type": "text", "text": "💊 ยาที่อาจมีปฏิกิริยารุนแรงกับ Warfarin", "weight": "bold", "size": "lg"}]
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
-            "contents": [
-                {"type": "text", "text": "ผู้ป่วยได้รับยาใดบ้าง?", "wrap": True, "size": "md"},
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "spacing": "sm",
-                    "contents": [
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#84C1FF",
-                         "action": {"type": "message", "label": "ไม่ได้ใช้", "text": "ไม่ได้ใช้"}}
-                    ] + [
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#FFD700",
-                         "action": {"type": "message", "label": drug, "text": drug}}
-                        for drug in interaction_drugs
-                    ] + [
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#FFB6C1",
-                         "action": {"type": "message", "label": "ใช้หลายชนิด", "text": "ใช้หลายชนิด"}},
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#D8BFD8",
-                         "action": {"type": "message", "label": "ยาชนิดอื่นๆ", "text": "ยาชนิดอื่นๆ"}}
-                    ]
-                }
-            ]
-        },
-        "styles": {
-            "header": {"backgroundColor": "#F9E79F"},
-            "body": {"backgroundColor": "#FFFFFF"}
-        }
-    }
-    flex_container = FlexContainer.from_dict(flex_content)
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=reply_token,
-            messages=[FlexMessage(alt_text="เลือกยาที่มีปฏิกิริยา", contents=flex_container)]
-        )
-    )
-
-def get_inr_followup(inr):
-    if inr < 1.5: return 7
-    elif inr <= 1.9: return 14
-    elif inr <= 3.0: return 56
-    elif inr <= 3.9: return 14
-    elif inr <= 6.0: return 7
-    elif inr <= 8.9: return 5
-    elif inr > 9.0: return 2
-    return None
-
-def get_followup_text(inr):
-    days = get_inr_followup(inr)
-    if days:
-        date = (datetime.now() + timedelta(days=days)).strftime("%-d %B %Y")
-        return f"📅  คำแนะนำ: ควรตรวจ INR ภายใน {days} วัน\n📌 วันที่ควรตรวจ: {date}"
-    else:
-        return ""
+        return "🚨 INR ≥ 5.0 → หยุดยา และพิจารณาให้ Vitamin K"
 
 def calculate_dose(drug, indication, weight):
     drug_info = DRUG_DATABASE.get(drug)
@@ -1942,7 +1373,6 @@ def get_indication_entry(drug, indication_name, entry_index=0):
 def handle_message(event: MessageEvent):
     if not isinstance(event.message, TextMessageContent):
         return
-
     user_id = event.source.user_id
     text = event.message.text.strip()
     text_lower = text.lower()
@@ -1965,13 +1395,12 @@ def handle_message(event: MessageEvent):
         user_ages.pop(user_id, None)
         send_drug_selection(event)
         return
-
-    # 🌟 Warfarin Flow
+    
+    # ดำเนิน Warfarin flow
     if user_id in user_sessions:
         session = user_sessions[user_id]
         if session.get("flow") == "warfarin":
             step = session.get("step")
-
             if step == "ask_inr":
                 try:
                     session["inr"] = float(text)
@@ -1986,7 +1415,6 @@ def handle_message(event: MessageEvent):
                     )
                 )
                 return
-
             elif step == "ask_twd":
                 try:
                     session["twd"] = float(text)
@@ -2001,108 +1429,67 @@ def handle_message(event: MessageEvent):
                     )
                 )
                 return
-
             elif step == "ask_bleeding":
-                if text.lower().strip(".") not in ["yes", "no"]:
+                if text.lower() not in ["yes", "no"]:
                     reply = "❌ ตอบว่า yes หรือ no เท่านั้น"
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-                    )
-                    return
-                session["bleeding"] = text.lower()
-                if text.lower().strip(".") == "yes":
-                    # ✅ มี bleeding → แสดงผลทันทีและจบ flow
-                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"])
-                    user_sessions.pop(user_id, None)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=result)])
-                    )
                 else:
-                    # ถ้าไม่มี bleeding → ไปถามเรื่องสมุนไพรต่อ
-                    session["step"] = "choose_supplement"
-                    send_supplement_flex(event.reply_token)
-                return
-
-            elif step == "choose_supplement":
-                if text == "ไม่ได้ใช้":
-                    session["supplement"] = ""
-                else:
-                    session["supplement"] = text
-                session["step"] = "choose_interaction"
-                send_interaction_flex(event.reply_token)
-                return
-
-            elif step == "choose_interaction":
-                if text == "ไม่ได้ใช้":
-                    interaction_note = ""
-                    supplement = session.get("supplement", "")
-                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
-                    final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
-                    user_sessions.pop(user_id, None)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=final_result)])
-                    )
-                    return
-
-                elif text in ["ใช้หลายชนิด", "ยาชนิดอื่นๆ"]:
-                    session["step"] = "ask_interaction"
-                    reply = "💊 โปรดพิมพ์ชื่อยาที่ใช้อยู่ เช่น Amiodarone, NSAIDs"
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
-                    )
-                    return
-
-                else:
-                    interaction_note = f"\n⚠️ พบการใช้ยา: {text} ซึ่งอาจมีปฏิกิริยากับ Warfarin"
-                    supplement = session.get("supplement", "")
-                    result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
-                    final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
-                    user_sessions.pop(user_id, None)
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=final_result)])
-                    )
-                    return
-
-            elif step == "ask_interaction":
-                interaction_note = f"\n⚠️ พบการใช้ยา: {text.strip()} ซึ่งอาจมีปฏิกิริยากับ Warfarin"
-                supplement = session.get("supplement", "")
-                result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
-                final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
-                user_sessions.pop(user_id, None)
+                    result = calculate_warfarin(session["inr"], session["twd"], text.lower())
+                    user_sessions.pop(user_id, None)  # จบ session
+                    reply = result
                 messaging_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=final_result)])
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply)]
+                    )
                 )
                 return
 
+    if text == "เลือกยาใหม่":
+        user_drug_selection.pop(user_id, None)
+        user_ages.pop(user_id, None)
+        send_drug_selection(event)
+        return
 
-
+    if text.startswith("MoreIndication:"):
+        drug_name = text.replace("MoreIndication:", "").strip()
+        send_indication_carousel(event, drug_name, show_all=True)
+        return
 
     if text.startswith("เลือกยา:"):
         drug_name = text.replace("เลือกยา:", "").strip()
         user_drug_selection[user_id] = {"drug": drug_name}
 
-        # ✅ กรณี azithromycin ใช้ special_indication_carousel
-        if drug_name == "Azithromycin":
+        if drug_name in DRUG_DATABASE:
             send_indication_carousel(event, drug_name)
-
-        # ✅ ยาพิเศษอื่น ๆ ที่อยู่ใน SPECIAL_DRUGS
-        elif drug_name in SPECIAL_DRUGS:
-            send_special_indication_carousel(event, drug_name)
-
-        # ✅ ยาทั่วไปที่อยู่ใน DRUG_DATABASE
-        elif drug_name in DRUG_DATABASE:
-            send_indication_carousel(event, drug_name)
-
-        # ❌ ไม่พบข้อมูลยาเลย
         else:
+            send_special_indication_carousel(event, drug_name)
+        return
+
+    if text.startswith("Indication:") and user_id in user_drug_selection:
+        indication = text.replace("Indication:", "").strip()
+        user_drug_selection[user_id]["indication"] = indication
+        drug = user_drug_selection[user_id].get("drug")
+
+        if user_id in user_ages:
+            user_ages.pop(user_id)
+
+        if drug in SPECIAL_DRUGS:
+            example_age = round(random.uniform(1, 18), 1)
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"ไม่พบข้อมูลสำหรับยา {drug_name}")]
+                    messages=[TextMessage(text=f"📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
+                )
+            )
+        else:
+            example_weight = round(random.uniform(5.0, 20.0), 1)
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
                 )
             )
         return
-
     
     if user_id in user_drug_selection:
 
@@ -2167,13 +1554,28 @@ def handle_message(event: MessageEvent):
                             messages=[TextMessage(text="❌ กรุณาพิมพ์น้ำหนักให้ถูกต้อง เช่น 20 กก")]
                         )
                     )
-                    return
 
                 entry = user_drug_selection[user_id]
                 drug = entry.get("drug")
 
-                # ✅ ตรวจสอบว่าเป็นยาทั่วไปก่อน (DRUG_DATABASE มาก่อน)
-                if drug in DRUG_DATABASE:
+                if drug in SPECIAL_DRUGS:
+                    age = user_ages.get(user_id)
+                    if age is None:
+                        # แจ้งให้ใส่อายุก่อน แล้วค่อยพิมพ์น้ำหนักอีกครั้ง
+                        messaging_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี\nจากนั้นพิมพ์น้ำหนักอีกครั้ง")]
+                            )
+                        )
+                        return  # หยุดการทำงานที่นี่เลย
+                    else:
+                        try:
+                            reply = calculate_special_drug(user_id, drug, weight, age)
+                        except Exception as e:
+                            logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
+                            reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+                else:
                     if "indication" not in entry:
                         reply = "❗️ กรุณาเลือกข้อบ่งใช้ก่อน เช่น 'Indication: Fever'"
                     else:
@@ -2184,29 +1586,6 @@ def handle_message(event: MessageEvent):
                             logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
                             reply = "เกิดข้อผิดพลาดในการคำนวณยา"
 
-                # ✅ เฉพาะกรณีที่อยู่ใน SPECIAL_DRUGS (แต่ไม่อยู่ใน DRUG_DATABASE)
-                elif drug in SPECIAL_DRUGS:
-                    age = user_ages.get(user_id)
-                    if age is None:
-                        messaging_api.reply_message(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี\nจากนั้นพิมพ์น้ำหนักอีกครั้ง")]
-                            )
-                        )
-                        return
-                    else:
-                        try:
-                            reply = calculate_special_drug(user_id, drug, weight, age)
-                        except Exception as e:
-                            logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
-                            reply = "เกิดข้อผิดพลาดในการคำนวณยา"
-
-                # ❌ ยาไม่อยู่ในฐานข้อมูลเลย
-                else:
-                    reply = f"⛔ ไม่พบข้อมูลของยา {drug}"
-
-                # ✅ ส่งผลลัพธ์การคำนวณ
                 messaging_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
@@ -2215,15 +1594,26 @@ def handle_message(event: MessageEvent):
                 )
                 return
 
-        # ❗️ ไม่พบคำว่า "อายุ" หรือ "น้ำหนัก"
+        else:
+            # ถ้าไม่มีคำว่า "อายุ" หรือ "น้ำหนัก" ให้แจ้งเตือน
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
+                )
+            )
+            return
+
+    if user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
+                messages=[
+                    TextMessage(text="❓ พิมพ์ 'คำนวณยา warfarin' หรือ 'คำนวณยาเด็ก' เพื่อเริ่มต้นใช้งาน")
+                ]
             )
         )
         return
-
         
 
 if __name__ == "__main__":
