@@ -385,6 +385,7 @@ DRUG_DATABASE = {
             "duration_days": 10
         }
         ]
+    }
     },
     "Cefixime": {
     "concentration_mg_per_ml": 100 / 5,
@@ -941,7 +942,6 @@ DRUG_DATABASE = {
             "Other": "INDICATION_OTHERS"
         },
         "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)","Other" ]
-    }
     }
 }
 
