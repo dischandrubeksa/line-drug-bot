@@ -997,6 +997,70 @@ SPECIAL_DRUGS = {
     },
     "common_indications": ["Fever"]
     },
+    "Ibuprofen": {
+    "concentration_mg_per_ml": 100 / 5,
+    "bottle_size_ml": 60,
+    "indications": [
+        {
+            "name": "Analgesic",
+            "age_based": False,
+            "weight_based": True,
+            "dose_mg_per_kg_per_day": [4, 10],
+            "frequency": [3, 4],  # every 6–8h
+            "max_mg_per_dose": 600,
+            "max_mg_per_day": 2400,
+            "note": "⚠️ ไม่แนะนำใช้ >10 วัน เว้นแต่แพทย์สั่ง"
+        },
+        {
+            "name": "Fever",
+            "age_based": False,
+            "weight_based": True,
+            "dose_mg_per_kg_per_day": [5, 10],
+            "frequency": [3, 4],  # every 6–8h
+            "max_mg_per_dose": 600,
+            "max_mg_per_day": 2400,
+            "note": "⚠️ ไม่แนะนำใช้ >3 วัน เว้นแต่แพทย์สั่ง"
+        },
+        {
+            "name": "Juvenile idiopathic arthritis (JIA)",
+            "age_based": False,
+            "weight_based": True,
+            "dose_mg_per_kg_per_day": [30, 50],
+            "frequency": [3, 4],
+            "max_mg_per_dose": 800,
+            "max_mg_per_day": 2400,
+            "note": "เริ่มต้นที่ 30 mg/kg/day และปรับเพิ่มหากจำเป็น"
+        },
+        {
+            "name": "Analgesic (age-based)",
+            "age_based": True,
+            "weight_based": False,
+            "age_rules": [
+                {
+                    "min_age": 12,
+                    "dose_mg_per_dose": [200, 400],
+                    "frequency": [4, 6],
+                    "max_mg_per_day": 2400,
+                    "note": "Immediate release ทุก 4–6 ชม"
+                }
+            ]
+        },
+        {
+            "name": "Fever (age-based)",
+            "age_based": True,
+            "weight_based": False,
+            "age_rules": [
+                {
+                    "min_age": 12,
+                    "dose_mg_per_dose": [200, 400],
+                    "frequency": [4, 6],
+                    "max_mg_per_day": 2400,
+                    "note": "Immediate release ทุก 4–6 ชม"
+                }
+            ]
+        }
+    ]
+    },
     "Cetirizine": {
     "concentration_mg_per_ml": 5 / 5,
     "bottle_size_ml": 60,
@@ -1210,10 +1274,16 @@ def send_drug_selection(event):
     ])
     carousel2 = CarouselTemplate(columns=[
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
-        CarouselColumn(title='Paracetamol', text='10–15 mg/kg/dose', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
-        CarouselColumn(title='Cetirizine', text='0.25 mg/kg/day', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
+        CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
+        CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
+        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
+        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')]),
+    ])
+    carousel3 = CarouselTemplate(columns=[
+        CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
-        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')])
+        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')]),
+        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
     ])
     messaging_api.reply_message(
     ReplyMessageRequest(
