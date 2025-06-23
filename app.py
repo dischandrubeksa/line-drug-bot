@@ -832,8 +832,19 @@ def send_drug_selection(event):
     return
 
 def send_indication_carousel(event, drug_name, show_all=False):
-    drug_info = DRUG_DATABASE.get(drug_name)
+    # ✅ แก้ไขให้หา drug_name แบบ case-insensitive
+    matched_drug = next((k for k in DRUG_DATABASE if k.lower() == drug_name.lower()), None)
+    drug_info = DRUG_DATABASE.get(matched_drug)
+    
+    logging.info(f"🧪 ตรวจสอบ drug_name: {drug_name}")
+    logging.info(f"🧪 matched_drug: {matched_drug}")
+    logging.info(f"🧪 ใน DRUG_DATABASE: {matched_drug in DRUG_DATABASE if matched_drug else 'ไม่พบ'}")
+    logging.info(f"🧪 drug_info: {drug_info}")
+    logging.info(f"📦 กำลังหา drug: {drug_name}")
+    logging.info(f"🔎 drug_info found: {drug_info is not None}")
+    
     if not drug_info or "indications" not in drug_info:
+        logging.info("⛔ ไม่พบข้อมูล indications")
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
@@ -870,12 +881,30 @@ def send_indication_carousel(event, drug_name, show_all=False):
                     or first_entry.get("dose_mg_per_kg_per_dose")
                     or first_entry.get("dose_mg")
                 )
+
                 if "dose_mg_per_kg_per_day" in first_entry:
                     unit = "mg/kg/day"
                 elif "dose_mg_per_kg_per_dose" in first_entry:
                     unit = "mg/kg/dose"
                 elif "dose_mg" in first_entry:
                     unit = "mg/day"
+
+                # ✅ ลองค้น dose จาก dose_by_day
+                if dose is None and isinstance(first_entry.get("dose_by_day"), dict):
+                    for day_data in first_entry["dose_by_day"].values():
+                        dose = (
+                            day_data.get("dose_mg_per_kg_per_day")
+                            or day_data.get("dose_mg_per_kg")
+                            or day_data.get("dose_mg")
+                        )
+                        if "dose_mg_per_kg_per_day" in day_data:
+                            unit = "mg/kg/day"
+                        elif "dose_mg_per_kg" in day_data:
+                            unit = "mg/kg"
+                        elif "dose_mg" in day_data:
+                            unit = "mg"
+                        if dose:
+                            break
 
             elif isinstance(indication_info, dict):
                 for sub in indication_info.values():
@@ -896,12 +925,12 @@ def send_indication_carousel(event, drug_name, show_all=False):
 
             if dose is not None and unit:
                 text = f"{dose} {unit}"
-
         else:
             text = "ดูข้อบ่งใช้อื่นทั้งหมด"
-            action_text = f"MoreIndication: {drug_name}"
+            action_text = f"MoreIndication: {matched_drug or drug_name}"
 
         actions = [MessageAction(label=label, text=action_text)]
+        logging.info(f"📄 Adding column: {title} → {text}")
         columns.append(CarouselColumn(title=title, text=text, actions=actions))
 
     carousel_chunks = [columns[i:i + 5] for i in range(0, len(columns), 5)]
@@ -919,6 +948,7 @@ def send_indication_carousel(event, drug_name, show_all=False):
             logging.info(f"⚠️ ผิดพลาดตอนสร้าง TemplateMessage: {e}")
 
     logging.info(f"📤 ส่ง carousel ทั้งหมด: {len(messages)} ชุด")
+    logging.info(f"📋 จำนวน indication ที่จะแสดง: {len(names_to_show)}")
     try:
         messaging_api.reply_message(
             ReplyMessageRequest(
@@ -928,6 +958,7 @@ def send_indication_carousel(event, drug_name, show_all=False):
         )
     except Exception as e:
         logging.info(f"❌ ผิดพลาดตอนส่งข้อความ: {e}")
+
 
 
 def calculate_warfarin(inr, twd, bleeding):
