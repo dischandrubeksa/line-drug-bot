@@ -1227,7 +1227,13 @@ def send_drug_selection(event):
 
 def send_indication_carousel(event, drug_name, show_all=False):
     drug_info = DRUG_DATABASE.get(drug_name)
+    logging.info(f"📦 กำลังหา drug: {drug_name}")
+    logging.info(f"🔎 drug_info found: {drug_info is not None}")
     if not drug_info or "indications" not in drug_info:
+        if not drug_info:
+            logging.info("⛔ drug_info = None")
+        elif "indications" not in drug_info:
+            logging.info("⛔ ไม่มี key indications ใน drug_info")
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
