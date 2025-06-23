@@ -385,18 +385,87 @@ DRUG_DATABASE = {
             "duration_days": 10
         }
         ]
+    }
     },
     "Cefixime": {
-        "concentration_mg_per_ml": 100 / 5,
-        "bottle_size_ml": 30,
-        "indications": {
-            "Febrile Neutropenia": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
-            "Otitis Media": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
-            "Rhinosinusitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 7, "max_mg_per_day": 400},
-            "Strep Pharyngitis": {"dose_mg_per_kg_per_day": 8, "frequency": 1, "duration_days": 10, "max_mg_per_day": 400},
-            "Typhoid Fever": {"dose_mg_per_kg_per_day": 17.5, "frequency": 2, "duration_days": 10, "max_mg_per_day": None},
-            "UTI": {"dose_mg_per_kg_per_day": 8, "frequency": 2, "duration_days": 7, "max_mg_per_day": 400}
+    "concentration_mg_per_ml": 100 / 5,
+    "bottle_size_ml": 50,
+    "indications": {
+        "Febrile neutropenia": [
+        {
+            "sub_indication": "Low-risk (step-down after IV)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "note": "ใช้แบบ once daily หรือแบ่งวันละ 2 ครั้งหลัง IV antibiotic 48–72 ชม."
         }
+        ],
+        "Gonococcal infection": [
+        {
+            "sub_indication": "Uncomplicated cervix/urethra/rectum (≥45 kg)",
+            "fixed_dose_mg": 800,
+            "frequency": 1,
+            "note": "เฉพาะเมื่อ ceftriaxone ใช้ไม่ได้; ให้ครั้งเดียว 800 mg"
+        }
+        ],
+        "Irinotecan-associated diarrhea (prophylaxis)": [
+        {
+            "sub_indication": "Prophylaxis before irinotecan",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": 1,
+            "max_mg_per_dose": 400,
+            "duration_days_range": [5, 10],
+            "note": "เริ่มก่อน irinotecan 2 วันและให้ต่อเนื่องระหว่างการรักษา"
+        }
+        ],
+        "Otitis media": [
+        {
+            "sub_indication": "Alternative agent (AOM)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days_range": [5, 10],
+            "max_mg_per_day": 400,
+            "note": "ใช้ในกรณีไม่ตอบสนองต่อ first-line หรือร่วมกับ clindamycin"
+        }
+        ],
+        "Rhinosinusitis": [
+        {
+            "sub_indication": "Acute bacterial (alt agent)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days_range": [5, 10],
+            "max_mg_per_day": 400,
+            "note": "ไม่ใช่ first-line; ใช้ร่วมกับยาอื่นหลังล้มเหลวจากการรักษาเบื้องต้น"
+        }
+        ],
+        "Pharyngitis/Tonsillitis": [
+        {
+            "sub_indication": "Group A Strep (penicillin allergy)",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days": 10,
+            "max_mg_per_day": 400,
+            "note": "ใช้กรณีแพ้ penicillin; narrow-spectrum cephalosporins เป็นทางเลือกที่ดีกว่า"
+        }
+        ],
+        "Typhoid fever": [
+        {
+            "sub_indication": "Salmonella typhi",
+            "dose_mg_per_kg_per_day": [15, 20],
+            "frequency": 2,
+            "duration_days_range": [7, 14],
+            "note": "ข้อมูลจำกัด; การตอบสนองแตกต่างกันตามพื้นที่และเชื้อ"
+        }
+        ],
+        "Urinary tract infection": [
+        {
+            "sub_indication": "Uncomplicated or complicated UTI",
+            "dose_mg_per_kg_per_day": 8,
+            "frequency": [1, 2],
+            "duration_days_range": [5, 10],
+            "note": "สำหรับ cystitis ใช้ 5 วัน, pyelonephritis ใช้ 7–10 วัน"
+        }
+        ]
+    }
     },
     "Augmentin": {
     "concentration_mg_per_ml": 400 / 5,  # ตัวอย่าง: 400 mg amoxicillin + 57 mg clavulanate per 5 mL
@@ -485,70 +554,395 @@ DRUG_DATABASE = {
             "note": "📝 ปรับตามความรุนแรง อายุ และ clinical response"
         }
         ]
+    }
     },
     "Azithromycin": {
         "concentration_mg_per_ml": 200 / 5,
         "bottle_size_ml": 15,
         "indications": {
             "Pertussis": [
-                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
-                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+                {
+                    "sub_indication": "Infants <6 months",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "max_mg_per_day": None,
+                    "note": "ใช้วันละครั้ง เป็นเวลา 5 วัน"
+                },
+                {
+                    "sub_indication": "Infants ≥6 months, Children, Adolescents",
+                    "dose_by_day": {
+                        "Day 1": {
+                            "dose_mg_per_kg": 10,
+                            "max_mg_per_day": 500
+                        },
+                        "Day 2-5": {
+                            "dose_mg_per_kg": 5,
+                            "max_mg_per_day": 250
+                        }
+                    },
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "note": "เริ่มด้วย 10 mg/kg (max 500 mg) วันที่ 1 แล้วตามด้วย 5 mg/kg (max 250 mg) วันที่ 2-5"
+                }
             ],
-            "Pneumonia (Atypical)": [
-                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
-                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            "Pneumonia (community acquired)": [
+                {
+                    "sub_indication": "5-day regimen (mild infection / step-down therapy)",
+                    "dose_mg_per_kg_per_day": [10, 5],
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "max_mg_per_day": [500, 250],
+                    "note": "Day 1: 10 mg/kg (max 500 mg), Day 2–5: 5 mg/kg (max 250 mg)"
+                },
+                {
+                    "sub_indication": "3-day regimen",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 3,
+                    "max_mg_per_day": 500,
+                    "note": "ใช้ในผู้ป่วยที่ไม่รุนแรง หรือกรณีมีข้อจำกัด; severe case อาจใช้ 5–7 วัน"
+                }
             ],
-            "Strep Pharyngitis": {
-                "dose_mg_per_kg_per_day": 12, "frequency": 1, "duration_days": 5, "max_mg_per_dose": 500
-            },
-            "Typhoid Fever": {
-                "dose_mg_per_kg_per_day": 15, "frequency": 1, "duration_days": 7, "max_mg_per_dose": 1000
-            },
-            "UTI (Off-label)": {
-                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
-            },
-            "Rhinosinusitis": {
-                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
-            },
-            "Chlamydia": {
-                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 1, "max_mg_per_dose": 1000
-            },
-            "Diarrhea (Campylobacter)": {
-                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 3, "max_mg_per_dose": 500
-            },
-            "Diarrhea (Shigella)": [
-                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 12, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
-                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+            "Pharyngitis/Tonsillitis": [
+                {
+                    "sub_indication": "5-day regimen",
+                    "dose_mg_per_kg_per_day": 12,
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "max_mg_per_day": 500,
+                    "note": "ใช้ในผู้ที่แพ้ penicillin รุนแรง (severe allergy)"
+                },
+                {
+                    "sub_indication": "3-day regimen",
+                    "dose_mg_per_kg_per_day": 20,
+                    "frequency": 1,
+                    "duration_days": 3,
+                    "max_mg_per_day": 1000,
+                    "note": "ข้อมูลจำกัด แต่มีการใช้แบบ 3 วัน; ควรใช้ total ≥60 mg/kg ตลอดคอร์สเพื่อประสิทธิภาพสูง"
+                }
             ],
-            "Cholera": {
-                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 1, "max_mg_per_dose": 1000
-            },
+            "Typhoid Fever": [
+                {
+                    "sub_indication": "7-day regimen (10 mg/kg/day)",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 7,
+                    "max_mg_per_day": 500,
+                    "note": "💊 ขนาดปานกลาง: 10 mg/kg/day นาน 7 วัน"
+                },
+                {
+                    "sub_indication": "5–7-day regimen (20 mg/kg/day)",
+                    "dose_mg_per_kg_per_day": 20,
+                    "frequency": 1,
+                    "duration_days": [5, 7],
+                    "max_mg_per_day": 1000,
+                    "note": "💊 ขนาดสูง: 20 mg/kg/day นาน 5–7 วัน; พิจารณาในกรณีรุนแรงหรือตอบสนองไม่ดี"
+                }
+            ],
+            "Gonococcal infection": [
+                {
+                    "sub_indication": "uncomplicated infections of the cervix, urethra, or rectum",
+                    "dose_mg": 2000,
+                    "frequency": 1,
+                    "duration_days": 1,
+                    "note": "🍼 Children >45 kg and Adolescents\n💉 ใช้เมื่อไม่สามารถใช้ ceftriaxone ได้; ให้ร่วมกับ gentamicin IM"
+                }
+            ],
+            "Rhinosinusitis": [
+                {
+                    "sub_indication": "Infants ≥6 months, Children, and Adolescents",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 3,
+                    "max_mg_per_day": 500,
+                    "note": "📌 ใช้ในกรณีแพ้ยาอื่นหรือจำเป็น; macrolides ไม่แนะนำให้ใช้เป็น empiric therapy เนื่องจากอัตราดื้อยาสูง"
+                }
+            ],
+            "Chlamydia": [
+                {
+                    "sub_indication": "Urogenital/anogenital or oropharyngeal infection",
+                    "age_group": "Children <8 years weighing ≥45 kg or Children ≥8 years and Adolescents",
+                    "dose_mg": 1000,
+                    "frequency": 1,
+                    "duration_days": 1,
+                    "max_mg_per_day": 1000,
+                    "note": "💊 ให้เพียงครั้งเดียว 1,000 mg; พิจารณาร่วมกับยา gonorrhea ถ้ามีความเสี่ยง"
+                }
+            ],
+            "Pneumonia, congenital": [
+                {
+                    "sub_indication": "Infants",
+                    "dose_mg_per_kg_per_day": 20,
+                    "frequency": 1,
+                    "duration_days": 3,
+                    "max_mg_per_day": None,
+                    "note": "📌 ใช้ขนาด 20 mg/kg/day วันละครั้ง เป็นเวลา 3 วัน"
+                }
+            ],
+            "Diarrhea (Campylobacter infection)": [
+                {
+                    "sub_indication": "Immunocompetent patients",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 3,
+                    "max_mg_per_day": 500,
+                    "note": "📌 โดยทั่วไปไม่แนะนำให้ใช้ในผู้ป่วยภูมิคุ้มกันปกติที่ไม่มีภาวะแทรกซ้อน"
+                },
+                {
+                    "sub_indication": "Patients with HIV",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "max_mg_per_day": 500,
+                    "note": "⚠️ ผู้ติดเชื้อ HIV ควรได้รับยาอย่างน้อย 5 วัน"
+                },
+                {
+                    "sub_indication": "Immunocompromised or complicated infection",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": [7,14],
+                    "max_mg_per_day": 500,
+                    "note": "📌 ระยะเวลาอาจขยายถึง 7–14 วันตามภาวะแทรกซ้อนและระดับภูมิคุ้มกัน"
+                }
+            ],
+            "Diarrhea (Shigellosis infection)": [
+                {
+                    "sub_indication": "Patients without HIV (5-day regimen)",
+                    "dose_by_day": {
+                        "Day 1": {
+                            "dose_mg_per_kg_per_day": 12,
+                            "max_mg_per_day": 500
+                        },
+                        "Day 2-5": {
+                            "dose_mg_per_kg_per_day": 5,
+                            "max_mg_per_day": 250
+                        }
+                    },
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "note": "เริ่มด้วย 12 mg/kg (max 500 mg) วันที่ 1 แล้วตามด้วย 5 mg/kg (max 250 mg) วันที่ 2–5"
+                },
+                {
+                    "sub_indication": "Patients without HIV (3-day regimen)",
+                    "dose_mg_per_kg_per_day": 10,
+                    "max_mg_per_day": 500,
+                    "frequency": 1,
+                    "duration_days": 3,
+                    "note": "📌 10 mg/kg/day once daily for 3 days (max 500 mg/day)"
+                },
+                {
+                    "sub_indication": "Patients with HIV",
+                    "dose_mg": 500,
+                    "max_mg_per_day": 500,
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "note": "ผู้ป่วย HIV ให้ 500 mg/day เป็นเวลา 5 วัน"
+                }
+            ],
+            "Diarrhea (Cholera infection)":[
+                {
+                    "sub_indication": "Alternative agent",
+                    "dose_mg": 1000,
+                    "frequency": 1,
+                    "duration_days": 1,
+                    "note": "📌 ให้ 1,000 mg เป็น single dose (off-label use สำหรับ cholera)"
+                }
+            ],
             "Babesiosis": [
-                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
-                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+                {
+                    "sub_indication": "Mild to moderate disease (oral step-up)",
+                    "dose_by_day": {
+                        "Day 1": {
+                            "dose_mg": 500,
+                            "max_mg_per_day": 500
+                        },
+                        "Day 2+": {
+                            "dose_mg": 250,
+                            "max_mg_per_day": 250
+                        }
+                    },
+                    "frequency": 1,
+                    "duration_days": [7,10],
+                    "note": "เริ่มด้วย 500 mg วันแรก ตามด้วย 250 mg/day ร่วมกับ atovaquone จนครบ 7–10 วัน"
+                },
+                {
+                    "sub_indication": "Severe disease (IV initial)",
+                    "dose_mg": 500,
+                    "max_mg_per_day": 500,
+                    "frequency": 1,
+                    "duration_days": 2,
+                    "note": "IV 500 mg/day + atovaquone อย่างน้อย 2 วัน จากนั้นเปลี่ยนเป็น oral"
+                },
+                {
+                    "sub_indication": "Severe disease (oral step-down)",
+                    "dose_mg": 250,
+                    "max_mg_per_day": 500,
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "note": "หลังจาก IV → เปลี่ยนเป็น oral 250–500 mg/day + atovaquone จนครบคอร์ส"
+                },
+                {
+                    "sub_indication": "Immunocompromised (extended therapy)",
+                    "dose_mg": 500,
+                    "max_mg_per_day": 1000,
+                    "frequency": 1,
+                    "duration_days": 42,
+                    "note": "ในผู้ป่วยภูมิคุ้มกันต่ำ อาจต้องให้ต่อเนื่อง ≥6 สัปดาห์ ร่วมกับ atovaquone"
+                }
             ],
             "Cat Scratch Disease": [
-                {"day_range": "Day 1", "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 1, "max_mg_per_day": 500},
-                {"day_range": "Day 2–5", "dose_mg_per_kg_per_day": 5, "frequency": 1, "duration_days": 4, "max_mg_per_day": 250}
+                {
+                    "sub_indication": "Lymphadenitis (Infants, Children, Adolescents)",
+                    "dose_by_day": {
+                        "Day 1": {
+                            "dose_mg_per_kg": 10,
+                            "max_mg_per_day": 500
+                        },
+                        "Day 2-5": {
+                            "dose_mg_per_kg": 5,
+                            "max_mg_per_day": 250
+                        }
+                    },
+                    "frequency": 1,
+                    "duration_days": 5,
+                    "note": "📌 เริ่มด้วย 10 mg/kg (max 500 mg) วันที่ 1 แล้วตามด้วย 5 mg/kg (max 250 mg) วันที่ 2–5"
+                }
             ],
-            "MAC (Mycobacterium avium, prophylaxis)": {
-                "dose_mg_per_kg_per_day": 20, "frequency": 1, "duration_days": 7, "max_mg_per_dose": 1200
-            },
-            "NTM Pulmonary Infection": {
-                "dose_mg_per_kg_per_day": 10, "frequency": 1, "duration_days": 14, "max_mg_per_dose": 500
-            },
-            "Cystic Fibrosis (maintenance)": {
-                "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
-            },
-            "Asthma (Adjunct)": {
-                "dose_mg_per_kg_per_day": 10, "frequency": 3, "duration_days": 14, "max_mg_per_dose": 500
-            },
+            "Mycobacterium avium complex infection": [
+                {
+                    "sub_indication": "Primary prophylaxis (Infants and Children)",
+                    "dose_mg_per_kg_per_day": 20,
+                    "frequency": 1,
+                    "duration_days": 7,  # weekly
+                    "max_mg_per_day": 1200,
+                    "note": "📌 20 mg/kg once weekly (preferred) (max 1,200 mg/dose)"
+                },
+                {
+                    "sub_indication": "Primary prophylaxis (alternative, Infants and Children)",
+                    "dose_mg_per_kg_per_day": 5,
+                    "frequency": 1,
+                    "duration_days": 7,
+                    "max_mg_per_day": 250,
+                    "note": "📌 5 mg/kg/day once daily (alternative regimen) (max 250 mg/day)"
+                },
+                {
+                    "sub_indication": "Treatment (Infants and Children)",
+                    "dose_mg_per_kg_per_day": 12,
+                    "frequency": 1,
+                    "duration_days": 365,  # ≥12 months
+                    "max_mg_per_day": 500,
+                    "note": "📌 ใช้เป็นส่วนหนึ่งของ combination therapy ต่อเนื่อง ≥12 เดือน"
+                },
+                {
+                    "sub_indication": "Secondary prophylaxis (Infants and Children)",
+                    "dose_mg_per_kg_per_day": 5,
+                    "frequency": 1,
+                    "duration_days": 180,  # ≥6 months
+                    "max_mg_per_day": 250,
+                    "note": "📌 Long-term suppression (secondary prophylaxis) after completion of treatment ≥12 months"
+                },
+                {
+                    "sub_indication": "Primary prophylaxis (Adolescents)",
+                    "dose_mg_per_kg_per_day": 20,
+                    "frequency": 1,
+                    "duration_days": 7,
+                    "max_mg_per_day": 1200,
+                    "note": "📌 1,200 mg once weekly or 600 mg twice weekly for CD4 <50"
+                },
+                {
+                    "sub_indication": "Treatment and secondary prophylaxis (Adolescents)",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 365,
+                    "max_mg_per_day": 600,
+                    "note": "📌 500–600 mg daily as part of appropriate combination regimen ≥12 เดือน"
+                }
+            ],
+            "Nontuberculous mycobacteria (NTM) infection, pulmonary": [
+                {
+                    "sub_indication": "Patients with cystic fibrosis (Children)",
+                    "dose_mg_per_kg_per_day": [10, 12],
+                    "frequency": 1,
+                    "duration_days": 365,
+                    "max_mg_per_day": 500,
+                    "note": "📌 ให้ 10–12 mg/kg/day วันละครั้ง เป็นเวลา ≥12 เดือน หลัง culture conversion"
+                },
+                {
+                    "sub_indication": "Patients with cystic fibrosis (Adolescents)",
+                    "dose_mg": [250, 500],
+                    "frequency": 1,
+                    "duration_days": 365,
+                    "note": "📌 ให้ 250–500 mg/day วันละครั้ง ≥12 เดือน สำหรับ adolescent"
+                },
+                {
+                    "sub_indication": "Patients without cystic fibrosis",
+                    "dose_mg_per_kg_per_day": 10,
+                    "frequency": 1,
+                    "duration_days": 365,
+                    "max_mg_per_day": 500,
+                    "note": "📌 Infants ≥6 เดือน, Children, Adolescents: 10 mg/kg/day (max 500 mg/day) ≥12 เดือน"
+                },
+                {
+                    "sub_indication": "Solid organ transplant recipients",
+                    "dose_mg_per_kg_per_day": [10, 12],
+                    "frequency": 1,
+                    "duration_days": 365,
+                    "max_mg_per_day": 500,
+                    "note": "📌 Infants, Children, Adolescents (oral/IV): 10–12 mg/kg/day once daily ≥12 เดือน"
+                }
+            ],
+            "Cystic Fibrosis (maintenance)": [
+                {
+                    "sub_indication": "Weight-directed dosing (≥3 months)",
+                    "dose_mg_per_kg_per_dose": 10,
+                    "frequency_per_week": 3,
+                    "max_mg_per_dose": 500,
+                    "note": "📌 10 mg/kg/dose สัปดาห์ละ 3 ครั้ง (เช่น Mon/Wed/Fri), max 500 mg/dose"
+                },
+                {
+                    "sub_indication": "Fixed dosing (≥6 years, weight 18–<36 kg)",
+                    "dose_mg": 250,
+                    "frequency_per_week": 3,
+                    "note": "📌 250 mg สัปดาห์ละ 3 ครั้ง (เช่น Mon/Wed/Fri)"
+                },
+                {
+                    "sub_indication": "Fixed dosing (≥6 years, weight ≥36 kg)",
+                    "dose_mg": 500,
+                    "frequency_per_week": 3,
+                    "note": "📌 500 mg สัปดาห์ละ 3 ครั้ง (เช่น Mon/Wed/Fri)"
+                }
+            ],
+            "Asthma, poorly controlled": [
+                {
+                    "sub_indication": "Weight <20 kg",
+                    "dose_mg": 125,
+                    "frequency_per_week": 3,
+                    "note": "📌 125 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนักน้อยกว่า 20 kg)"
+                },
+                {
+                    "sub_indication": "Weight 20–30 kg",
+                    "dose_mg": 250,
+                    "frequency_per_week": 3,
+                    "note": "📌 250 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนัก 20–30 kg)"
+                },
+                {
+                    "sub_indication": "Weight >30–40 kg",
+                    "dose_mg": 375,
+                    "frequency_per_week": 3,
+                    "note": "📌 375 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนักมากกว่า 30–40 kg)"
+                },
+                {
+                    "sub_indication": "Weight >40 kg",
+                    "dose_mg": 500,
+                    "frequency_per_week": 3,
+                    "note": "📌 500 mg สัปดาห์ละ 3 ครั้ง (เหมาะกับผู้ป่วยน้ำหนักมากกว่า 40 kg)"
+                }
+            ],
             "Other": "INDICATION_OTHERS"
         },
-        "common_indications": ["Pneumonia (Atypical)", "Strep Pharyngitis","Rhinosinusitis","Chlamydia" ]
+        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)" ]
     }
-}
-}
 }
 
 logging.basicConfig(
