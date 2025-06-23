@@ -1275,22 +1275,23 @@ def send_drug_selection(event):
     carousel2 = CarouselTemplate(columns=[
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
         CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก Paracetamol', text='เลือกยา: Paracetamol')]),
-        CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
-        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก Azithromycin', text='เลือกยา: Azithromycin')]),
+        CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก Ibuprofen', text='เลือกยา: Ibuprofen')]),
+        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก Domperidone', text='เลือกยา: Domperidone')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')]),
     ])
     carousel3 = CarouselTemplate(columns=[
         CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก Cetirizine', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
-        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Ferrous drop', text='เลือกยา: Ferrous drop')]),
-        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Hydroxyzine', text='เลือกยา: Hydroxyzine')]),
+        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Chlorpheniramine', text='เลือกยา: Chlorpheniramine')]),
+        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก Salbutamol', text='เลือกยา: Salbutamol')]),
     ])
     messaging_api.reply_message(
     ReplyMessageRequest(
         reply_token=event.reply_token,
         messages=[
             TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
-            TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2)
+            TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2),
+            TemplateMessage(alt_text="เลือกยากลุ่มถัดไป", template=carousel3)
         ]
     ))
     return
