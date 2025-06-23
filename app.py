@@ -2167,28 +2167,13 @@ def handle_message(event: MessageEvent):
                             messages=[TextMessage(text="❌ กรุณาพิมพ์น้ำหนักให้ถูกต้อง เช่น 20 กก")]
                         )
                     )
+                    return
 
                 entry = user_drug_selection[user_id]
                 drug = entry.get("drug")
 
-                if drug in SPECIAL_DRUGS:
-                    age = user_ages.get(user_id)
-                    if age is None:
-                        # แจ้งให้ใส่อายุก่อน แล้วค่อยพิมพ์น้ำหนักอีกครั้ง
-                        messaging_api.reply_message(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี\nจากนั้นพิมพ์น้ำหนักอีกครั้ง")]
-                            )
-                        )
-                        return  # หยุดการทำงานที่นี่เลย
-                    else:
-                        try:
-                            reply = calculate_special_drug(user_id, drug, weight, age)
-                        except Exception as e:
-                            logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
-                            reply = "เกิดข้อผิดพลาดในการคำนวณยา"
-                else:
+                # ✅ ตรวจสอบว่าเป็นยาทั่วไปก่อน (DRUG_DATABASE มาก่อน)
+                if drug in DRUG_DATABASE:
                     if "indication" not in entry:
                         reply = "❗️ กรุณาเลือกข้อบ่งใช้ก่อน เช่น 'Indication: Fever'"
                     else:
@@ -2199,6 +2184,29 @@ def handle_message(event: MessageEvent):
                             logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
                             reply = "เกิดข้อผิดพลาดในการคำนวณยา"
 
+                # ✅ เฉพาะกรณีที่อยู่ใน SPECIAL_DRUGS (แต่ไม่อยู่ใน DRUG_DATABASE)
+                elif drug in SPECIAL_DRUGS:
+                    age = user_ages.get(user_id)
+                    if age is None:
+                        messaging_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[TextMessage(text="📆 กรุณาพิมพ์อายุของเด็กก่อน เช่น 5 ปี\nจากนั้นพิมพ์น้ำหนักอีกครั้ง")]
+                            )
+                        )
+                        return
+                    else:
+                        try:
+                            reply = calculate_special_drug(user_id, drug, weight, age)
+                        except Exception as e:
+                            logging.info(f"❌ คำนวณผิดพลาดใน SPECIAL_DRUG: {e}")
+                            reply = "เกิดข้อผิดพลาดในการคำนวณยา"
+
+                # ❌ ยาไม่อยู่ในฐานข้อมูลเลย
+                else:
+                    reply = f"⛔ ไม่พบข้อมูลของยา {drug}"
+
+                # ✅ ส่งผลลัพธ์การคำนวณ
                 messaging_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
@@ -2207,31 +2215,18 @@ def handle_message(event: MessageEvent):
                 )
                 return
 
-        else:
-            # ถ้าไม่มีคำว่า "อายุ" หรือ "น้ำหนัก" ให้แจ้งเตือน
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
-                )
-            )
-            return
-
-    if user_id not in user_sessions and user_id not in user_drug_selection:
+        # ❗️ ไม่พบคำว่า "อายุ" หรือ "น้ำหนัก"
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[
-                    TextMessage(text="❓ พิมพ์ 'คำนวณยา warfarin' หรือ 'คำนวณยาเด็ก' เพื่อเริ่มต้นใช้งาน")
-                ]
+                messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
             )
         )
         return
+
         
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
     
-LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
-LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
