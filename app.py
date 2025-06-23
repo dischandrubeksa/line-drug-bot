@@ -940,9 +940,9 @@ DRUG_DATABASE = {
             ],
             "Other": "INDICATION_OTHERS"
         },
-        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)" ]
+        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)","Other" ]
     }
-}
+    }
 }
 
 logging.basicConfig(
