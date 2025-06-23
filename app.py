@@ -2075,52 +2075,32 @@ def handle_message(event: MessageEvent):
 
 
 
-    if text == "เลือกยาใหม่":
-        user_drug_selection.pop(user_id, None)
-        user_ages.pop(user_id, None)
-        send_drug_selection(event)
-        return
-
-    if text.startswith("MoreIndication:"):
-        drug_name = text.replace("MoreIndication:", "").strip()
-        send_indication_carousel(event, drug_name, show_all=True)
-        return
-
     if text.startswith("เลือกยา:"):
         drug_name = text.replace("เลือกยา:", "").strip()
         user_drug_selection[user_id] = {"drug": drug_name}
 
-        if drug_name in DRUG_DATABASE:
-            send_indication_carousel(event, drug_name)
-        else:
+        # ✅ กรณี azithromycin ใช้ special_indication_carousel
+        if drug_name == "Azithromycin":
             send_special_indication_carousel(event, drug_name)
-        return
 
-    if text.startswith("Indication:") and user_id in user_drug_selection:
-        indication = text.replace("Indication:", "").strip()
-        user_drug_selection[user_id]["indication"] = indication
-        drug = user_drug_selection[user_id].get("drug")
+        # ✅ ยาพิเศษอื่น ๆ ที่อยู่ใน SPECIAL_DRUGS
+        elif drug_name in SPECIAL_DRUGS:
+            send_special_indication_carousel(event, drug_name)
 
-        if user_id in user_ages:
-            user_ages.pop(user_id)
+        # ✅ ยาทั่วไปที่อยู่ใน DRUG_DATABASE
+        elif drug_name in DRUG_DATABASE:
+            send_indication_carousel(event, drug_name)
 
-        if drug in SPECIAL_DRUGS:
-            example_age = round(random.uniform(1, 18), 1)
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
-                )
-            )
+        # ❌ ไม่พบข้อมูลยาเลย
         else:
-            example_weight = round(random.uniform(5.0, 20.0), 1)
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
+                    messages=[TextMessage(text=f"ไม่พบข้อมูลสำหรับยา {drug_name}")]
                 )
             )
         return
+
     
     if user_id in user_drug_selection:
 
