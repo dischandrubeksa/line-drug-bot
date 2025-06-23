@@ -1461,11 +1461,17 @@ def handle_message(event: MessageEvent):
         drug_name = text.replace("เลือกยา:", "").strip()
         user_drug_selection[user_id] = {"drug": drug_name}
 
-        if drug_name in DRUG_DATABASE:
+        # ✅ กรณี azithromycin ใช้ special_indication_carousel
+        if drug_name == "Azithromycin":
             send_indication_carousel(event, drug_name)
-        else:
+
+        # ✅ ยาพิเศษอื่น ๆ ที่อยู่ใน SPECIAL_DRUGS
+        elif drug_name in SPECIAL_DRUGS:
             send_special_indication_carousel(event, drug_name)
-        return
+
+        # ✅ ยาทั่วไปที่อยู่ใน DRUG_DATABASE
+        elif drug_name in DRUG_DATABASE:
+            send_indication_carousel(event, drug_name)
 
     if text.startswith("Indication:") and user_id in user_drug_selection:
         indication = text.replace("Indication:", "").strip()
