@@ -1515,6 +1515,7 @@ def get_indication_entry(drug, indication_name, entry_index=0):
 def handle_message(event: MessageEvent):
     if not isinstance(event.message, TextMessageContent):
         return
+
     user_id = event.source.user_id
     text = event.message.text.strip()
     text_lower = text.lower()
@@ -1538,7 +1539,7 @@ def handle_message(event: MessageEvent):
         send_drug_selection(event)
         return
 
-    # 🌟 Warfarin flow
+    # 🌟 Warfarin Flow
     if user_id in user_sessions:
         session = user_sessions[user_id]
         if session.get("flow") == "warfarin":
@@ -1577,26 +1578,32 @@ def handle_message(event: MessageEvent):
             elif step == "ask_bleeding":
                 if text.lower() not in ["yes", "no"]:
                     reply = "❌ ตอบว่า yes หรือ no เท่านั้น"
-                    messaging_api.reply_message(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text=reply)]
-                        )
-                    )
-                    return
                 else:
                     session["bleeding"] = text.lower()
                     session["step"] = "ask_supplement"
                     send_supplement_flex(event.reply_token)
                     return
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply)]
+                    )
+                )
+                return
 
             elif step == "ask_supplement":
                 session["supplement"] = text
+                session["step"] = "ask_interaction"
+                send_interaction_flex(event.reply_token)
+                return
+
+            elif step == "ask_interaction":
+                session["interaction"] = text
                 result = calculate_warfarin(
                     session["inr"],
                     session["twd"],
                     session["bleeding"],
-                    session["supplement"]
+                    session.get("supplement")
                 )
                 user_sessions.pop(user_id, None)
                 messaging_api.reply_message(
@@ -1606,6 +1613,7 @@ def handle_message(event: MessageEvent):
                     )
                 )
                 return
+
 
 
     if text == "เลือกยาใหม่":
