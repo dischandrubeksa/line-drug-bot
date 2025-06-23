@@ -941,7 +941,7 @@ DRUG_DATABASE = {
             ],
             "Other": "INDICATION_OTHERS"
         },
-        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)","Other" ]
+        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)" ]
     }
 }
 
