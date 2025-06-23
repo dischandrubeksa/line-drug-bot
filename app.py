@@ -2081,7 +2081,7 @@ def handle_message(event: MessageEvent):
 
         # ✅ กรณี azithromycin ใช้ special_indication_carousel
         if drug_name == "Azithromycin":
-            send_special_indication_carousel(event, drug_name)
+            send_indication_carousel(event, drug_name)
 
         # ✅ ยาพิเศษอื่น ๆ ที่อยู่ใน SPECIAL_DRUGS
         elif drug_name in SPECIAL_DRUGS:
