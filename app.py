@@ -553,6 +553,7 @@ DRUG_DATABASE = {
             "note": "📝 ปรับตามความรุนแรง อายุ และ clinical response"
         }
         ]
+    }
     },
     "Azithromycin": {
         "concentration_mg_per_ml": 200 / 5,
@@ -943,7 +944,6 @@ DRUG_DATABASE = {
     }
 }
 }
-}
 
 logging.basicConfig(
     level=logging.INFO,  # เปลี่ยนเป็น DEBUG ถ้าต้องการ log ละเอียด
@@ -1227,6 +1227,9 @@ def send_drug_selection(event):
 
 def send_indication_carousel(event, drug_name, show_all=False):
     drug_info = DRUG_DATABASE.get(drug_name)
+    logging.info(f"🧪 ตรวจสอบ drug_name: {drug_name}")
+    logging.info(f"🧪 ใน DRUG_DATABASE: {'Azithromycin' in DRUG_DATABASE}")
+    logging.info(f"🧪 drug_info: {DRUG_DATABASE.get(drug_name)}")
     logging.info(f"📦 กำลังหา drug: {drug_name}")
     logging.info(f"🔎 drug_info found: {drug_info is not None}")
     if not drug_info or "indications" not in drug_info:
@@ -1320,6 +1323,7 @@ def send_indication_carousel(event, drug_name, show_all=False):
             action_text = f"MoreIndication: {drug_name}"
 
         actions = [MessageAction(label=label, text=action_text)]
+        logging.info(f"📄 Adding column: {title} → {text}")
         columns.append(CarouselColumn(title=title, text=text, actions=actions))
 
     carousel_chunks = [columns[i:i + 5] for i in range(0, len(columns), 5)]
@@ -1337,6 +1341,7 @@ def send_indication_carousel(event, drug_name, show_all=False):
             logging.info(f"⚠️ ผิดพลาดตอนสร้าง TemplateMessage: {e}")
 
     logging.info(f"📤 ส่ง carousel ทั้งหมด: {len(messages)} ชุด")
+    logging.info(f"📋 จำนวน indication ที่จะแสดง: {len(names_to_show)}")
     try:
         messaging_api.reply_message(
             ReplyMessageRequest(
