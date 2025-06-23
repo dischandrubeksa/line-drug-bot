@@ -939,7 +939,7 @@ DRUG_DATABASE = {
             ],
             "Other": "INDICATION_OTHERS"
         },
-        "common_indications": ["Pneumonia (Atypical)", "Strep Pharyngitis","Rhinosinusitis","Chlamydia" ]
+        "common_indications": ["Gonococcal infection", "Pharyngitis/Tonsillitis","Rhinosinusitis","Pneumonia (community acquired)" ]
     }
 }
 }
@@ -1264,12 +1264,30 @@ def send_indication_carousel(event, drug_name, show_all=False):
                     or first_entry.get("dose_mg_per_kg_per_dose")
                     or first_entry.get("dose_mg")
                 )
+
                 if "dose_mg_per_kg_per_day" in first_entry:
                     unit = "mg/kg/day"
                 elif "dose_mg_per_kg_per_dose" in first_entry:
                     unit = "mg/kg/dose"
                 elif "dose_mg" in first_entry:
                     unit = "mg/day"
+
+                # ✅ กรณียังไม่พบ dose เลย → ลองดูใน dose_by_day
+                if dose is None and isinstance(first_entry.get("dose_by_day"), dict):
+                    for day_data in first_entry["dose_by_day"].values():
+                        dose = (
+                            day_data.get("dose_mg_per_kg_per_day")
+                            or day_data.get("dose_mg_per_kg")
+                            or day_data.get("dose_mg")
+                        )
+                        if "dose_mg_per_kg_per_day" in day_data:
+                            unit = "mg/kg/day"
+                        elif "dose_mg_per_kg" in day_data:
+                            unit = "mg/kg"
+                        elif "dose_mg" in day_data:
+                            unit = "mg"
+                        if dose:
+                            break
 
             elif isinstance(indication_info, dict):
                 for sub in indication_info.values():
@@ -1326,14 +1344,16 @@ def send_indication_carousel(event, drug_name, show_all=False):
 
 def calculate_warfarin(inr, twd, bleeding, supplement=None):
     if bleeding == "yes":
-        return "🚨 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
+        return "\U0001f6a8 มี major bleeding → หยุด Warfarin, ให้ Vitamin K1 10 mg IV"
 
     warning = ""
     if supplement:
         herb_map = {
             "กระเทียม": "garlic", "ใบแปะก๊วย": "ginkgo", "โสม": "ginseng",
-            "ขมิ้น": "turmeric", "น้ำมันปลา": "fish oil",
-            "dong quai": "dong quai", "cranberry": "cranberry"
+            "ขมิ้น": "turmeric", "น้ำมันปลา": "fish oil", "dong quai": "dong quai", "cranberry": "cranberry",
+            "ตังกุย": "dong quai", "โกจิ": "goji berry", "คาร์โมไมล์": "chamomile", "ขิง": "ginger", "ชะเอมเทศ": "licorice",
+            "ชาเขียว": "green tea", "นมถั่วเหลือง": "soy milk", "คลอโรฟิลล์": "chlorophyll",
+            "วิตามินเค": "vitamin K", "โคเอนไซม์ Q10": "Coenzyme Q10", "St.John’s Wort": "St.John’s Wort"
         }
         matched = [name for name in herb_map if name in supplement]
         if matched:
@@ -1410,8 +1430,8 @@ def send_supplement_flex(reply_token):
     )
 def send_interaction_flex(reply_token):
     interaction_drugs = [
-        "Amiodarone", "Metronidazole", "Trimethoprim/Sulfamethoxazole",
-        "Fluconazole", "Erythromycin", "NSAIDs", "Aspirin"
+        "Amiodarone", "Gemfibrozil", "Azole antifungal", "Trimethoprim/Sulfamethoxazole",
+        "Macrolides(ex.Erythromycin)", "NSAIDs", "Quinolones(ex.Ciprofloxacin)"
     ]
     flex_content = {
         "type": "bubble",
