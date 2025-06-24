@@ -1004,7 +1004,7 @@ SPECIAL_DRUGS = {
         "indications": {
             "Upper respiratory allergy symptoms (hay fever)": [
                 {
-                    "sub_indication": "อายุตั้งแต่ 2–<6 ปี",
+                    "sub_indication": "อายุตั้งแต่ 2 ถึง <6 ปี",
                     "age_min": 2,
                     "age_max": 5.9,
                     "dose_mg": 1,
@@ -1013,7 +1013,7 @@ SPECIAL_DRUGS = {
                     "note": "ใช้ด้วยความระมัดระวังในเด็กเล็ก; ไม่แนะนำในเด็ก <2 ปี"
                 },
                 {
-                    "sub_indication": "อายุตั้งแต่ 6–<12 ปี",
+                    "sub_indication": "อายุตั้งแต่ 6 ถึง <12 ปี",
                     "age_min": 6,
                     "age_max": 11.9,
                     "dose_mg": 2,
@@ -1031,6 +1031,43 @@ SPECIAL_DRUGS = {
         },
         "common_indications": ["Upper respiratory allergy symptoms (hay fever)"]
     },
+    "Salbutamol": {
+        "concentration_mg_per_ml": 2 / 5,  # ตัวอย่าง: 2 mg per 5 mL syrup
+        "bottle_size_ml": 60,
+        "requires_age": True,
+        "indications": {
+            "Bronchospasm (if inhaled not tolerated)": [
+                {
+                    "sub_indication": "อายุตั้งแต่ 2 ถึง <6 ปี",
+                    "age_min": 2,
+                    "age_max": 5.9,
+                    "dose_mg_per_kg_per_dose": [0.1, 0.2],  # ✅ ระบุหลายค่าได้ใน list
+                    "frequency": 3,
+                    "max_mg_per_dose": [2, 4],
+                    "max_mg_per_day": 12,
+                    "note": "เริ่มต้น 0.1 mg/kg/dose ขนาดยาสูงสุดไม่เกิน 2 mg ต่อครั้ง; อาจสามารถเพิ่มเป็น 0.2 mg/kg/dose ขนาดยาสูงสุดไม่เกิน 4 mg ต่อครั้ง และ 12 mg/วัน"
+                },
+                {
+                    "sub_indication": "อายุมากกว่า 6 ถึง 14 ปี", 
+                    "age_min": 6.01,
+                    "age_max": 14,
+                    "dose_mg": 2,
+                    "frequency": [3, 4],
+                    "max_mg_per_day": 24
+                },
+                {
+                    "sub_indication": "อายุมากกว่า 14 ปี",
+                    "age_min": 14.01,
+                    "dose_mg_range": [2, 4],
+                    "frequency": [3, 4],
+                    "max_mg_per_day": 32
+                }
+            ]
+        },
+        "common_indications": ["Bronchospasm (if inhaled not tolerated)"],
+        "note": "⚠️ ไม่แนะนำให้ใช้ยานี้ในรูปแบบรับประทานหากสามารถใช้ inhaled ได้ เนื่องจากผลข้างเคียงสูงกว่าและประสิทธิภาพต่ำกว่า"
+    },
+
     "Domperidone": {
         "concentration_mg_per_ml": 1,  # 1 mg/ml
         "bottle_size_ml": 30,
@@ -1882,6 +1919,64 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         return "\n".join(lines)
     
+    if drug == "Salbutamol":
+        indication_data = info["indications"].get(indication)
+        if not indication_data:
+            return f"❌ ไม่พบข้อมูลข้อบ่งใช้ {indication}"
+
+        matched_group = None
+        for group in indication_data:
+            age_min = group.get("age_min", 0)
+            age_max = group.get("age_max", float("inf"))
+            if age_min <= age <= age_max:
+                matched_group = group
+                break
+
+        if not matched_group:
+            return f"❌ ไม่พบข้อมูลสำหรับอายุ {age} ปี"
+
+        lines = [f"🧪 {drug} - {indication}", f"(น้ำหนัก {weight} kg, อายุ {age} ปี):"]
+
+        sub = matched_group.get("sub_indication")
+        if sub:
+            lines.append(f"\n🔹 {sub}")
+
+        # ✅ ตรวจสอบกรณี dose_mg_per_kg_per_dose เป็น list
+        if "dose_mg_per_kg_per_dose" in matched_group and isinstance(matched_group["dose_mg_per_kg_per_dose"], list):
+            doses = matched_group["dose_mg_per_kg_per_dose"]
+            max_doses = matched_group.get("max_mg_per_dose", [float("inf")] * len(doses))
+            freq = matched_group["frequency"]
+
+            for i, dose_per_kg in enumerate(doses):
+                total_mg = weight * dose_per_kg
+                total_mg = min(total_mg, max_doses[i])
+                ml = total_mg / concentration
+                lines.append(
+                    f"\nขนาดยา: {dose_per_kg} mg/kg/dose → {total_mg:.1f} mg/dose × วันละ {freq} ครั้ง (max {max_doses[i]} mg/dose) ≈ ~{ml:.1f} ml/ครั้ง"
+                )
+
+        elif "dose_mg" in matched_group:
+            dose = matched_group["dose_mg"]
+            freqs = matched_group["frequency"] if isinstance(matched_group["frequency"], list) else [matched_group["frequency"]]
+            ml = dose / concentration
+            for freq in freqs:
+                lines.append(f"ขนาดยา: {dose} mg × วันละ {freq} ครั้ง ≈ ~{ml:.1f} ml/ครั้ง")
+
+        elif "dose_mg_range" in matched_group:
+            freqs = matched_group["frequency"]
+            for d in matched_group["dose_mg_range"]:
+                ml = d / concentration
+                for freq in freqs:
+                    lines.append(f"ขนาดยา: {d} mg × วันละ {freq} ครั้ง ≈ ~{ml:.1f} ml/ครั้ง")
+
+        if matched_group.get("note"):
+            lines.append(f"\n📝 หมายเหตุ: {matched_group['note']}")
+
+        if info.get("note"):
+            lines.append(f"\n📌 หมายเหตุเพิ่มเติม: {info['note']}")
+
+        return "\n".join(lines)
+
     if drug == "Chlorpheniramine":
         indication_data = info["indications"].get(indication)
         if not indication_data:
