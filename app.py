@@ -1003,8 +1003,6 @@ SPECIAL_DRUGS = {
     "indications": [
         {
             "name": "Analgesic",
-            "age_based": False,
-            "weight_based": True,
             "dose_mg_per_kg_per_day": [4, 10],
             "frequency": [3, 4],  # every 6–8h
             "max_mg_per_dose": 600,
@@ -1013,8 +1011,6 @@ SPECIAL_DRUGS = {
         },
         {
             "name": "Fever",
-            "age_based": False,
-            "weight_based": True,
             "dose_mg_per_kg_per_day": [5, 10],
             "frequency": [3, 4],  # every 6–8h
             "max_mg_per_dose": 600,
@@ -1023,44 +1019,20 @@ SPECIAL_DRUGS = {
         },
         {
             "name": "Juvenile idiopathic arthritis (JIA)",
-            "age_based": False,
-            "weight_based": True,
             "dose_mg_per_kg_per_day": [30, 50],
             "frequency": [3, 4],
             "max_mg_per_dose": 800,
             "max_mg_per_day": 2400,
             "note": "เริ่มต้นที่ 30 mg/kg/day และปรับเพิ่มหากจำเป็น"
-        },
-        {
-            "name": "Analgesic (age-based)",
-            "age_based": True,
-            "weight_based": False,
-            "age_rules": [
-                {
-                    "min_age": 12,
-                    "dose_mg_per_dose": [200, 400],
-                    "frequency": [4, 6],
-                    "max_mg_per_day": 2400,
-                    "note": "Immediate release ทุก 4–6 ชม"
-                }
-            ]
-        },
-        {
-            "name": "Fever (age-based)",
-            "age_based": True,
-            "weight_based": False,
-            "age_rules": [
-                {
-                    "min_age": 12,
-                    "dose_mg_per_dose": [200, 400],
-                    "frequency": [4, 6],
-                    "max_mg_per_day": 2400,
-                    "note": "Immediate release ทุก 4–6 ชม"
-                }
-            ]
         }
+    ],
+    "common_indications": [
+        "Analgesic",
+        "Fever",
+        "Juvenile idiopathic arthritis (JIA)"
     ]
     },
+
     "Cetirizine": {
     "concentration_mg_per_ml": 5 / 5,
     "bottle_size_ml": 60,
