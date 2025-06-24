@@ -2015,36 +2015,49 @@ def send_special_indication_carousel(event, drug_name):
         return
 
     indications = drug_info["indications"]
-    common = drug_info.get("common_indications", list(indications.keys()))  # ✅ fallback
+    common = drug_info.get("common_indications", list(indications.keys()))  # fallback
 
-    names_to_show = common
     columns = []
-
-    for name in names_to_show:
+    for name in common:
         title = name[:40]
-        indication_info = indications[name]
+        indication_info = indications.get(name)
 
         try:
+            dose = "?"
             if isinstance(indication_info, list):
                 sample = indication_info[0] if indication_info else {}
-                dose = (
-                    sample.get("dose_mg_per_kg_per_day")
-                    or sample.get("dose_mg_per_kg_per_dose")
-                    or sample.get("dose_mg")
-                    or sample.get("dose_mg_range", ["?"])[0]
-                    or "?"
-                )
+
+                # ✅ รองรับหลายรูปแบบ
+                if "dose_mg_per_kg_per_day" in sample:
+                    dose = f"{sample['dose_mg_per_kg_per_day']} mg/kg/day"
+                elif "dose_mg_per_kg_per_dose" in sample:
+                    dose = f"{sample['dose_mg_per_kg_per_dose']} mg/kg/dose"
+                elif "dose_mg_range" in sample:
+                    dose = f"{sample['dose_mg_range'][0]}–{sample['dose_mg_range'][1]} mg"
+                elif "dose_mg" in sample:
+                    dose = f"{sample['dose_mg']} mg"
+                elif "initial_dose_mg" in sample:
+                    dose = f"{sample['initial_dose_mg']} mg"
             elif isinstance(indication_info, dict):
-                sample_group = next(iter(indication_info.values()))
-                dose = sample_group.get("dose_mg_per_kg_per_day") or "?"
+                sample = next(iter(indication_info.values()))
+                if isinstance(sample, dict):
+                    if "dose_mg_per_kg_per_day" in sample:
+                        dose = f"{sample['dose_mg_per_kg_per_day']} mg/kg/day"
+                    elif "dose_mg" in sample:
+                        dose = f"{sample['dose_mg']} mg"
+                    elif "dose_mg_range" in sample:
+                        dose = f"{sample['dose_mg_range'][0]}–{sample['dose_mg_range'][1]} mg"
+                    elif "initial_dose_mg" in sample:
+                        dose = f"{sample['initial_dose_mg']} mg"
             else:
                 dose = "?"
-        except Exception as e:
+
+        except Exception:
             dose = "?"
 
         columns.append(CarouselColumn(
             title=title,
-            text=f"{dose} mg",
+            text=dose,
             actions=[MessageAction(label="เลือก", text=f"Indication: {name}")]
         ))
 
