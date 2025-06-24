@@ -1269,36 +1269,46 @@ def callback():
     return 'OK'
 
 def send_drug_selection(event):
-    carousel1 = CarouselTemplate(columns=[
+    # ✅ เตรียม column แต่ละชุด
+    columns1 = [
         CarouselColumn(title='Amoxicillin', text='250 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Amoxicillin')]),
         CarouselColumn(title='Cephalexin', text='125 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cephalexin')]),
         CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cefdinir')]),
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cefixime')]),
         CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Augmentin')]),
-    ])
-    carousel2 = CarouselTemplate(columns=[
+    ]
+    columns2 = [
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Azithromycin')]),
         CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]),
         CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ibuprofen')]),
         CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
-    ])
-    carousel3 = CarouselTemplate(columns=[
+    ]
+    columns3 = [
         CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Chlorpheniramine')]),
         CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
-    ])
-    messaging_api.reply_message(
-    ReplyMessageRequest(
-        reply_token=event.reply_token,
-        messages=[
-            TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=carousel1),
-            TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=carousel2),
-            TemplateMessage(alt_text="เลือกยากลุ่มถัดไป", template=carousel3)
-        ]
-    ))
-    return
+    ]
+
+    # ✅ รวมข้อความที่มี columns เท่านั้น
+    messages = []
+    if columns1:
+        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=CarouselTemplate(columns=columns1)))
+    if columns2:
+        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=CarouselTemplate(columns=columns2)))
+    if columns3:
+        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มถัดไป", template=CarouselTemplate(columns=columns3)))
+
+    # ✅ ส่งข้อความ
+    if messages:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=messages
+            )
+        )
+
 
 def send_indication_carousel(event, drug_name, show_all=False):
     # ✅ แก้ไขให้หา drug_name แบบ case-insensitive
