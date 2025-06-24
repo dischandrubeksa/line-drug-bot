@@ -1028,7 +1028,8 @@ SPECIAL_DRUGS = {
                     "max_mg_per_day": 24
                 }
             ]
-        }
+        },
+        "common_indications": ["Upper respiratory allergy symptoms (hay fever)"]
     },
     "Domperidone": {
         "concentration_mg_per_ml": 1,  # 1 mg/ml
