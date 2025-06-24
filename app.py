@@ -997,6 +997,33 @@ SPECIAL_DRUGS = {
     },
     "common_indications": ["Fever"]
     },
+    "Domperidone": {
+        "concentration_mg_per_ml": 1,  # 1 mg/ml
+        "bottle_size_ml": 30,
+        "requires_age": True,
+        "indications": {
+            "GI Motility Disorders / Nausea, Vomiting": [
+                {
+                    "sub_indication": "อายุ ≥12 ปี และน้ำหนัก <35 kg",
+                    "age_min": 12,
+                    "weight_max": 34.9,
+                    "dose_mg_per_kg_per_dose": 0.25,
+                    "frequency": [1, 2, 3],
+                    "max_mg_per_day": 30,
+                    "note": "⚠️ ไม่ควรใช้ในเด็ก <12 ปี; ใช้ขนาดต่ำสุดและระยะเวลาสั้นที่สุด"
+                },
+                {
+                    "sub_indication": "อายุ ≥12 ปี และน้ำหนัก ≥35 kg",
+                    "age_min": 12,
+                    "weight_min": 35,
+                    "dose_mg": 10,
+                    "frequency": 3,
+                    "max_mg_per_day": 30,
+                    "note": "⚠️ ไม่ควรใช้ในเด็ก <12 ปี; ใช้ขนาดต่ำสุดและระยะเวลาสั้นที่สุด"
+                }
+            ]
+        }
+    },
     "Ibuprofen": {
         "concentration_mg_per_ml": 100 / 5,
         "bottle_size_ml": 60,
@@ -1556,29 +1583,36 @@ def calculate_dose(drug, indication, weight):
                 min_freq = min(freqs)
                 max_freq = max(freqs)
 
-                reply_lines.append(
-                    f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
-                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
-                )
+                if min_freq == max_freq:
+                    reply_lines.append(
+                        f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
+                        f"แบ่งวันละ {min_freq} ครั้ง × {days} วัน "
+                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                    )
+                else:
+                    reply_lines.append(
+                        f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
+                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                    )
             else:
                 ml_per_day = total_mg_day / conc
                 ml_phase = ml_per_day * days
                 total_ml += ml_phase
 
-                if len(freqs) == 1:
-                    freq = freqs[0]
-                    ml_per_dose = ml_per_day / freq
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+
+                if min_freq == max_freq:
+                    ml_per_dose = ml_per_day / min_freq
                     if "max_mg_per_dose" in phase:
                         ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
 
                     reply_lines.append(
                         f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                        f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+                        f"แบ่งวันละ {min_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_dose:.1f} ml)"
                     )
                 else:
-                    min_freq = min(freqs)
-                    max_freq = max(freqs)
                     reply_lines.append(
                         f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                         f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
@@ -1588,6 +1622,7 @@ def calculate_dose(drug, indication, weight):
             note = phase.get("note")
             if note:
                 reply_lines.append(f"📝 หมายเหตุ: {note}")
+
 
 
     # ✅ กรณี indication เป็น dict ธรรมดา
@@ -1755,6 +1790,50 @@ def calculate_special_drug(user_id, drug, weight, age):
             reply_lines.append(f"\n📌 หมายเหตุ: {indication_info['note']}")
 
         return "\n".join(reply_lines)
+    
+    if drug == "Domperidone":
+        indication_data = info["indications"].get(indication)
+        if not indication_data:
+            return f"❌ ไม่พบข้อมูลข้อบ่งใช้ {indication}"
+
+        lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg, อายุ {age} ปี):"]
+
+        if age < 12:
+            return "❌ ไม่แนะนำให้ใช้ในเด็กอายุน้อยกว่า 12 ปี"
+
+        matched_group = None
+        for group in indication_data:
+            min_age = group.get("age_min", 0)
+            max_age = group.get("age_max", float("inf"))
+            min_weight = group.get("weight_min", 0)
+            max_weight = group.get("weight_max", float("inf"))
+
+            if min_age <= age <= max_age and min_weight <= weight <= max_weight:
+                matched_group = group
+                break
+
+        if not matched_group:
+            return "❌ ไม่พบข้อมูลที่ตรงกับช่วงอายุและน้ำหนักนี้"
+
+        sub = matched_group.get("sub_indication", "ไม่ระบุช่วง")
+        lines.append(f"\n🔹 {sub}")
+
+        if "dose_mg_per_kg_per_dose" in matched_group:
+            dose = weight * matched_group["dose_mg_per_kg_per_dose"]
+            dose = min(dose, matched_group["max_mg_per_day"])  # ไม่เกิน max
+            ml = dose / concentration
+            freq_text = "วันละ " + "-".join([str(f) for f in matched_group["frequency"]]) + " ครั้ง"
+            lines.append(f"ขนาดยา: {matched_group['dose_mg_per_kg_per_dose']} mg/kg/dose → {dose:.1f} mg/dose × {freq_text} (max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/dose")
+        elif "dose_mg" in matched_group:
+            dose = matched_group["dose_mg"]
+            freq = matched_group["frequency"]
+            ml = dose / concentration
+            lines.append(f"ขนาดยา: {dose} mg × {freq} ครั้ง/วัน (max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/ครั้ง")
+
+        if matched_group.get("note"):
+            lines.append(f"📝 หมายเหตุ: {matched_group['note']}")
+
+        return "\n".join(lines)
     
     # ✅ Ibuprofen และยาอื่น ๆ ที่ใช้โครงสร้าง weight_based
     if drug == "Ibuprofen":
