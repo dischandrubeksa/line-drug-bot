@@ -997,7 +997,7 @@ SPECIAL_DRUGS = {
     },
     "common_indications": ["Fever"]
     },
-    "Chlorphenamine": {
+    "Chlorpheniramine": {
         "concentration_mg_per_ml": 2 / 5,  # 2 mg per 5 mL
         "bottle_size_ml": 60,
         "requires_age": True,
