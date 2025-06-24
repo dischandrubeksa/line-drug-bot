@@ -1882,7 +1882,7 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         return "\n".join(lines)
     
-    if drug == "Chlorphenamine":
+    if drug == "Chlorpheniramine":
         indication_data = info["indications"].get(indication)
         if not indication_data:
             return f"❌ ไม่พบข้อมูลข้อบ่งใช้ {indication}"
@@ -1896,15 +1896,21 @@ def calculate_special_drug(user_id, drug, weight, age):
         for group in indication_data:
             min_age = float(group.get("age_min", 0))
             max_age = float(group.get("age_max", float("inf")))
-            min_weight = float(group.get("weight_min", 0))
-            max_weight = float(group.get("weight_max", float("inf")))
 
-            if min_age <= age <= max_age and min_weight <= weight <= max_weight:
+            # ✅ ตรวจ weight เฉพาะกรณีที่มี weight_min/max
+            min_weight = float(group.get("weight_min", -float("inf")))
+            max_weight = float(group.get("weight_max", float("inf")))
+            check_weight = "weight_min" in group or "weight_max" in group
+
+            age_match = min_age <= age <= max_age
+            weight_match = (not check_weight) or (min_weight <= weight <= max_weight)
+
+            if age_match and weight_match:
                 matched_group = group
                 break
 
         if not matched_group:
-            return "❌ ไม่พบข้อมูลที่ตรงกับช่วงอายุและน้ำหนักนี้"
+            return f"❌ ไม่พบข้อมูลที่ตรงกับช่วงอายุ{'และน้ำหนัก' if check_weight else ''}นี้"
 
         sub = matched_group.get("sub_indication", "ไม่ระบุช่วง")
         lines.append(f"\n🔹 {sub}")
