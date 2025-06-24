@@ -998,40 +998,44 @@ SPECIAL_DRUGS = {
     "common_indications": ["Fever"]
     },
     "Ibuprofen": {
-    "concentration_mg_per_ml": 100 / 5,
-    "bottle_size_ml": 60,
-    "indications": [
-        {
-            "name": "Analgesic",
-            "dose_mg_per_kg_per_day": [4, 10],
-            "frequency": [3, 4],  # every 6–8h
-            "max_mg_per_dose": 600,
-            "max_mg_per_day": 2400,
-            "note": "⚠️ ไม่แนะนำใช้ >10 วัน เว้นแต่แพทย์สั่ง"
+        "concentration_mg_per_ml": 100 / 5,
+        "bottle_size_ml": 60,
+        "indications": {
+            "Analgesic": {
+                "weight_based": {
+                    "dose_mg_per_kg_per_dose": [4, 10],
+                    "frequency": [6, 8],
+                    "max_mg_per_dose": 600,
+                    "max_mg_per_day": 2400,
+                    "note": "⚠️ ไม่แนะนำใช้ >10 วัน เว้นแต่แพทย์สั่ง"
+                }
+            },
+            "Fever": {
+                "weight_based": {
+                    "dose_mg_per_kg_per_dose": [5, 10],
+                    "frequency": [6, 8],
+                    "max_mg_per_dose": 600,
+                    "max_mg_per_day": 2400,
+                    "note": "⚠️ ไม่แนะนำใช้ >3 วัน เว้นแต่แพทย์สั่ง"
+                }
+            },
+            "Juvenile idiopathic arthritis (JIA)": {
+                "weight_based": {
+                    "dose_mg_per_kg_per_day": [30, 50],
+                    "frequency": [6, 8],
+                    "max_mg_per_dose": 800,
+                    "max_mg_per_day": 2400,
+                    "note": "เริ่มต้นที่ 30 mg/kg/day และปรับเพิ่มหากจำเป็น"
+                }
+            }
         },
-        {
-            "name": "Fever",
-            "dose_mg_per_kg_per_day": [5, 10],
-            "frequency": [3, 4],  # every 6–8h
-            "max_mg_per_dose": 600,
-            "max_mg_per_day": 2400,
-            "note": "⚠️ ไม่แนะนำใช้ >3 วัน เว้นแต่แพทย์สั่ง"
-        },
-        {
-            "name": "Juvenile idiopathic arthritis (JIA)",
-            "dose_mg_per_kg_per_day": [30, 50],
-            "frequency": [3, 4],
-            "max_mg_per_dose": 800,
-            "max_mg_per_day": 2400,
-            "note": "เริ่มต้นที่ 30 mg/kg/day และปรับเพิ่มหากจำเป็น"
-        }
-    ],
-    "common_indications": [
-        "Analgesic",
-        "Fever",
-        "Juvenile idiopathic arthritis (JIA)"
-    ]
+        "common_indications": [
+            "Analgesic",
+            "Fever",
+            "Juvenile idiopathic arthritis (JIA)"
+        ]
     },
+
 
     "Cetirizine": {
     "concentration_mg_per_ml": 5 / 5,
