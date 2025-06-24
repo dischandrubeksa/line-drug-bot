@@ -1820,20 +1820,34 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         if "dose_mg_per_kg_per_dose" in matched_group:
             dose = weight * matched_group["dose_mg_per_kg_per_dose"]
-            dose = min(dose, matched_group["max_mg_per_day"])  # ไม่เกิน max
+            dose = min(dose, matched_group["max_mg_per_day"])
             ml = dose / concentration
-            freq_text = "วันละ " + "-".join([str(f) for f in matched_group["frequency"]]) + " ครั้ง"
-            lines.append(f"ขนาดยา: {matched_group['dose_mg_per_kg_per_dose']} mg/kg/dose → {dose:.1f} mg/dose × {freq_text} (max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/dose")
+
+            freqs = matched_group["frequency"]
+            if isinstance(freqs, list) and len(freqs) > 1:
+                min_f, max_f = min(freqs), max(freqs)
+                freq_text = f"วันละ {min_f}–{max_f} ครั้ง"
+            else:
+                freq_text = f"วันละ {freqs[0] if isinstance(freqs, list) else freqs} ครั้ง"
+
+            lines.append(
+                f"ขนาดยา: {matched_group['dose_mg_per_kg_per_dose']} mg/kg/dose → {dose:.1f} mg/dose × {freq_text} "
+                f"(max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/dose"
+            )
+
         elif "dose_mg" in matched_group:
             dose = matched_group["dose_mg"]
             freq = matched_group["frequency"]
             ml = dose / concentration
-            lines.append(f"ขนาดยา: {dose} mg × {freq} ครั้ง/วัน (max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/ครั้ง")
+            lines.append(
+                f"ขนาดยา: {dose} mg × {freq} ครั้ง/วัน (max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/ครั้ง"
+            )
 
         if matched_group.get("note"):
             lines.append(f"📝 หมายเหตุ: {matched_group['note']}")
 
         return "\n".join(lines)
+
     
     # ✅ Ibuprofen และยาอื่น ๆ ที่ใช้โครงสร้าง weight_based
     if drug == "Ibuprofen":
