@@ -1795,7 +1795,7 @@ def send_special_indication_carousel(event, drug_name):
         return
 
     indications = drug_info["indications"]
-    common = drug_info.get("common_indications", [])
+    common = drug_info.get("common_indications", list(indications.keys()))  # ✅ fallback
 
     names_to_show = common
     columns = []
@@ -1806,28 +1806,21 @@ def send_special_indication_carousel(event, drug_name):
 
         try:
             if isinstance(indication_info, list):
-                # ✅ หาด้วย .get() อย่างปลอดภัยจาก list ของ dict
-                dose = next(
-                    (item.get("dose_mg_per_kg_per_day") or item.get("dose_mg")
-                    for item in indication_info if isinstance(item, dict)),
-                    "?"
+                sample = indication_info[0] if indication_info else {}
+                dose = (
+                    sample.get("dose_mg_per_kg_per_day")
+                    or sample.get("dose_mg_per_kg_per_dose")
+                    or sample.get("dose_mg")
+                    or sample.get("dose_mg_range", ["?"])[0]
+                    or "?"
                 )
             elif isinstance(indication_info, dict):
                 sample_group = next(iter(indication_info.values()))
-                if isinstance(sample_group, dict):
-                    dose = sample_group.get("dose_mg_per_kg_per_day") \
-                        or sample_group.get("dose_mg") \
-                        or sample_group.get("initial_dose_mg") \
-                        or sample_group.get("dose_mg_range", ["?"])[0] \
-                        or sample_group.get("dose_range_mg", ["?"])[0] \
-                        or "?"
-                else:
-                    dose = "?"
+                dose = sample_group.get("dose_mg_per_kg_per_day") or "?"
             else:
                 dose = "?"
         except Exception as e:
             dose = "?"
-
 
         columns.append(CarouselColumn(
             title=title,
@@ -1835,6 +1828,14 @@ def send_special_indication_carousel(event, drug_name):
             actions=[MessageAction(label="เลือก", text=f"Indication: {name}")]
         ))
 
+    if not columns:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"❌ ไม่พบข้อบ่งใช้สำหรับ {drug_name}")]
+            )
+        )
+        return
 
     carousel_template = CarouselTemplate(columns=columns)
     messages = [TemplateMessage(
@@ -1848,7 +1849,7 @@ def send_special_indication_carousel(event, drug_name):
             messages=messages
         )
     )
-    return
+
 
 def get_indication_title(indication_dict):
     """
