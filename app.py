@@ -997,6 +997,39 @@ SPECIAL_DRUGS = {
     },
     "common_indications": ["Fever"]
     },
+    "Chlorphenamine": {
+        "concentration_mg_per_ml": 2 / 5,  # 2 mg per 5 mL
+        "bottle_size_ml": 60,
+        "requires_age": True,
+        "indications": {
+            "Upper respiratory allergy symptoms (hay fever)": [
+                {
+                    "sub_indication": "อายุตั้งแต่ 2–<6 ปี",
+                    "age_min": 2,
+                    "age_max": 5.9,
+                    "dose_mg": 1,
+                    "frequency": "ทุก 6–8 ชั่วโมง",
+                    "max_mg_per_day": 6,
+                    "note": "ใช้ด้วยความระมัดระวังในเด็กเล็ก; ไม่แนะนำในเด็ก <2 ปี"
+                },
+                {
+                    "sub_indication": "อายุตั้งแต่ 6–<12 ปี",
+                    "age_min": 6,
+                    "age_max": 11.9,
+                    "dose_mg": 2,
+                    "frequency": "ทุก 6–8 ชั่วโมง",
+                    "max_mg_per_day": 12
+                },
+                {
+                    "sub_indication": "อายุตั้งแต่ 12 ปี ขึ้นไป",
+                    "age_min": 12,
+                    "dose_mg": 4,
+                    "frequency": "ทุก 6–8 ชั่วโมง",
+                    "max_mg_per_day": 24
+                }
+            ]
+        }
+    },
     "Domperidone": {
         "concentration_mg_per_ml": 1,  # 1 mg/ml
         "bottle_size_ml": 30,
@@ -1032,7 +1065,7 @@ SPECIAL_DRUGS = {
                 {
                     "type": "weight_based",
                     "dose_mg_per_kg_per_dose": [4, 10],
-                    "frequency": "every 6–8 hours",
+                    "frequency": "ทุก 6–8 ชั่วโมง",
                     "max_mg_per_dose": 600,
                     "max_mg_per_day": 2400,
                     "max_mg_per_kg_per_day": 40,
@@ -1043,7 +1076,7 @@ SPECIAL_DRUGS = {
                 {
                     "type": "weight_based",
                     "dose_mg_per_kg_per_dose": [5, 10],
-                    "frequency": "every 6–8 hours",
+                    "frequency": "ทุก 6–8 ชั่วโมง",
                     "max_mg_per_dose": 600,
                     "max_mg_per_day": 2400,
                     "max_mg_per_kg_per_day": 40,
@@ -1800,6 +1833,63 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         if age < 12:
             return "❌ ไม่แนะนำให้ใช้ในเด็กอายุน้อยกว่า 12 ปี"
+
+        matched_group = None
+        for group in indication_data:
+            min_age = group.get("age_min", 0)
+            max_age = group.get("age_max", float("inf"))
+            min_weight = group.get("weight_min", 0)
+            max_weight = group.get("weight_max", float("inf"))
+
+            if min_age <= age <= max_age and min_weight <= weight <= max_weight:
+                matched_group = group
+                break
+
+        if not matched_group:
+            return "❌ ไม่พบข้อมูลที่ตรงกับช่วงอายุและน้ำหนักนี้"
+
+        sub = matched_group.get("sub_indication", "ไม่ระบุช่วง")
+        lines.append(f"\n🔹 {sub}")
+
+        if "dose_mg_per_kg_per_dose" in matched_group:
+            dose = weight * matched_group["dose_mg_per_kg_per_dose"]
+            dose = min(dose, matched_group["max_mg_per_day"])
+            ml = dose / concentration
+
+            freqs = matched_group["frequency"]
+            if isinstance(freqs, list) and len(freqs) > 1:
+                min_f, max_f = min(freqs), max(freqs)
+                freq_text = f"วันละ {min_f}–{max_f} ครั้ง"
+            else:
+                freq_text = f"วันละ {freqs[0] if isinstance(freqs, list) else freqs} ครั้ง"
+
+            lines.append(
+                f"ขนาดยา: {matched_group['dose_mg_per_kg_per_dose']} mg/kg/dose → {dose:.1f} mg/dose × {freq_text} "
+                f"(max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/dose"
+            )
+
+        elif "dose_mg" in matched_group:
+            dose = matched_group["dose_mg"]
+            freq = matched_group["frequency"]
+            ml = dose / concentration
+            lines.append(
+                f"ขนาดยา: {dose} mg × {freq} ครั้ง/วัน (max {matched_group['max_mg_per_day']} mg/day) ≈ ~{ml:.1f} ml/ครั้ง"
+            )
+
+        if matched_group.get("note"):
+            lines.append(f"📝 หมายเหตุ: {matched_group['note']}")
+
+        return "\n".join(lines)
+    
+    if drug == "Chlorphenamine":
+        indication_data = info["indications"].get(indication)
+        if not indication_data:
+            return f"❌ ไม่พบข้อมูลข้อบ่งใช้ {indication}"
+
+        lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg, อายุ {age} ปี):"]
+
+        if age < 2:
+            return "❌ ไม่แนะนำให้ใช้ในเด็กอายุน้อยกว่า 2 ปี"
 
         matched_group = None
         for group in indication_data:
