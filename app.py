@@ -1959,8 +1959,13 @@ def calculate_special_drug(user_id, drug, weight, age):
             dose = matched_group["dose_mg"]
             freqs = matched_group["frequency"] if isinstance(matched_group["frequency"], list) else [matched_group["frequency"]]
             ml = dose / concentration
-            for freq in freqs:
-                lines.append(f"ขนาดยา: {dose} mg × วันละ {freq} ครั้ง ≈ ~{ml:.1f} ml/ครั้ง")
+
+            if isinstance(freqs, list) and len(freqs) > 1 and all(isinstance(f, (int, float)) for f in freqs):
+                freq_text = f"วันละ {min(freqs)}–{max(freqs)} ครั้ง"
+                lines.append(f"ขนาดยา: {dose} mg × {freq_text} ≈ ~{ml:.1f} ml/ครั้ง")
+            else:
+                for freq in freqs:
+                    lines.append(f"ขนาดยา: {dose} mg × วันละ {freq} ครั้ง ≈ ~{ml:.1f} ml/ครั้ง")
 
         elif "dose_mg_range" in matched_group:
             freqs = matched_group["frequency"]
