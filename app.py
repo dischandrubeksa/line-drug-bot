@@ -1001,39 +1001,67 @@ SPECIAL_DRUGS = {
         "concentration_mg_per_ml": 100 / 5,
         "bottle_size_ml": 60,
         "indications": {
-            "Analgesic": {
-                "weight_based": {
+            "Analgesic": [
+                {
+                    "type": "weight_based",
                     "dose_mg_per_kg_per_dose": [4, 10],
-                    "frequency": [6, 8],
+                    "frequency": "every 6–8 hours",
                     "max_mg_per_dose": 600,
                     "max_mg_per_day": 2400,
-                    "note": "⚠️ ไม่แนะนำใช้ >10 วัน เว้นแต่แพทย์สั่ง"
+                    "max_mg_per_kg_per_day": 40,
+                    "note": "ไม่แนะนำให้ใช้ติดต่อกันเกิน 10 วันหากไม่มีคำแนะนำจากแพทย์"
+                },
+                {
+                    "type": "fixed",
+                    "age_range_years": [0.5, 11],
+                    "frequency": "every 6–8 hours",
+                    "max_doses_per_day": 4,
+                    "note": "หากไม่มีน้ำหนักให้ใช้ตามอายุ โดยดูจากตารางขนาดยา"
+                },
+                {
+                    "type": "fixed",
+                    "age_range_years": [12, 18],
+                    "dose_mg_per_dose": [200, 400],
+                    "frequency": "every 4–6 hours",
+                    "max_mg_per_day": 2400
                 }
-            },
-            "Fever": {
-                "weight_based": {
+            ],
+            "Fever": [
+                {
+                    "type": "weight_based",
                     "dose_mg_per_kg_per_dose": [5, 10],
-                    "frequency": [6, 8],
+                    "frequency": "every 6–8 hours",
                     "max_mg_per_dose": 600,
                     "max_mg_per_day": 2400,
-                    "note": "⚠️ ไม่แนะนำใช้ >3 วัน เว้นแต่แพทย์สั่ง"
+                    "max_mg_per_kg_per_day": 40,
+                    "note": "ไม่ควรใช้เกิน 3 วันหากไม่มีคำแนะนำจากแพทย์"
+                },
+                {
+                    "type": "fixed",
+                    "age_range_years": [0.5, 11],
+                    "frequency": "every 6–8 hours",
+                    "max_doses_per_day": 4,
+                    "note": "เลือกขนาดยาโดยอิงจากน้ำหนัก หากไม่มีให้ใช้ตามอายุ"
+                },
+                {
+                    "type": "fixed",
+                    "age_range_years": [12, 18],
+                    "dose_mg_per_dose": [200, 400],
+                    "frequency": "every 4–6 hours",
+                    "max_mg_per_day": 2400
                 }
-            },
-            "Juvenile idiopathic arthritis (JIA)": {
-                "weight_based": {
+            ],
+            "Juvenile Idiopathic Arthritis (JIA)": [
+                {
+                    "type": "weight_based",
                     "dose_mg_per_kg_per_day": [30, 50],
-                    "frequency": [6, 8],
+                    "divided_doses": 3,
                     "max_mg_per_dose": 800,
                     "max_mg_per_day": 2400,
-                    "note": "เริ่มต้นที่ 30 mg/kg/day และปรับเพิ่มหากจำเป็น"
+                    "note": "เริ่มจากขนาดต่ำและปรับเพิ่มหากจำเป็น"
                 }
-            }
-        },
-        "common_indications": [
-            "Analgesic",
-            "Fever",
-            "Juvenile idiopathic arthritis (JIA)"
-        ]
+            ]
+        }
     },
 
 
@@ -1706,6 +1734,30 @@ def calculate_special_drug(user_id, drug, weight, age):
             reply_lines.append(f"\n📌 หมายเหตุ: {indication_info['note']}")
 
         return "\n".join(reply_lines)
+    
+    # ✅ Ibuprofen และยาอื่น ๆ ที่ใช้โครงสร้าง weight_based
+    if "weight_based" in info["indications"].get(indication, {}):
+        profile = info["indications"][indication]["weight_based"]
+        dose_range = profile.get("dose_mg_per_kg_per_dose") or profile.get("dose_mg_per_kg_per_day")
+        freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+        max_dose = profile["max_mg_per_dose"]
+        max_per_day = profile.get("max_mg_per_day")
+
+        reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
+        for freq in freqs:
+            for dose in dose_range:
+                total_mg = dose * weight
+                dose_per_time = min(total_mg, max_dose)
+                reply_lines.append(f"💊 {dose} mg/kg → ทุก {freq} ชม. → ครั้งละ ~{dose_per_time:.1f} mg")
+
+        if max_per_day:
+            reply_lines.append(f"🔢 Max ต่อวัน: {max_per_day} mg")
+
+        if "note" in profile:
+            reply_lines.append(f"\n📌 หมายเหตุ: {profile['note']}")
+
+        return "\n".join(reply_lines)
+
 
     # กรณีพิเศษอื่น ๆ เช่น Paracetamol (ใช้แบบเดิม)
     indication_info = next(iter(info["indications"].values()))
