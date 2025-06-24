@@ -1894,10 +1894,10 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         matched_group = None
         for group in indication_data:
-            min_age = group.get("age_min", 0)
-            max_age = group.get("age_max", float("inf"))
-            min_weight = group.get("weight_min", 0)
-            max_weight = group.get("weight_max", float("inf"))
+            min_age = float(group.get("age_min", 0))
+            max_age = float(group.get("age_max", float("inf")))
+            min_weight = float(group.get("weight_min", 0))
+            max_weight = float(group.get("weight_max", float("inf")))
 
             if min_age <= age <= max_age and min_weight <= weight <= max_weight:
                 matched_group = group
