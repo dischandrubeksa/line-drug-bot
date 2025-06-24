@@ -1010,21 +1010,7 @@ SPECIAL_DRUGS = {
                     "max_mg_per_day": 2400,
                     "max_mg_per_kg_per_day": 40,
                     "note": "ไม่แนะนำให้ใช้ติดต่อกันเกิน 10 วันหากไม่มีคำแนะนำจากแพทย์"
-                },
-                {
-                    "type": "fixed",
-                    "age_range_years": [0.5, 11],
-                    "frequency": "every 6–8 hours",
-                    "max_doses_per_day": 4,
-                    "note": "หากไม่มีน้ำหนักให้ใช้ตามอายุ โดยดูจากตารางขนาดยา"
-                },
-                {
-                    "type": "fixed",
-                    "age_range_years": [12, 18],
-                    "dose_mg_per_dose": [200, 400],
-                    "frequency": "every 4–6 hours",
-                    "max_mg_per_day": 2400
-                }
+                } 
             ],
             "Fever": [
                 {
@@ -1035,21 +1021,8 @@ SPECIAL_DRUGS = {
                     "max_mg_per_day": 2400,
                     "max_mg_per_kg_per_day": 40,
                     "note": "ไม่ควรใช้เกิน 3 วันหากไม่มีคำแนะนำจากแพทย์"
-                },
-                {
-                    "type": "fixed",
-                    "age_range_years": [0.5, 11],
-                    "frequency": "every 6–8 hours",
-                    "max_doses_per_day": 4,
-                    "note": "เลือกขนาดยาโดยอิงจากน้ำหนัก หากไม่มีให้ใช้ตามอายุ"
-                },
-                {
-                    "type": "fixed",
-                    "age_range_years": [12, 18],
-                    "dose_mg_per_dose": [200, 400],
-                    "frequency": "every 4–6 hours",
-                    "max_mg_per_day": 2400
-                }
+                } 
+
             ],
             "Juvenile Idiopathic Arthritis (JIA)": [
                 {
@@ -1646,6 +1619,7 @@ def calculate_dose(drug, indication, weight):
 def calculate_special_drug(user_id, drug, weight, age):
     info = SPECIAL_DRUGS[drug]
     indication = user_drug_selection.get(user_id, {}).get("indication")
+    concentration = info["concentration_mg_per_ml"]
 
     if drug == "Hydroxyzine" and indication == "Pruritus (weight_based)":
         data = info["indications"][indication]
@@ -1746,25 +1720,40 @@ def calculate_special_drug(user_id, drug, weight, age):
         return "\n".join(reply_lines)
     
     # ✅ Ibuprofen และยาอื่น ๆ ที่ใช้โครงสร้าง weight_based
-    if "weight_based" in info["indications"].get(indication, {}):
-        profile = info["indications"][indication]["weight_based"]
-        dose_range = profile.get("dose_mg_per_kg_per_dose") or profile.get("dose_mg_per_kg_per_day")
-        freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
-        max_dose = profile["max_mg_per_dose"]
-        max_per_day = profile.get("max_mg_per_day")
+    if drug == "Ibuprofen":
+        indication_data = info["indications"].get(indication)
+        if not indication_data:
+            return f"❌ ไม่พบข้อมูลข้อบ่งใช้ {indication}"
 
         reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
-        for freq in freqs:
-            for dose in dose_range:
-                total_mg = dose * weight
-                dose_per_time = min(total_mg, max_dose)
-                reply_lines.append(f"💊 {dose} mg/kg → ทุก {freq} ชม. → ครั้งละ ~{dose_per_time:.1f} mg")
 
-        if max_per_day:
-            reply_lines.append(f"🔢 Max ต่อวัน: {max_per_day} mg")
+        for item in indication_data:
+            if item.get("type") != "weight_based":
+                continue
 
-        if "note" in profile:
-            reply_lines.append(f"\n📌 หมายเหตุ: {profile['note']}")
+            if "dose_mg_per_kg_per_dose" in item:
+                for d in item["dose_mg_per_kg_per_dose"]:
+                    total_mg = weight * d
+                    total_ml = total_mg / concentration
+                    reply_lines.append(
+                        f"💊 {d} mg/kg → ~{total_mg:.1f} mg (~{total_ml:.2f} ml) {item['frequency']}"
+                    )
+            elif "dose_mg_per_kg_per_day" in item:
+                for d in item["dose_mg_per_kg_per_day"]:
+                    total_mg_day = weight * d
+                    doses = item.get("divided_doses", 3)
+                    dose_per_time = total_mg_day / doses
+                    dose_ml = dose_per_time / concentration
+                    reply_lines.append(
+                        f"💊 {d} mg/kg/day → ~{total_mg_day:.1f} mg/day → แบ่ง {doses} ครั้ง → ครั้งละ ~{dose_per_time:.1f} mg (~{dose_ml:.2f} ml)"
+                    )
+
+            if item.get("max_mg_per_dose"):
+                reply_lines.append(f"🔢 Max ต่อครั้ง: {item['max_mg_per_dose']} mg")
+            if item.get("max_mg_per_day"):
+                reply_lines.append(f"🔢 Max ต่อวัน: {item['max_mg_per_day']} mg")
+            if item.get("note"):
+                reply_lines.append(f"📌 {item['note']}")
 
         return "\n".join(reply_lines)
 
