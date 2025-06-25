@@ -1273,49 +1273,49 @@ SPECIAL_DRUGS = {
         "concentration_mg_per_ml": 10 / 5 ,
         "bottle_size_ml": 60,
         "indications": {
-        "Anxiety": {
-            "under_6": {
-            "dose_mg": 12.5,
-            "frequency": 4,
-            "max_mg_per_dose": 12.5
-            },
-            "above_or_equal_6": {
-            "dose_mg_range": [12.5, 25],
-            "frequency": 4,
-            "max_mg_per_dose": 25
-            }
-        },
-        "Pruritus (age-based)": {
-            "under_6": {
-            "dose_mg": 12.5,
-            "frequency": [3, 4],
-            "max_mg_per_dose": 12.5
-            },
-            "above_or_equal_6": {
-            "dose_mg_range": [12.5, 25],
-            "frequency": [3, 4],
-            "max_mg_per_dose": 25
-            }
-        },
-        "Pruritus (weight_based)": {
-            "≤40kg": {
-                "dose_mg_per_kg_per_day": 2,
-                "frequency": [6, 8],
+            "Anxiety": {
+                "under_6": {
+                "dose_mg": 12.5,
+                "frequency": 4,
+                "max_mg_per_dose": 12.5
+                },
+                "above_or_equal_6": {
+                "dose_mg_range": [12.5, 25],
+                "frequency": 4,
                 "max_mg_per_dose": 25
+                }
             },
-            ">40kg": {
-                "dose_mg_range": [25, 50],
-                "frequency": [1, 2],
+            "Pruritus (age-based)": {
+                "under_6": {
+                "dose_mg": 12.5,
+                "frequency": [3, 4],
+                "max_mg_per_dose": 12.5
+                },
+                "above_or_equal_6": {
+                "dose_mg_range": [12.5, 25],
+                "frequency": [3, 4],
+                "max_mg_per_dose": 25
+                }
+            },
+            "Pruritus (weight_based)": {
+                "≤40kg": {
+                    "dose_mg_per_kg_per_day": 2,
+                    "frequency": [6, 8],
+                    "max_mg_per_dose": 25
+                },
+                ">40kg": {
+                    "dose_mg_range": [25, 50],
+                    "frequency": [1, 2],
+                    "max_mg_per_dose": 50
+                }
+            },
+            "Pruritus from opioid": {
+                "all_ages": {
+                "dose_mg_per_kg_per_dose": 0.5,
+                "frequency": 6,
                 "max_mg_per_dose": 50
+                }
             }
-        },
-        "Pruritus from opioid": {
-            "all_ages": {
-            "dose_mg_per_kg_per_dose": 0.5,
-            "frequency": 6,
-            "max_mg_per_dose": 50
-            }
-        }
         },
         "common_indications": [
         "Anxiety",
@@ -1375,16 +1375,17 @@ def send_drug_selection(event):
     columns2 = [
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Azithromycin')]),
         CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]),
+        CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
         CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ibuprofen')]),
         CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
-        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
+        
     ]
     columns3 = [
         CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Chlorpheniramine')]),
         CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
-        CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
+        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
     ]
 
     # ✅ รวมข้อความที่มี columns เท่านั้น
@@ -1789,33 +1790,71 @@ def calculate_special_drug(user_id, drug, weight, age):
     indication = user_drug_selection.get(user_id, {}).get("indication")
     concentration = info["concentration_mg_per_ml"]
 
-    if drug == "Hydroxyzine" and indication == "Pruritus (weight_based)":
-        data = info["indications"][indication]
-        if weight <= 40:
-            profile = data["\u226440kg"]  # ≤ = less than or equal to
-            dose_per_kg = profile["dose_mg_per_kg_per_day"]
+    if drug == "Hydroxyzine":
+        if indication in ["Anxiety", "Pruritus (age-based)"]:
+            data = info["indications"][indication]
+
+            if age < 6:
+                profile = data["under_6"]
+            else:
+                profile = data["above_or_equal_6"]
+
             freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
             max_dose = profile["max_mg_per_dose"]
 
-            total_mg_day = weight * dose_per_kg
-            reply_lines = [f"{drug} - {indication} (\u226440kg):"]
-            for freq in freqs:
-                dose_per_time = min(total_mg_day / freq, max_dose)
-                reply_lines.append(f"💊 {total_mg_day:.1f} mg/day → {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg")
+            reply_lines = [f"{drug} - {indication}:"]
+            if "dose_mg" in profile:
+                dose = profile["dose_mg"]
+                for freq in freqs:
+                    reply_lines.append(f"💊 {dose:.1f} mg × {freq} ครั้ง/วัน")
+            elif "dose_mg_range" in profile:
+                for freq in freqs:
+                    for dose in profile["dose_mg_range"]:
+                        dose_per_time = min(dose, max_dose)
+                        reply_lines.append(f"💊 {dose_per_time:.1f} mg × {freq} ครั้ง/วัน")
             return "\n".join(reply_lines)
+
+        elif indication == "Pruritus (weight_based)":
+            data = info["indications"][indication]
+
+            if weight <= 40:
+                profile = data["≤40kg"]
+                dose_per_kg = profile["dose_mg_per_kg_per_day"]
+                freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+                max_dose = profile["max_mg_per_dose"]
+
+                total_mg_day = weight * dose_per_kg
+                reply_lines = [f"{drug} - {indication} (≤40kg):"]
+                for freq in freqs:
+                    dose_per_time = min(total_mg_day / freq, max_dose)
+                    reply_lines.append(f"💊 {total_mg_day:.1f} mg/day → {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg")
+                return "\n".join(reply_lines)
+
+            else:
+                profile = data[">40kg"]
+                dose_range = profile["dose_mg_range"]
+                freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+                max_dose = profile["max_mg_per_dose"]
+
+                reply_lines = [f"{drug} - {indication} (>40kg):"]
+                for freq in freqs:
+                    for dose in dose_range:
+                        dose_per_time = min(dose, max_dose)
+                        reply_lines.append(f"💊 {dose_per_time:.1f} mg × {freq} ครั้ง/วัน")
+                return "\n".join(reply_lines)
+
+        elif indication == "Pruritus from opioid":
+            data = info["indications"][indication]["all_ages"]
+            dose_per_kg = data["dose_mg_per_kg_per_dose"]
+            freq = data["frequency"]
+            max_dose = data["max_mg_per_dose"]
+
+            dose = min(weight * dose_per_kg, max_dose)
+            return f"{drug} - {indication}:\n💊 {dose:.1f} mg × {freq} ครั้ง/วัน"
 
         else:
-            profile = data[">40kg"]
-            dose_range = profile["dose_mg_range"]
-            freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
-            max_dose = profile["max_mg_per_dose"]
+            return f"❌ ยังไม่รองรับข้อบ่งใช้ {indication} ของ {drug}"
 
-            reply_lines = [f"{drug} - {indication} (>40kg):"]
-            for freq in freqs:
-                for dose in dose_range:
-                    dose_per_time = min(dose, max_dose)
-                    reply_lines.append(f"💊 {dose_per_time:.1f} mg × {freq} ครั้ง/วัน")
-            return "\n".join(reply_lines)
     
     if drug == "Cetirizine":
         indication_info = info["indications"].get(indication)
