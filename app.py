@@ -2274,7 +2274,10 @@ def handle_message(event: MessageEvent):
     if text_lower in ['คำนวณยา warfarin']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
-        user_sessions[user_id] = {"mode": "calculate_warfarin", "flow": "warfarin", "step": "ask_inr"}
+        user_ages.pop(user_id, None)  # ✅ ล้างข้อมูลเก่า
+
+        # ✅ ไม่ต้องมี mode
+        user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
 
         messaging_api.reply_message(
             ReplyMessageRequest(
