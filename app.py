@@ -1801,7 +1801,21 @@ def calculate_special_drug(user_id, drug, weight, age):
 
             freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
             max_dose = profile["max_mg_per_dose"]
+            concentration = info["concentration_mg_per_ml"]
 
+            # ✅ กรณีพิเศษ: Anxiety + อายุน้อยกว่า 6 ปี
+            if indication == "Anxiety" and age < 6:
+                dose = profile["dose_mg"]
+                volume_per_dose = round(dose / concentration, 1)
+                return (
+                    f"🧪 {drug} - {indication}\n"
+                    f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n\n"
+                    f"🔹 อายุน้อยกว่า 6 ปี\n"
+                    f"ขนาดยา: {dose:.1f} mg × วันละ {freqs[0]} ครั้ง ≈ ~{volume_per_dose:.1f} ml/ครั้ง\n\n"
+                    f"📌 หมายเหตุเพิ่มเติม: แม้ FDA จะอนุมัติให้ใช้ในเด็ก <6 ปี แต่แนวทางจากผู้เชี่ยวชาญส่วนใหญ่ไม่แนะนำให้ใช้ยาในกลุ่มนี้ (although FDA approved, expert guidelines do not recommend pharmacotherapy in patients <6 years of age)"
+                )
+
+            # ✅ รูปแบบปกติ
             reply_lines = [f"{drug} - {indication}:"]
             if "dose_mg" in profile:
                 dose = profile["dose_mg"]
