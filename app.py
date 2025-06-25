@@ -2494,23 +2494,23 @@ def handle_message(event: MessageEvent):
                 )
                 return
 
-        else:
-            # ถ้าไม่มีคำว่า "อายุ" หรือ "น้ำหนัก" ให้แจ้งเตือน
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
-                )
-            )
-            return
-
-    if user_id not in user_sessions and user_id not in user_drug_selection:
+    elif text_lower == "คำนวณขนาดยา warfarin":
+        # ไม่ทำอะไร เพราะ LINE OA ตอบ auto-response ไปแล้ว
+        return
+    elif user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[
-                    TextMessage(text="❓ พิมพ์ 'คำนวณยา warfarin' หรือ 'คำนวณยาเด็ก' เพื่อเริ่มต้นใช้งาน")
-                ]
+                messages=[TextMessage(text="❓ พิมพ์ 'คำนวณยา warfarin' หรือ 'คำนวณยาเด็ก' เพื่อเริ่มต้นใช้งาน")]
+            )
+        )
+        return
+    else:
+        # ข้อความทั่วไปที่ไม่เข้าเงื่อนไข
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
             )
         )
         return
