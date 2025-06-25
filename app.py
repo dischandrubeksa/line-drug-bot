@@ -1857,29 +1857,29 @@ def calculate_special_drug(user_id, drug, weight, age):
             if weight <= 40:
                 profile = data["≤40kg"]
                 dose_per_kg = profile["dose_mg_per_kg_per_day"]
-                freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+                freqs = sorted(profile["frequency"])  # เช่น [6, 8]
                 max_dose = profile["max_mg_per_dose"]
                 concentration = info["concentration_mg_per_ml"]
 
                 total_mg_day = weight * dose_per_kg
 
-                reply_lines = [
-                    f"🧪 {drug} - {indication} (≤40kg)",
-                    f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n"
-                ]
-
+                dose_lines = []
                 for freq in freqs:
                     dose_per_time = min(total_mg_day / freq, max_dose)
                     volume = round(dose_per_time / concentration, 1)
-                    reply_lines.append(f"ขนาดยา: {total_mg_day:.1f} mg/day → วันละ {freq} ครั้ง → ครั้งละ ~{dose_per_time:.1f} mg ≈ ~{volume:.1f} ml/ครั้ง")
+                    dose_lines.append((freq, dose_per_time, volume))
 
-                reply_lines.append("")
-                reply_lines.append(
-                    "📌 หมายเหตุ: จากการศึกษาทางเภสัชจลนศาสตร์ อาจให้วันละครั้ง (ก่อนนอน) หรือวันละ 2 ครั้งก็เพียงพอ เนื่องจากมีครึ่งชีวิตยาว"
-                    
+                reply_text = (
+                    f"🧪 {drug} - {indication} (≤40kg)\n"
+                    f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n\n"
+                    f"ขนาดยา: {total_mg_day:.1f} mg/day\n"
+                    f"  → วันละ {dose_lines[0][0]} ครั้ง → ครั้งละ ~{dose_lines[0][1]:.1f} mg ≈ ~{dose_lines[0][2]:.1f} ml/ครั้ง\n"
+                    f"  → วันละ {dose_lines[1][0]} ครั้ง → ครั้งละ ~{dose_lines[1][1]:.1f} mg ≈ ~{dose_lines[1][2]:.1f} ml/ครั้ง\n\n"
+                    f"📌 หมายเหตุ: จากการศึกษาทางเภสัชจลนศาสตร์ อาจให้วันละครั้ง (ก่อนนอน) หรือวันละ 2 ครั้งก็เพียงพอ เนื่องจากมีครึ่งชีวิตยาว"
                 )
 
-                return "\n".join(reply_lines)
+                return reply_text
+
 
         elif indication == "Pruritus from opioid":
             data = info["indications"][indication]["all_ages"]
