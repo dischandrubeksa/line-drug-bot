@@ -1315,12 +1315,6 @@ SPECIAL_DRUGS = {
             "frequency": 6,
             "max_mg_per_dose": 50
             }
-        },
-        "Sedation": {
-            "all_ages": {
-            "dose_mg_per_kg": 0.6,
-            "max_mg_per_dose": 100
-            }
         }
         },
         "common_indications": [
@@ -1328,7 +1322,6 @@ SPECIAL_DRUGS = {
         "Pruritus (age-based)",
         "Pruritus (weight_based)",
         "Pruritus from opioid",
-        "Sedation"
         ]
     },
     "Ferrous drop": {
