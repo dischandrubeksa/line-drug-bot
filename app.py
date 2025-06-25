@@ -1793,49 +1793,61 @@ def calculate_special_drug(user_id, drug, weight, age):
     if drug == "Hydroxyzine":
         if indication in ["Anxiety", "Pruritus (age-based)"]:
             data = info["indications"][indication]
+            concentration = info["concentration_mg_per_ml"]
 
             if age < 6:
                 profile = data["under_6"]
-            else:
-                profile = data["above_or_equal_6"]
-
-            freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
-            max_dose = profile["max_mg_per_dose"]
-            concentration = info["concentration_mg_per_ml"]
-
-            # ✅ กรณีพิเศษ: Anxiety + อายุน้อยกว่า 6 ปี
-            if indication == "Anxiety" and age < 6:
+                freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
                 dose = profile["dose_mg"]
-                volume_per_dose = round(dose / concentration, 1)
-                return (
-                    f"🧪 {drug} - {indication}\n"
-                    f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n\n"
-                    f"🔹 อายุน้อยกว่า 6 ปี\n"
-                    f"ขนาดยา: {dose:.1f} mg × วันละ {freqs[0]} ครั้ง ≈ ~{volume_per_dose:.1f} ml/ครั้ง\n\n"
-                    f"📌 หมายเหตุเพิ่มเติม: แม้ FDA จะอนุมัติให้ใช้ในเด็ก <6 ปี แต่ไกด์ไลน์ส่วนใหญ่ไม่แนะนำให้ใช้ยาในกลุ่มนี้"
-                )
+                volume = round(dose / concentration, 1)
+                freq_str = f"{min(freqs)}–{max(freqs)}" if len(freqs) > 1 else f"{freqs[0]}"
 
-            # ✅ รูปแบบปกติ
+                reply_lines = [
+                    f"🧪 {drug} - {indication}",
+                    f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n",
+                    f"🔹 อายุน้อยกว่า 6 ปี",
+                    f"ขนาดยา: {dose:.1f} mg × วันละ {freq_str} ครั้ง ≈ ~{volume:.1f} ml/ครั้ง",
+                ]
+
+                # หมายเหตุแยกตาม indication
+                if indication == "Anxiety":
+                    reply_lines.append("")
+                    reply_lines.append("📌 หมายเหตุเพิ่มเติม: แม้ FDA จะอนุมัติให้ใช้ในเด็ก <6 ปี แต่แนวทางผู้เชี่ยวชาญส่วนใหญ่ไม่แนะนำให้ใช้ยาในกลุ่มนี้")
+                elif indication == "Pruritus (age-based)":
+                    reply_lines.append("")
+                    reply_lines.append(
+                        "📌 หมายเหตุ: อ้างอิงจากการศึกษาทางเภสัชจลนศาสตร์ ยานี้อาจให้วันละครั้ง (ก่อนนอน) หรือวันละ 2 ครั้งก็เพียงพอ เนื่องจากมีครึ่งชีวิตยาว"
+                    )
+
+                return "\n".join(reply_lines)
+
             else:
                 profile = data["above_or_equal_6"]
                 freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+                dose_range = profile["dose_mg_range"]
                 max_dose = profile["max_mg_per_dose"]
-                concentration = info["concentration_mg_per_ml"]
+                freq_str = f"{min(freqs)}–{max(freqs)}" if len(freqs) > 1 else f"{freqs[0]}"
 
                 reply_lines = [
                     f"🧪 {drug} - {indication}",
                     f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n",
                     f"🔹 อายุตั้งแต่ 6 ปีขึ้นไป"
                 ]
-                for freq in freqs:
-                    for dose in profile["dose_mg_range"]:
-                        dose_per_time = min(dose, max_dose)
-                        volume = round(dose_per_time / concentration, 1)
-                        reply_lines.append(f"ขนาดยา: {dose_per_time:.1f} mg × วันละ {freq} ครั้ง ≈ ~{volume:.1f} ml/ครั้ง")
 
-                reply_lines.append(
-                    "\n📌 หมายเหตุเพิ่มเติม: แนวทางผู้เชี่ยวชาญไม่แนะนำให้ใช้ Hydroxyzine ในเด็กเพื่อรักษาภาวะวิตกกังวล\n"
-                )
+                for dose in dose_range:
+                    dose_per_time = min(dose, max_dose)
+                    volume = round(dose_per_time / concentration, 1)
+                    reply_lines.append(f"ขนาดยา: {dose_per_time:.1f} mg × วันละ {freq_str} ครั้ง ≈ ~{volume:.1f} ml/ครั้ง")
+
+                reply_lines.append("")
+
+                # หมายเหตุแยกตาม indication
+                if indication == "Anxiety":
+                    reply_lines.append("📌 หมายเหตุเพิ่มเติม: แนวทางผู้เชี่ยวชาญไม่แนะนำให้ใช้ Hydroxyzine ในเด็กเพื่อรักษาภาวะวิตกกังวล")
+                elif indication == "Pruritus (age-based)":
+                    reply_lines.append(
+                        "📌 หมายเหตุ: จากการศึกษาทางเภสัชจลนศาสตร์ อาจให้วันละครั้ง (ก่อนนอน) หรือวันละ 2 ครั้งก็เพียงพอ เนื่องจากมีครึ่งชีวิตยาว"
+                    )
 
                 return "\n".join(reply_lines)
 
