@@ -1164,7 +1164,7 @@ SPECIAL_DRUGS = {
           "max_mg_per_day": 2.5
         },
         "12_to_23_months": {
-          "initial_dose_mg": 2.5,
+          "dose_mg": 2.5,
           "frequency": 1,
           "max_frequency": 2,
           "max_mg_per_day": 5
