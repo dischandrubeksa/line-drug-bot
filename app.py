@@ -1929,7 +1929,15 @@ def calculate_special_drug(user_id, drug, weight, age):
         else:
             # ✅ กรณีปกติ: dose_mg_range หรือ dose_mg + frequency
             freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
-            dose_range = profile["dose_mg_range"] if "dose_mg_range" in profile else [profile["dose_mg"]]
+            if "dose_mg_range" in profile:
+                dose_range = profile["dose_mg_range"]
+            elif "dose_range_mg" in profile:
+                dose_range = profile["dose_range_mg"]  # 👈 รองรับชื่อเก่าที่ผิด
+            elif "dose_mg" in profile:
+                dose_range = [profile["dose_mg"]]
+            else:
+                return "❌ ไม่พบข้อมูล dose_mg ที่เหมาะสมใน profile"
+            
             max_dose = profile.get("max_mg_per_dose", None)
 
             for dose in dose_range:
