@@ -2274,11 +2274,7 @@ def handle_message(event: MessageEvent):
     if text_lower in ['คำนวณยา warfarin']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
-        user_ages.pop(user_id, None)  # ✅ ล้างข้อมูลเก่า
-
-        # ✅ ไม่ต้องมี mode
         user_sessions[user_id] = {"flow": "warfarin", "step": "ask_inr"}
-
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
@@ -2291,10 +2287,8 @@ def handle_message(event: MessageEvent):
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
         user_ages.pop(user_id, None)
-        user_sessions[user_id] = {"mode": "calculate_drug"}  # ✅ เพิ่มตรงนี้
         send_drug_selection(event)
         return
-
     
     # ดำเนิน Warfarin flow
     if user_id in user_sessions:
@@ -2375,9 +2369,6 @@ def handle_message(event: MessageEvent):
         indication = text.replace("Indication:", "").strip()
         user_drug_selection[user_id]["indication"] = indication
         drug = user_drug_selection[user_id].get("drug")
-
-        # ✅ เพิ่มตรงนี้เพื่อให้ไม่หลุด flow
-        user_sessions[user_id] = {"mode": "calculate_drug"}
 
         if user_id in user_ages:
             user_ages.pop(user_id)
@@ -2501,19 +2492,17 @@ def handle_message(event: MessageEvent):
                         messages=[TextMessage(text=reply)]
                     )
                 )
-                user_sessions.pop(user_id, None)  # ✅ ล้าง session หลังคำนวณเสร็จ
                 return
 
         else:
-            # ✅ เตือนเฉพาะเมื่ออยู่ในโหมดคำนวณยาเด็ก
-            if user_sessions.get(user_id, {}).get("mode") == "calculate_drug":
-                messaging_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
-                    )
+            # ถ้าไม่มีคำว่า "อายุ" หรือ "น้ำหนัก" ให้แจ้งเตือน
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
                 )
-                return
+            )
+            return
 
     if user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
@@ -2531,5 +2520,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
     
-LINE_CHANNEL_ACCESS_TOKEN = 'f9aa6b49ac00dfb359098504cffe6eab'
-LINE_CHANNEL_SECRET = 'kzXIG0cO1xDAPMJaQ0NrEiufMINBbst7Z5ndou3YkPp21dJKvr3ZHIL4eeePNM2q4JPFmy+ttnGunjBPaEZ3Vl1yG3gVR8sISp/DVpy7SibXB+xoed0JZd2MmbU9qnhKkf2Eu5teI7DiM/v0DMkV7AdB04t89/1O/w1cDnyilFU='
