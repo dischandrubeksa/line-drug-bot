@@ -2271,6 +2271,18 @@ def handle_message(event: MessageEvent):
     text = event.message.text.strip()
     text_lower = text.lower()
 
+    auto_response_commands = {
+        "คำนวณขนาดยา warfarin",
+        "เลือก: warfarin guideline",
+        "สมุนไพร/อาหารเสริมที่ควรระวัง",
+        "warfarin drug interaction",
+        "drug use evaluation",
+        "แจ้งประกาศยาใหม่",
+        "ติดต่อหัวหน้าแผนก"
+    }
+    if text_lower in auto_response_commands:
+        return
+
     if text_lower in ['คำนวณยา warfarin']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
@@ -2494,9 +2506,7 @@ def handle_message(event: MessageEvent):
                 )
                 return
 
-    elif text_lower == "คำนวณขนาดยา warfarin":
-        # ไม่ทำอะไร เพราะ LINE OA ตอบ auto-response ไปแล้ว
-        return
+    # กรณีที่ยังไม่มีการเลือกยา    
     elif user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
             ReplyMessageRequest(
