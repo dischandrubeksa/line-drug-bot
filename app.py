@@ -402,7 +402,7 @@ DRUG_DATABASE = {
         "Gonococcal infection": [
         {
             "sub_indication": "Uncomplicated cervix/urethra/rectum (≥45 kg)",
-            "fixed_dose_mg": 800,
+            "dose_mg": 800,
             "frequency": 1,
             "note": "เฉพาะเมื่อ ceftriaxone ใช้ไม่ได้; ให้ครั้งเดียว 800 mg"
         }
