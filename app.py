@@ -978,6 +978,7 @@ SPECIAL_DRUGS = {
     "indications": {
         "Fever": [
             {
+                "label": "10–15 mg/kg/dose",
                 "min_age_years": 0,
                 "max_age_years": 6,
                 "dose_mg_per_kg_per_day": 60,
@@ -986,6 +987,7 @@ SPECIAL_DRUGS = {
                 "max_mg_per_dose": 250
             },
             {
+                "label": "10–15 mg/kg/dose",
                 "min_age_years": 6,
                 "max_age_years": 18,
                 "dose_mg_per_kg_per_day": 60,
@@ -1004,6 +1006,7 @@ SPECIAL_DRUGS = {
     "indications": {
         "Fever": [
             {
+                "label": "10–15 mg/kg/dose",
                 "min_age_years": 0,
                 "max_age_years": 6,
                 "dose_mg_per_kg_per_day": 60,
@@ -1012,6 +1015,7 @@ SPECIAL_DRUGS = {
                 "max_mg_per_dose": 250
             },
             {
+                "label": "10–15 mg/kg/dose",
                 "min_age_years": 6,
                 "max_age_years": 18,
                 "dose_mg_per_kg_per_day": 60,
