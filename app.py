@@ -1908,12 +1908,17 @@ def calculate_special_drug(user_id, drug, weight, age):
             init_dose = profile["initial_dose_mg"]
             init_freq = profile["frequency"]
             init_vol = round(init_dose / concentration, 1)
-            lines.append(f"💊 เริ่มต้น {init_dose} mg × {init_freq} ครั้ง/วัน ≈ ~{init_vol} ml/ครั้ง")
-            for opt in profile["options"]:
-                dose = opt["dose_mg"]
-                freq = opt["frequency"]
-                vol = round(dose / concentration, 1)
-                lines.append(f"หรือ: {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+
+            lines.append("💊 ขนาดยาแนะนำ:")
+            lines.append(f"• เริ่มต้น: {init_dose} mg × {init_freq} ครั้ง/วัน ≈ ~{init_vol} ml/ครั้ง")
+
+            if profile.get("options"):
+                lines.append("• ตัวเลือกอื่น:")
+                for opt in profile["options"]:
+                    dose = opt["dose_mg"]
+                    freq = opt["frequency"]
+                    vol = round(dose / concentration, 1)
+                    lines.append(f"   - {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
 
         else:
             # ✅ กรณีปกติ: dose_mg_range หรือ dose_mg + frequency
