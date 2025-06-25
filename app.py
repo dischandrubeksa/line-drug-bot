@@ -1893,10 +1893,6 @@ def calculate_special_drug(user_id, drug, weight, age):
         if not profile:
             return f"❌ ยังไม่มีข้อมูลช่วงอายุนี้ใน indication {indication}"
 
-        freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
-        dose_range = profile["dose_mg_range"] if "dose_mg_range" in profile else [profile["dose_mg"]]
-        max_dose = profile.get("max_mg_per_dose", None)
-
         lines = [f"{drug} - {indication} (อายุ {age:.1f} ปี):"]
 
         def format_frequency(freqs):
@@ -1907,19 +1903,38 @@ def calculate_special_drug(user_id, drug, weight, age):
                 return f"{freqs[0]}–{freqs[-1]}"
             return " หรือ ".join(str(f) for f in freqs)
 
-        for dose in dose_range:
-            dose_per_time = min(dose, max_dose) if max_dose else dose
-            vol = round(dose_per_time / concentration, 1)
-            freq_text = format_frequency(freqs)
-            lines.append(f"💊 ขนาดยา: {dose_per_time} mg × {freq_text} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+        # 👉 รองรับกรณีแบบ initial_dose + options
+        if "initial_dose_mg" in profile and "options" in profile:
+            init_dose = profile["initial_dose_mg"]
+            init_freq = profile["frequency"]
+            init_vol = round(init_dose / concentration, 1)
+            lines.append(f"💊 เริ่มต้น {init_dose} mg × {init_freq} ครั้ง/วัน ≈ ~{init_vol} ml/ครั้ง")
+            for opt in profile["options"]:
+                dose = opt["dose_mg"]
+                freq = opt["frequency"]
+                vol = round(dose / concentration, 1)
+                lines.append(f"หรือ: {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
 
-        if max_dose:
-            lines.append(f"\n📌 ขนาดยาสูงสุดต่อครั้ง: {max_dose} mg")
+        else:
+            # ✅ กรณีปกติ: dose_mg_range หรือ dose_mg + frequency
+            freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+            dose_range = profile["dose_mg_range"] if "dose_mg_range" in profile else [profile["dose_mg"]]
+            max_dose = profile.get("max_mg_per_dose", None)
+
+            for dose in dose_range:
+                dose_per_time = min(dose, max_dose) if max_dose else dose
+                vol = round(dose_per_time / concentration, 1)
+                freq_text = format_frequency(freqs)
+                lines.append(f"💊 ขนาดยา: {dose_per_time} mg × {freq_text} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+
+            if max_dose:
+                lines.append(f"\n📌 ขนาดยาสูงสุดต่อครั้ง: {max_dose} mg")
 
         if "max_mg_per_day" in profile:
             lines.append(f"📌 ขนาดยาสูงสุดต่อวัน: {profile['max_mg_per_day']} mg")
 
         return "\n".join(lines)
+
 
     
     if drug == "Ferrous drop":
