@@ -997,6 +997,33 @@ SPECIAL_DRUGS = {
     },
     "common_indications": ["Fever"]
     },
+
+    "Paracetamol drop": {
+    "concentration_mg_per_ml": 60 / 0.6,
+    "bottle_size_ml": 15,
+    "indications": {
+        "Fever": [
+            {
+                "min_age_years": 0,
+                "max_age_years": 6,
+                "dose_mg_per_kg_per_day": 60,
+                "frequency": 4,
+                "duration_days": 3,
+                "max_mg_per_dose": 250
+            },
+            {
+                "min_age_years": 6,
+                "max_age_years": 18,
+                "dose_mg_per_kg_per_day": 60,
+                "frequency": 4,
+                "duration_days": 3,
+                "max_mg_per_dose": 500
+            }
+        ]
+    },
+    "common_indications": ["Fever"]
+    },
+
     "Chlorpheniramine": {
         "concentration_mg_per_ml": 2 / 5,  # 2 mg per 5 mL
         "bottle_size_ml": 60,
@@ -1360,6 +1387,7 @@ def send_drug_selection(event):
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Chlorpheniramine')]),
         CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
+        CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
     ]
 
     # ✅ รวมข้อความที่มี columns เท่านั้น
