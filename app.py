@@ -1237,10 +1237,9 @@ SPECIAL_DRUGS = {
           "frequency": 1
         },
         "12_to_23_months": {
-          "initial_dose_mg": 2.5,
-          "frequency": 1,
-          "max_frequency": 2,
-          "max_mg_per_day": 5
+        "dose_mg": 2.5,
+        "frequency": 1,
+        "max_mg_per_day": 5
         },
         "2_to_5_years": {
           "initial_dose_mg": 2.5,
@@ -1252,12 +1251,14 @@ SPECIAL_DRUGS = {
           "max_mg_per_day": 5
         },
         "6_to_11_years": {
-          "dose_mg": 5,
-          "frequency_options": [1, 2]
+        "dose_range_mg": [5, 10],
+        "frequency": 1,
+        "max_mg_per_day": 10
         },
         "above_or_equal_12": {
-          "dose_mg": 10,
-          "frequency": 1
+        "dose_range_mg": [5, 10],
+        "frequency": 1,
+        "max_mg_per_day": 10
         }
       }
     },
