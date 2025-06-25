@@ -1875,20 +1875,29 @@ def calculate_special_drug(user_id, drug, weight, age):
         data = info["indications"][indication]
         concentration = info["concentration_mg_per_ml"]
 
-        # แปลงช่วงอายุ
-        if age < 1:
-            age_key = "6_to_11_months"
-        elif 1 <= age < 2:
-            age_key = "12_to_23_months"
-        elif 2 <= age <= 5:
-            age_key = "2_to_5_years"
-        elif 6 <= age <= 11:
-            age_key = "6_to_11_years"
-        elif age >= 12:
-            age_key = "above_or_equal_12"
+        # ✅ แปลงช่วงอายุ
+        if drug == "Cetirizine" and indication == "Anaphylaxis (adjunctive only)":
+            if age < 2:
+                age_key = "6_to_23_months"
+            elif 2 <= age <= 5:
+                age_key = "2_to_5_years"
+            else:
+                age_key = "above_5"
         else:
-            return f"❌ ไม่พบช่วงอายุที่เหมาะสม (อายุ {age} ปี)"
+            if age < 1:
+                age_key = "6_to_11_months"
+            elif 1 <= age < 2:
+                age_key = "12_to_23_months"
+            elif 2 <= age <= 5:
+                age_key = "2_to_5_years"
+            elif 6 <= age <= 11:
+                age_key = "6_to_11_years"
+            elif age >= 12:
+                age_key = "above_or_equal_12"
+            else:
+                return f"❌ ไม่พบช่วงอายุที่เหมาะสม (อายุ {age} ปี)"
 
+        # ✅ ตรวจสอบว่ามีข้อมูลช่วงอายุนี้หรือไม่
         profile = data.get(age_key)
         if not profile:
             return f"❌ ยังไม่มีข้อมูลช่วงอายุนี้ใน indication {indication}"
@@ -1903,15 +1912,13 @@ def calculate_special_drug(user_id, drug, weight, age):
                 return f"{freqs[0]}–{freqs[-1]}"
             return " หรือ ".join(str(f) for f in freqs)
 
-        # 👉 รองรับกรณีแบบ initial_dose + options
+        # 👉 แบบ initial_dose + options
         if "initial_dose_mg" in profile and "options" in profile:
             init_dose = profile["initial_dose_mg"]
             init_freq = profile["frequency"]
             init_vol = round(init_dose / concentration, 1)
-
             lines.append("💊 ขนาดยาแนะนำ:")
             lines.append(f"• เริ่มต้น: {init_dose} mg × {init_freq} ครั้ง/วัน ≈ ~{init_vol} ml/ครั้ง")
-
             if profile.get("options"):
                 lines.append("• ตัวเลือกอื่น:")
                 for opt in profile["options"]:
@@ -1919,7 +1926,6 @@ def calculate_special_drug(user_id, drug, weight, age):
                     freq = opt["frequency"]
                     vol = round(dose / concentration, 1)
                     lines.append(f"   - {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
-
         else:
             # ✅ กรณีปกติ: dose_mg_range หรือ dose_mg + frequency
             freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
