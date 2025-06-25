@@ -1898,11 +1898,20 @@ def calculate_special_drug(user_id, drug, weight, age):
         max_dose = profile.get("max_mg_per_dose", None)
 
         lines = [f"{drug} - {indication} (อายุ {age:.1f} ปี):"]
+
+        def format_frequency(freqs):
+            freqs = sorted(set(freqs))
+            if len(freqs) == 1:
+                return f"{freqs[0]}"
+            if freqs == list(range(freqs[0], freqs[-1] + 1)):
+                return f"{freqs[0]}–{freqs[-1]}"
+            return " หรือ ".join(str(f) for f in freqs)
+
         for dose in dose_range:
             dose_per_time = min(dose, max_dose) if max_dose else dose
-            for freq in freqs:
-                vol = round(dose_per_time / concentration, 1)
-                lines.append(f"💊 ขนาดยา: {dose_per_time} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+            vol = round(dose_per_time / concentration, 1)
+            freq_text = format_frequency(freqs)
+            lines.append(f"💊 ขนาดยา: {dose_per_time} mg × {freq_text} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
 
         if max_dose:
             lines.append(f"\n📌 ขนาดยาสูงสุดต่อครั้ง: {max_dose} mg")
