@@ -2166,34 +2166,30 @@ def send_special_indication_carousel(event, drug_name):
             if isinstance(indication_info, list):
                 sample = indication_info[0] if indication_info else {}
 
-                # ✅ รองรับหลายรูปแบบ
-                if "dose_mg_per_kg_per_day" in sample:
-                    dose = f"{sample['dose_mg_per_kg_per_day']} mg/kg/day"
-                elif "dose_mg_per_kg_per_dose" in sample:
-                    dose = f"{sample['dose_mg_per_kg_per_dose']} mg/kg/dose"
-                elif "dose_mg_range" in sample:
-                    dose = f"{sample['dose_mg_range'][0]}–{sample['dose_mg_range'][1]} mg"
-                elif "dose_mg" in sample:
-                    dose = f"{sample['dose_mg']} mg"
-                elif "initial_dose_mg" in sample:
-                    dose = f"{sample['initial_dose_mg']} mg"
+                # ✅ ใช้ label หากมี
+                dose = sample.get("label") or (
+                    f"{sample['dose_mg_per_kg_per_day']} mg/kg/day" if "dose_mg_per_kg_per_day" in sample else
+                    f"{sample['dose_mg_per_kg_per_dose']} mg/kg/dose" if "dose_mg_per_kg_per_dose" in sample else
+                    f"{sample['dose_mg_range'][0]}–{sample['dose_mg_range'][1]} mg" if "dose_mg_range" in sample else
+                    f"{sample['dose_mg']} mg" if "dose_mg" in sample else
+                    f"{sample['initial_dose_mg']} mg" if "initial_dose_mg" in sample else "?"
+                )
+
             elif isinstance(indication_info, dict):
                 sample = next(iter(indication_info.values()))
                 if isinstance(sample, dict):
-                    if "dose_mg_per_kg_per_day" in sample:
-                        dose = f"{sample['dose_mg_per_kg_per_day']} mg/kg/day"
-                    elif "dose_mg" in sample:
-                        dose = f"{sample['dose_mg']} mg"
-                    elif "dose_mg_range" in sample:
-                        dose = f"{sample['dose_mg_range'][0]}–{sample['dose_mg_range'][1]} mg"
-                    elif "initial_dose_mg" in sample:
-                        dose = f"{sample['initial_dose_mg']} mg"
+                    dose = sample.get("label") or (
+                        f"{sample['dose_mg_per_kg_per_day']} mg/kg/day" if "dose_mg_per_kg_per_day" in sample else
+                        f"{sample['dose_mg_per_kg_per_dose']} mg/kg/dose" if "dose_mg_per_kg_per_dose" in sample else
+                        f"{sample['dose_mg_range'][0]}–{sample['dose_mg_range'][1]} mg" if "dose_mg_range" in sample else
+                        f"{sample['dose_mg']} mg" if "dose_mg" in sample else
+                        f"{sample['initial_dose_mg']} mg" if "initial_dose_mg" in sample else "?"
+                    )
             else:
                 dose = "?"
 
         except Exception:
             dose = "?"
-
         columns.append(CarouselColumn(
             title=title,
             text=dose,
