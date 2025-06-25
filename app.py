@@ -2373,6 +2373,9 @@ def handle_message(event: MessageEvent):
         user_drug_selection[user_id]["indication"] = indication
         drug = user_drug_selection[user_id].get("drug")
 
+        # ✅ เพิ่มตรงนี้เพื่อให้ไม่หลุด flow
+        user_sessions[user_id] = {"mode": "calculate_drug"}
+
         if user_id in user_ages:
             user_ages.pop(user_id)
 
