@@ -1859,25 +1859,26 @@ def calculate_special_drug(user_id, drug, weight, age):
                 dose_per_kg = profile["dose_mg_per_kg_per_day"]
                 freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
                 max_dose = profile["max_mg_per_dose"]
+                concentration = info["concentration_mg_per_ml"]
 
                 total_mg_day = weight * dose_per_kg
-                reply_lines = [f"{drug} - {indication} (≤40kg):"]
+
+                reply_lines = [
+                    f"🧪 {drug} - {indication} (≤40kg)",
+                    f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n"
+                ]
+
                 for freq in freqs:
                     dose_per_time = min(total_mg_day / freq, max_dose)
-                    reply_lines.append(f"💊 {total_mg_day:.1f} mg/day → {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg")
-                return "\n".join(reply_lines)
+                    volume = round(dose_per_time / concentration, 1)
+                    reply_lines.append(f"ขนาดยา: {total_mg_day:.1f} mg/day → วันละ {freq} ครั้ง → ครั้งละ ~{dose_per_time:.1f} mg ≈ ~{volume:.1f} ml/ครั้ง")
 
-            else:
-                profile = data[">40kg"]
-                dose_range = profile["dose_mg_range"]
-                freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
-                max_dose = profile["max_mg_per_dose"]
+                reply_lines.append("")
+                reply_lines.append(
+                    "📌 หมายเหตุ: จากการศึกษาทางเภสัชจลนศาสตร์ อาจให้วันละครั้ง (ก่อนนอน) หรือวันละ 2 ครั้งก็เพียงพอ เนื่องจากมีครึ่งชีวิตยาว"
+                    
+                )
 
-                reply_lines = [f"{drug} - {indication} (>40kg):"]
-                for freq in freqs:
-                    for dose in dose_range:
-                        dose_per_time = min(dose, max_dose)
-                        reply_lines.append(f"💊 {dose_per_time:.1f} mg × {freq} ครั้ง/วัน")
                 return "\n".join(reply_lines)
 
         elif indication == "Pruritus from opioid":
