@@ -1234,7 +1234,8 @@ SPECIAL_DRUGS = {
       "Urticaria, chronic spontaneous": {
         "6_to_11_months": {
           "dose_mg": 2.5,
-          "frequency": 1
+          "frequency": 1,
+          "max_mg_per_day": 2.5
         },
         "12_to_23_months": {
         "dose_mg": 2.5,
