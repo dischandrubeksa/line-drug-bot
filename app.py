@@ -1871,32 +1871,37 @@ def calculate_special_drug(user_id, drug, weight, age):
             return f"❌ ยังไม่รองรับข้อบ่งใช้ {indication} ของ {drug}"
 
     
-    if drug == "Cetirizine" and indication == "Anaphylaxis (adjunctive only)":
-        if age < 2:
-            age_key = "6_to_23_months"
-        elif 2 <= age <= 5:
-            age_key = "2_to_5_years"
-        else:
-            age_key = "above_5"
-    else:
-        # ✅ รองรับทั้งแบบปกติและกรณีใช้ key พิเศษ (เช่น above_or_equal_6)
-        if age < 1:
-            age_key = "6_to_11_months"
-        elif 1 <= age < 2:
-            age_key = "12_to_23_months"
-        elif 2 <= age <= 5:
-            age_key = "2_to_5_years"
-        elif 6 <= age <= 11:
-            if "6_to_11_years" in data:
-                age_key = "6_to_11_years"
-            elif "above_or_equal_6" in data:
-                age_key = "above_or_equal_6"
+    if drug in ["Cetirizine"]:
+        data = info["indications"][indication]
+        concentration = info["concentration_mg_per_ml"]
+
+        # ✅ แปลงช่วงอายุ
+        if drug == "Cetirizine" and indication == "Anaphylaxis (adjunctive only)":
+            if age < 2:
+                age_key = "6_to_23_months"
+            elif 2 <= age <= 5:
+                age_key = "2_to_5_years"
             else:
-                return f"❌ ยังไม่มีข้อมูลช่วงอายุนี้ใน indication {indication}"
-        elif age >= 12:
-            age_key = "above_or_equal_12"
+                age_key = "above_5"
         else:
-            return f"❌ ไม่พบช่วงอายุที่เหมาะสม (อายุ {age} ปี)"
+            if age < 1:
+                age_key = "6_to_11_months"
+            elif 1 <= age < 2:
+                age_key = "12_to_23_months"
+            elif 2 <= age <= 5:
+                age_key = "2_to_5_years"
+            elif 6 <= age <= 11:
+                if "6_to_11_years" in data:
+                    age_key = "6_to_11_years"
+                elif "above_or_equal_6" in data:
+                    age_key = "above_or_equal_6"
+                else:
+                    return f"❌ ยังไม่มีข้อมูลช่วงอายุนี้ใน indication {indication}"   
+            elif age >= 12:
+                age_key = "above_or_equal_12"
+            else:
+                return f"❌ ไม่พบช่วงอายุที่เหมาะสม (อายุ {age} ปี)"
+
         # ✅ ตรวจสอบว่ามีข้อมูลช่วงอายุนี้หรือไม่
         profile = data.get(age_key)
         if not profile:
