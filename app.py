@@ -1164,10 +1164,10 @@ SPECIAL_DRUGS = {
           "max_mg_per_day": 2.5
         },
         "12_to_23_months": {
-          "dose_mg": 2.5,
-          "frequency": 1,
-          "max_frequency": 2,
-          "max_mg_per_day": 5
+            "dose_mg_range": [2.5, 2.5],
+            "frequency": [1, 2],
+            "max_mg_per_dose": 2.5,
+            "max_mg_per_day": 5
         }
       },
       "Allergic symptoms, hay fever": {
@@ -1871,68 +1871,47 @@ def calculate_special_drug(user_id, drug, weight, age):
             return f"❌ ยังไม่รองรับข้อบ่งใช้ {indication} ของ {drug}"
 
     
-    if drug == "Cetirizine":
-        indication_info = info["indications"].get(indication)
-        if not indication_info:
-            return f"❌ ไม่พบข้อบ่งใช้ {indication}"
+    if drug in ["Cetirizine"]:
+        data = info["indications"][indication]
+        concentration = info["concentration_mg_per_ml"]
 
-        possible_groups = indication_info.keys()
-
-        age_group = None
+        # แปลงช่วงอายุ
         if age < 1:
-            age_group = "6_to_11_months"
+            age_key = "6_to_11_months"
         elif 1 <= age < 2:
-            age_group = "12_to_23_months"
-        elif 2 <= age <= 5 and "2_to_5_years" in possible_groups:
-            age_group = "2_to_5_years"
-        elif 6 <= age <= 11 and "6_to_11_years" in possible_groups:
-            age_group = "6_to_11_years"
-        elif age >= 12 and "above_or_equal_12" in possible_groups:
-            age_group = "above_or_equal_12"
-        elif age > 5 and "above_5" in possible_groups:
-            age_group = "above_5"
+            age_key = "12_to_23_months"
+        elif 2 <= age <= 5:
+            age_key = "2_to_5_years"
+        elif 6 <= age <= 11:
+            age_key = "6_to_11_years"
+        elif age >= 12:
+            age_key = "above_or_equal_12"
+        else:
+            return f"❌ ไม่พบช่วงอายุที่เหมาะสม (อายุ {age} ปี)"
 
-        group_data = indication_info.get(age_group)
-        if not group_data:
-            return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
+        profile = data.get(age_key)
+        if not profile:
+            return f"❌ ยังไม่มีข้อมูลช่วงอายุนี้ใน indication {indication}"
 
-        concentration = info.get("concentration_mg_per_ml", 1)
-        lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
+        freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+        dose_range = profile["dose_mg_range"] if "dose_mg_range" in profile else [profile["dose_mg"]]
+        max_dose = profile.get("max_mg_per_dose", None)
 
-        def add_line(dose_mg, freq):
-            vol = round(dose_mg / concentration, 1)
-            lines.append(f"💊 ขนาดยา: {dose_mg} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+        lines = [f"{drug} - {indication} (อายุ {age:.1f} ปี):"]
+        for dose in dose_range:
+            dose_per_time = min(dose, max_dose) if max_dose else dose
+            for freq in freqs:
+                vol = round(dose_per_time / concentration, 1)
+                lines.append(f"💊 ขนาดยา: {dose_per_time} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
 
-        if "dose_mg" in group_data and "frequency" in group_data:
-            add_line(group_data["dose_mg"], group_data["frequency"])
+        if max_dose:
+            lines.append(f"\n📌 ขนาดยาสูงสุดต่อครั้ง: {max_dose} mg")
 
-        elif "initial_dose_mg" in group_data and "frequency" in group_data:
-            dose = group_data["initial_dose_mg"]
-            freq = group_data["frequency"]
-            vol = round(dose / concentration, 1)
-            lines.append(f"💊 เริ่มต้น {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
-            for opt in group_data.get("options", []):
-                dose = opt["dose_mg"]
-                freq = opt["frequency"]
-                vol = round(dose / concentration, 1)
-                lines.append(f"หรือ: {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
-
-        elif "dose_range_mg" in group_data and "frequency" in group_data:
-            for dose in group_data["dose_range_mg"]:
-                add_line(dose, group_data["frequency"])
-
-        elif "dose_mg_range" in group_data and "frequency" in group_data:
-            for dose in group_data["dose_mg_range"]:
-                add_line(dose, group_data["frequency"])
-
-        elif "dose_mg" in group_data and "frequency_options" in group_data:
-            for freq in group_data["frequency_options"]:
-                add_line(group_data["dose_mg"], freq)
-
-        if "max_mg_per_dose" in group_data:
-            lines.append(f"\n📌 ขนาดยาสูงสุดต่อครั้ง: {group_data['max_mg_per_dose']} mg")
+        if "max_mg_per_day" in profile:
+            lines.append(f"📌 ขนาดยาสูงสุดต่อวัน: {profile['max_mg_per_day']} mg")
 
         return "\n".join(lines)
+
     
     if drug == "Ferrous drop":
         indication_info = info["indications"][indication]["all_ages"]
