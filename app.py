@@ -767,14 +767,6 @@ DRUG_DATABASE = {
                     "note": "เริ่มด้วย 500 mg วันแรก ตามด้วย 250 mg/day ร่วมกับ atovaquone จนครบ 7–10 วัน"
                 },
                 {
-                    "sub_indication": "Severe disease (IV initial)",
-                    "dose_mg": 500,
-                    "max_mg_per_day": 500,
-                    "frequency": 1,
-                    "duration_days": 2,
-                    "note": "IV 500 mg/day + atovaquone อย่างน้อย 2 วัน จากนั้นเปลี่ยนเป็น oral"
-                },
-                {
                     "sub_indication": "Severe disease (oral step-down)",
                     "dose_mg": 250,
                     "max_mg_per_day": 500,
@@ -1328,22 +1320,15 @@ SPECIAL_DRUGS = {
         "concentration_mg_per_ml": 15 / 0.6 ,
         "bottle_size_ml": 15,
         "indications": {
-        "Iron deficiency, treatment": {
-            "all_ages": {
-            "initial_dose_mg_per_kg_per_day": 3,
-            "max_dose_range_mg_per_day": [60, 120],
-            "usual_max_mg_per_day": 150,
-            "absolute_max_mg_per_day": 200,
-            "frequency": [1, 3],
+            "Iron deficiency, treatment": {
+            "dose_mg_per_kg_per_day": 3,
+            "frequency": 1,
+            "max_mg_per_day": 60,
             "note": "ให้ครั้งเดียว หรือแบ่งวันละ 1–3 ครั้งได้; การให้วันเว้นวันอาจช่วยดูดซึมดีขึ้น"
-            }
         }
-        },
-        "common_indications": [
-        "Iron deficiency, treatment"
-        ]
+        }
     }
-    }
+}
 
 @app.route('/')
 def home():
@@ -1880,16 +1865,6 @@ def calculate_special_drug(user_id, drug, weight, age):
 
                 return reply_text
 
-
-        elif indication == "Pruritus from opioid":
-            data = info["indications"][indication]["all_ages"]
-            dose_per_kg = data["dose_mg_per_kg_per_dose"]
-            freq = data["frequency"]
-            max_dose = data["max_mg_per_dose"]
-
-            dose = min(weight * dose_per_kg, max_dose)
-            return f"{drug} - {indication}:\n💊 {dose:.1f} mg × {freq} ครั้ง/วัน"
-
         else:
             return f"❌ ยังไม่รองรับข้อบ่งใช้ {indication} ของ {drug}"
 
@@ -1943,24 +1918,35 @@ def calculate_special_drug(user_id, drug, weight, age):
     if drug == "Ferrous drop":
         indication_info = info["indications"][indication]["all_ages"]
         dose_per_kg = indication_info["initial_dose_mg_per_kg_per_day"]
-        freqs = indication_info["frequency"]
+        freqs = [indication_info["frequency"]]  # รองรับแบบ list ได้ภายหลัง
         max_range = indication_info["max_dose_range_mg_per_day"]
         usual_max = indication_info.get("usual_max_mg_per_day")
         absolute_max = indication_info.get("absolute_max_mg_per_day")
+        concentration = info.get("concentration_mg_per_ml")
+        note = indication_info.get("note", "")
 
         total_mg_day = weight * dose_per_kg
-        total_mg_day = min(max(total_mg_day, max_range[0]), max_range[1])
+        total_mg_day = max(total_mg_day, max_range[0])  # ไม่ให้ต่ำกว่า min
+        total_mg_day = min(total_mg_day, max_range[1])  # ไม่เกิน max range
         if absolute_max:
             total_mg_day = min(total_mg_day, absolute_max)
 
-        reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
-        reply_lines.append(f"💊 {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day")
+        reply_lines = [f"🧪 {drug} - {indication}", f"(น้ำหนัก {weight:.1f} kg):\n"]
+        line = f"💊 {dose_per_kg:.0f} mg/kg/day → {total_mg_day:.1f} mg/day วันละ {freqs[0]} ครั้ง"
 
-        for freq in freqs:
-            reply_lines.append(f"→ {freq} ครั้ง/วัน → ครั้งละ ~{(total_mg_day / freq):.1f} mg")
+        if concentration:
+            volume = round(total_mg_day / freqs[0] / concentration, 1)
+            line += f" ≈ ~{volume:.1f} ml ต่อครั้ง"
 
-        if "note" in indication_info:
-            reply_lines.append(f"\n📌 หมายเหตุ: {indication_info['note']}")
+        reply_lines.append(line)
+
+        if usual_max:
+            reply_lines.append(f"(max usual: {usual_max} mg/day)")
+        if absolute_max:
+            reply_lines.append(f"(absolute max: {absolute_max} mg/day)")
+
+        if note:
+            reply_lines.append(f"\n📌 หมายเหตุ: {note}")
 
         return "\n".join(reply_lines)
     
