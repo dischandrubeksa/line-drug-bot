@@ -766,6 +766,7 @@ DRUG_DATABASE = {
                     "duration_days": [7,10],
                     "note": "เริ่มด้วย 500 mg วันแรก ตามด้วย 250 mg/day ร่วมกับ atovaquone จนครบ 7–10 วัน"
                 },
+
                 {
                     "sub_indication": "Severe disease (oral step-down)",
                     "dose_mg": 250,
@@ -1317,23 +1318,23 @@ SPECIAL_DRUGS = {
         ]
     },
     "Ferrous drop": {
-        "concentration_mg_per_ml": 15 / 0.6 ,
+        "concentration_mg_per_ml": 15 / 0.6,
         "bottle_size_ml": 15,
         "indications": {
-        "Iron deficiency, treatment": {
-            "label": "3mg/kg/day",
-            "all_ages": {
-            "initial_dose_mg_per_kg_per_day": 3,
-            "max_dose_range_mg_per_day": [60, 120],
-            "usual_max_mg_per_day": 150,
-            "absolute_max_mg_per_day": 200,
-            "frequency": 1,
-            "note": "ให้ครั้งเดียว หรือแบ่งวันละ 1–3 ครั้งได้; การให้วันเว้นวันอาจช่วยดูดซึมดีขึ้น"
+            "Iron deficiency, treatment": {
+                "label": "3 mg/kg/day",
+                "all_ages": {
+                    "initial_dose_mg_per_kg_per_day": 3,
+                    "max_dose_range_mg_per_day": [60, 120],
+                    "usual_max_mg_per_day": 150,
+                    "absolute_max_mg_per_day": 200,
+                    "frequency": [1, 2, 3],  # ✅ เพิ่ม 2 เข้าไปด้วย รองรับ dose แบ่ง 2 ครั้ง
+                    "note": "ให้ครั้งเดียว หรือแบ่งวันละ 1–3 ครั้งได้; การให้วันเว้นวันอาจช่วยดูดซึมดีขึ้น"
+                }
             }
-        }
         },
         "common_indications": [
-        "Iron deficiency, treatment"
+            "Iron deficiency, treatment"
         ]
     }
     }
@@ -1926,24 +1927,41 @@ def calculate_special_drug(user_id, drug, weight, age):
     if drug == "Ferrous drop":
         indication_info = info["indications"][indication]["all_ages"]
         dose_per_kg = indication_info["initial_dose_mg_per_kg_per_day"]
-        freqs = indication_info["frequency"]
         max_range = indication_info["max_dose_range_mg_per_day"]
         usual_max = indication_info.get("usual_max_mg_per_day")
         absolute_max = indication_info.get("absolute_max_mg_per_day")
+        concentration = info.get("concentration_mg_per_ml")
+        note = indication_info.get("note", "")
 
+        # คำนวณ total dose
         total_mg_day = weight * dose_per_kg
-        total_mg_day = min(max(total_mg_day, max_range[0]), max_range[1])
+        total_mg_day = max(total_mg_day, max_range[0])
+        total_mg_day = min(total_mg_day, max_range[1])
         if absolute_max:
             total_mg_day = min(total_mg_day, absolute_max)
 
-        reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
-        reply_lines.append(f"💊 {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day")
+        # เริ่มข้อความ
+        reply_lines = [
+            f"🧪 {drug} - {indication} (น้ำหนัก {weight:.1f} kg):\n",
+            f"💊 {dose_per_kg:.0f} mg/kg/day → {total_mg_day:.1f} mg/day"
+        ]
 
-        for freq in freqs:
-            reply_lines.append(f"→ {freq} ครั้ง/วัน → ครั้งละ ~{(total_mg_day / freq):.1f} mg")
+        # รองรับความถี่ 1–3 ครั้ง/วัน
+        for freq in [1, 2, 3]:
+            dose_per_time = total_mg_day / freq
+            line = f"→ วันละ {freq} ครั้ง → ครั้งละ ~{dose_per_time:.1f} mg"
+            if concentration:
+                volume = round(dose_per_time / concentration, 1)
+                line += f" ≈ ~{volume:.1f} ml/ครั้ง"
+            reply_lines.append(line)
 
-        if "note" in indication_info:
-            reply_lines.append(f"\n📌 หมายเหตุ: {indication_info['note']}")
+        if usual_max:
+            reply_lines.append(f"\n(max usual: {usual_max} mg/day)")
+        if absolute_max:
+            reply_lines.append(f"(absolute max: {absolute_max} mg/day)")
+
+        if note:
+            reply_lines.append(f"\n📌 หมายเหตุ: {note}")
 
         return "\n".join(reply_lines)
     
