@@ -1203,20 +1203,29 @@ SPECIAL_DRUGS = {
           "max_mg_per_day": 10
         }
       },
-      "Urticaria, acute": {
-        "6_to_23_months": {
-          "dose_mg": 2.5,
-          "frequency": 1
+      "Urticaria, acute": { 
+        "6_to_11_months": {
+        "dose_mg": 2.5,
+        "frequency": 1
+        },
+        "12_to_23_months": {
+        "dose_mg": 2.5,
+        "frequency": 1
         },
         "2_to_5_years": {
-          "dose_range_mg": [2.5, 5],
-          "frequency": 1
+        "dose_range_mg": [2.5, 5],
+        "frequency": 1
         },
-        "above_5": {
-          "dose_range_mg": [5, 10],
-          "frequency": 1
+        "6_to_11_years": {
+        "dose_range_mg": [5, 10],
+        "frequency": 1
+        },
+        "above_or_equal_12": {
+        "dose_range_mg": [5, 10],
+        "frequency": 1
         }
-      },
+    },
+
       "Urticaria, chronic spontaneous": {
         "6_to_11_months": {
           "dose_mg": 2.5,
