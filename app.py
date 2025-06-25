@@ -1206,23 +1206,28 @@ SPECIAL_DRUGS = {
       "Urticaria, acute": { 
         "6_to_11_months": {
         "dose_mg": 2.5,
-        "frequency": 1
+        "frequency": 1,
+        "max_mg_per_day": 2.5
         },
         "12_to_23_months": {
         "dose_mg": 2.5,
-        "frequency": 1
+        "frequency": 1,
+        "max_mg_per_day": 5
         },
         "2_to_5_years": {
         "dose_range_mg": [2.5, 5],
-        "frequency": 1
+        "frequency": 1,
+        "max_mg_per_day": 5
         },
         "6_to_11_years": {
         "dose_range_mg": [5, 10],
-        "frequency": 1
+        "frequency": 1,
+        "max_mg_per_day": 10
         },
         "above_or_equal_12": {
         "dose_range_mg": [5, 10],
-        "frequency": 1
+        "frequency": 1,
+        "max_mg_per_day": 10
         }
     },
 
