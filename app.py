@@ -2287,8 +2287,10 @@ def handle_message(event: MessageEvent):
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
         user_ages.pop(user_id, None)
+        user_sessions[user_id] = {"mode": "calculate_drug"}  # ✅ เพิ่มตรงนี้
         send_drug_selection(event)
         return
+
     
     # ดำเนิน Warfarin flow
     if user_id in user_sessions:
@@ -2492,17 +2494,19 @@ def handle_message(event: MessageEvent):
                         messages=[TextMessage(text=reply)]
                     )
                 )
+                user_sessions.pop(user_id, None)  # ✅ ล้าง session หลังคำนวณเสร็จ
                 return
 
         else:
-            # ถ้าไม่มีคำว่า "อายุ" หรือ "น้ำหนัก" ให้แจ้งเตือน
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
+            # ✅ เตือนเฉพาะเมื่ออยู่ในโหมดคำนวณยาเด็ก
+            if user_sessions.get(user_id, {}).get("mode") == "calculate_drug":
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="❗️ กรุณาพิมพ์อายุ เช่น '5 ปี' หรือ น้ำหนัก เช่น '18 กก'")]
+                    )
                 )
-            )
-            return
+                return
 
     if user_id not in user_sessions and user_id not in user_drug_selection:
         messaging_api.reply_message(
