@@ -1548,8 +1548,10 @@ def calculate_warfarin(inr, twd, bleeding, supplement=None):
     if supplement:
         herb_map = {
             "กระเทียม": "garlic", "ใบแปะก๊วย": "ginkgo", "โสม": "ginseng",
-            "ขมิ้น": "turmeric", "น้ำมันปลา": "fish oil",
-            "dong quai": "dong quai", "cranberry": "cranberry"
+            "ขมิ้น": "turmeric", "น้ำมันปลา": "fish oil", "dong quai": "dong quai", "cranberry": "cranberry",
+            "ตังกุย": "dong quai", "โกจิ": "goji berry", "คาร์โมไมล์": "chamomile", "ขิง": "ginger", "ชะเอมเทศ": "licorice",
+            "ชาเขียว": "green tea", "นมถั่วเหลือง": "soy milk", "คลอโรฟิลล์": "chlorophyll",
+            "วิตามินเค": "vitamin K", "โคเอนไซม์ Q10": "Coenzyme Q10", "St.John’s Wort": "St.John’s Wort"
         }
         high_risk = list(herb_map.keys())
         matched = [name for name in high_risk if name in supplement]
@@ -1625,7 +1627,7 @@ def send_supplement_flex(reply_token):
                         *[
                             {"type": "button", "style": "primary", "height": "sm", "color": "#AEC6CF",
                              "action": {"type": "message", "label": herb, "text": herb}}
-                            for herb in ["กระเทียม", "ใบแปะก๊วย", "โสม", "ขมิ้น", "น้ำมันปลา", "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"]
+                            for herb in ["กระเทียม", "ใบแปะก๊วย", "โสม", "ขมิ้น", "ขิง", "น้ำมันปลา", "ใช้หลายชนิด", "สมุนไพร/อาหารเสริมชนิดอื่นๆ"]
                         ]
                     ]
                 }
@@ -1647,8 +1649,8 @@ def send_supplement_flex(reply_token):
     )
 def send_interaction_flex(reply_token):
     interaction_drugs = [
-        "Amiodarone", "Metronidazole", "Trimethoprim/Sulfamethoxazole",
-        "Fluconazole", "Erythromycin", "NSAIDs", "Aspirin"
+        "Amiodarone", "Gemfibrozil", "Azole antifungal", "Trimethoprim/Sulfamethoxazole",
+        "Macrolides(ex.Erythromycin)", "NSAIDs", "Quinolones(ex.Ciprofloxacin)"
     ]
     flex_content = {
         "type": "bubble",
@@ -2624,16 +2626,43 @@ def handle_message(event: MessageEvent):
                     send_supplement_flex(reply_token)
                 return
 
-            
 
             elif step == "choose_supplement":
                 if text == "ไม่ได้ใช้":
                     session["supplement"] = ""
+                    session["step"] = "choose_interaction"
+                    send_interaction_flex(reply_token)
+                    return
+
+                elif text == "สมุนไพร/อาหารเสริมชนิดอื่นๆ":
+                    session["step"] = "ask_custom_supplement"
+                    messaging_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=reply_token,
+                            messages=[TextMessage(text="🌿 กรุณาพิมพ์ชื่อสมุนไพร/อาหารเสริมที่ใช้ เช่น ตังกุย ขิง ชาเขียว")]
+                        )
+                    )
+                    return
+                
+                elif step == "ask_custom_supplement":
+                    session["supplement"] = text
+                    session["step"] = "choose_interaction"
+                    send_interaction_flex(reply_token)
+                    return
+
                 else:
                     session["supplement"] = text
+                    session["step"] = "choose_interaction"
+                    send_interaction_flex(reply_token)
+                    return
+
+            elif step == "ask_custom_supplement":
+                session["supplement"] = text
                 session["step"] = "choose_interaction"
                 send_interaction_flex(reply_token)
                 return
+
+
 
             elif step == "choose_interaction":
                 if text == "ไม่ได้ใช้":
