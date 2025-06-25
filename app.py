@@ -391,19 +391,12 @@ DRUG_DATABASE = {
     "concentration_mg_per_ml": 100 / 5,
     "bottle_size_ml": 50,
     "indications": {
-        "Febrile neutropenia": [
-        {
-            "sub_indication": "Low-risk (step-down after IV)",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": [1, 2],
-            "note": "ใช้แบบ once daily หรือแบ่งวันละ 2 ครั้งหลัง IV antibiotic 48–72 ชม."
-        }
-        ],
         "Gonococcal infection": [
         {
             "sub_indication": "Uncomplicated cervix/urethra/rectum (≥45 kg)",
             "dose_mg": 800,
             "frequency": 1,
+            "duration_days": 1,
             "note": "เฉพาะเมื่อ ceftriaxone ใช้ไม่ได้; ให้ครั้งเดียว 800 mg"
         }
         ],
@@ -1883,9 +1876,8 @@ def calculate_special_drug(user_id, drug, weight, age):
         if not indication_info:
             return f"❌ ไม่พบข้อบ่งใช้ {indication}"
 
-        # ตรวจสอบ age_group ที่มีอยู่จริง
         possible_groups = indication_info.keys()
-        
+
         age_group = None
         if age < 1:
             age_group = "6_to_11_months"
@@ -1904,23 +1896,41 @@ def calculate_special_drug(user_id, drug, weight, age):
         if not group_data:
             return f"❌ ไม่พบข้อมูลกลุ่มอายุที่เหมาะสม (อายุ {age} ปี)"
 
+        concentration = info.get("concentration_mg_per_ml", 1)
         lines = [f"{drug} - {indication} (อายุ {age} ปี):"]
-        if "dose_mg" in group_data:
-            lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
-        elif "initial_dose_mg" in group_data:
-            options = group_data.get("options", [])
-            lines.append(f"💊 เริ่มต้น {group_data['initial_dose_mg']} mg × {group_data['frequency']} ครั้ง/วัน")
-            for opt in options:
-                lines.append(f"หรือ: {opt['dose_mg']} mg × {opt['frequency']} ครั้ง/วัน")
-        elif "dose_range_mg" in group_data:
+
+        def add_line(dose_mg, freq):
+            vol = round(dose_mg / concentration, 1)
+            lines.append(f"💊 ขนาดยา: {dose_mg} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+
+        if "dose_mg" in group_data and "frequency" in group_data:
+            add_line(group_data["dose_mg"], group_data["frequency"])
+
+        elif "initial_dose_mg" in group_data and "frequency" in group_data:
+            dose = group_data["initial_dose_mg"]
+            freq = group_data["frequency"]
+            vol = round(dose / concentration, 1)
+            lines.append(f"💊 เริ่มต้น {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+            for opt in group_data.get("options", []):
+                dose = opt["dose_mg"]
+                freq = opt["frequency"]
+                vol = round(dose / concentration, 1)
+                lines.append(f"หรือ: {dose} mg × {freq} ครั้ง/วัน ≈ ~{vol} ml/ครั้ง")
+
+        elif "dose_range_mg" in group_data and "frequency" in group_data:
             for dose in group_data["dose_range_mg"]:
-                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
-        elif "dose_mg_range" in group_data:
+                add_line(dose, group_data["frequency"])
+
+        elif "dose_mg_range" in group_data and "frequency" in group_data:
             for dose in group_data["dose_mg_range"]:
-                lines.append(f"💊 ขนาดยา: {dose} mg × {group_data['frequency']} ครั้ง/วัน")
+                add_line(dose, group_data["frequency"])
+
         elif "dose_mg" in group_data and "frequency_options" in group_data:
             for freq in group_data["frequency_options"]:
-                lines.append(f"💊 ขนาดยา: {group_data['dose_mg']} mg × {freq} ครั้ง/วัน")
+                add_line(group_data["dose_mg"], freq)
+
+        if "max_mg_per_dose" in group_data:
+            lines.append(f"\n📌 ขนาดยาสูงสุดต่อครั้ง: {group_data['max_mg_per_dose']} mg")
 
         return "\n".join(lines)
     
