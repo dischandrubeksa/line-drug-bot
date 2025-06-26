@@ -1377,7 +1377,7 @@ def send_drug_selection(event):
     ]
     columns2 = [
         CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Azithromycin')]),
-        CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]),
+        CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]), 
         CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
         CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ibuprofen')]),
         CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
@@ -2551,7 +2551,8 @@ def handle_message(event: MessageEvent):
         "warfarin drug interaction",
         "drug use evaluation",
         "แจ้งประกาศยาใหม่",
-        "ติดต่อหัวหน้าแผนก"
+        "ติดต่อหัวหน้าแผนก",
+        "เลือก: รายชื่อยา DUE",
     }
     if text_lower in auto_response_commands:
         return
