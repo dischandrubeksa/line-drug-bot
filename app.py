@@ -2004,8 +2004,8 @@ def calculate_special_drug(user_id, drug, weight, age):
     if drug == "Carbocysteine":
         concentration = info["concentration_mg_per_ml"]
 
-        if indication == "mucolytic_age_based":
-            data = info["indications"]["mucolytic_age_based"]
+        if indication == "mucolytic (age-based)":
+            data = info["indications"]["mucolytic (age-based)"]
 
             reply_lines = [f"🧪 {drug} - การใช้แบบอิงอายุ", f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n"]
 
@@ -2032,8 +2032,8 @@ def calculate_special_drug(user_id, drug, weight, age):
 
             return "\n".join(reply_lines)
 
-        elif indication == "mucolytic_weight_based":
-            data = info["indications"]["mucolytic_weight_based"]
+        elif indication == "mucolytic (weight-based)":
+            data = info["indications"]["mucolytic (weight-based)"]
             if age < data["age_min"]:
                 return f"❌ ไม่แนะนำการใช้ Carbocysteine ตามน้ำหนักในเด็กอายุน้อยกว่า {data['age_min']} ปี"
 
