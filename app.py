@@ -961,56 +961,28 @@ SPECIAL_DRUGS = {
     "concentration_mg_per_ml": 120 / 5,
     "bottle_size_ml": 60,
     "indications": {
-        "Fever": [
-            {
-                "label": "10–15 mg/kg/dose",
-                "min_age_years": 0,
-                "max_age_years": 6,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 250
-            },
-            {
-                "label": "10–15 mg/kg/dose",
-                "min_age_years": 6,
-                "max_age_years": 18,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 500
-            }
-        ]
+        "Fever / Pain": {
+            "dose_mg_per_kg_per_dose": [10, 15],
+            "frequency": "ทุก 4–6 ชม.",
+            "max_mg_per_day": 4000,
+            "note": "ให้ทุก 4–6 ชั่วโมง ไม่ควรเกิน 5 ครั้ง/วัน"
+        }
     },
-    "common_indications": ["Fever"]
+    "common_indications": ["Fever / Pain"]
     },
 
     "Paracetamol drop": {
     "concentration_mg_per_ml": 60 / 0.6,
     "bottle_size_ml": 15,
     "indications": {
-        "Fever": [
-            {
-                "label": "10–15 mg/kg/dose",
-                "min_age_years": 0,
-                "max_age_years": 6,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 250
-            },
-            {
-                "label": "10–15 mg/kg/dose",
-                "min_age_years": 6,
-                "max_age_years": 18,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 500
-            }
-        ]
+        "Fever / Pain": {
+            "dose_mg_per_kg_per_dose": [10, 15],
+            "frequency": "ทุก 4–6 ชม.",
+            "max_mg_per_day": 4000,
+            "note": "ให้ทุก 4–6 ชั่วโมง ไม่ควรเกิน 5 ครั้ง/วัน"
+        }
     },
-    "common_indications": ["Fever"]
+    "common_indications": ["Fever / Pain"]
     },
 
     "Chlorpheniramine": {
@@ -2431,27 +2403,33 @@ def calculate_special_drug(user_id, drug, weight, age):
         return "\n".join(reply_lines)
 
 
-    # กรณีพิเศษอื่น ๆ เช่น Paracetamol (ใช้แบบเดิม)
-    indication_info = next(iter(info["indications"].values()))
-    for entry in indication_info:
-        # ✅ ตรวจสอบก่อนว่า entry มี key 'dose_mg_per_kg_per_day'
-        dose_per_kg = entry.get("dose_mg_per_kg_per_day")
-        if dose_per_kg is None:
-            continue  # ข้ามถ้าไม่มี key นี้
+    if drug == "Paracetamol":
+        dose_range = indication_info.get("dose_mg_per_kg_per_dose")
+        frequency = indication_info.get("frequency")
+        max_mg_per_day = indication_info.get("max_mg_per_day")
+        note = indication_info.get("note", "")
+        concentration = info.get("concentration_mg_per_ml", 1)
 
-        if entry["min_age_years"] <= age < entry["max_age_years"]:
-            freq = entry["frequency"]
-            duration = entry["duration_days"]
-            max_dose = entry["max_mg_per_dose"]
+        if dose_range:
+            min_dose, max_dose = dose_range
+            min_total = weight * min_dose
+            max_total = weight * max_dose
 
-            total_mg_day = weight * dose_per_kg
-            dose_per_time = min(total_mg_day / freq, max_dose)
+            min_ml = min_total / concentration
+            max_ml = max_total / concentration
 
-            return (
-                f"{drug} (อายุ {age} ปี, น้ำหนัก {weight} kg):\n"
-                f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day\n"
-                f"แบ่ง {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg เป็นเวลา {duration} วัน"
+            result = (
+                f"{drug} (น้ำหนัก {weight} kg):\n"
+                f"ขนาดยา: {min_dose}–{max_dose} mg/kg/ครั้ง → {min_total:.1f}–{max_total:.1f} mg/ครั้ง\n"
+                f"ปริมาณยา: {min_ml:.1f}–{max_ml:.1f} ml/ครั้ง\n"
+                f"ความถี่: {frequency}"
             )
+            if max_mg_per_day:
+                result += f"\n⚠️ ไม่เกิน {max_mg_per_day} mg/วัน"
+            if note:
+                result += f"\n📝 {note}"
+            return result
+        return "❌ ไม่พบข้อมูลขนาดยา"
 
     return f"❌ ไม่พบขนาดยาที่เหมาะสมสำหรับอายุ {age} ปีใน {drug}"
 
@@ -2598,6 +2576,7 @@ def handle_message(event: MessageEvent):
         "แจ้งประกาศยาใหม่",
         "ติดต่อหัวหน้าแผนก",
         "เลือก: รายชื่อยา DUE",
+        "คำนวณขนาดยาเด็ก",
     }
     if text_lower in auto_response_commands:
         return
