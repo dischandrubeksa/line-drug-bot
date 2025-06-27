@@ -407,16 +407,6 @@ DRUG_DATABASE = {
             "note": "เฉพาะเมื่อ ceftriaxone ใช้ไม่ได้; ให้ครั้งเดียว 800 mg"
         }
         ],
-        "Irinotecan-associated diarrhea (prophylaxis)": [
-        {
-            "sub_indication": "Prophylaxis before irinotecan",
-            "dose_mg_per_kg_per_day": 8,
-            "frequency": 1,
-            "max_mg_per_dose": 400,
-            "duration_days_range": [5, 10],
-            "note": "เริ่มก่อน irinotecan 2 วันและให้ต่อเนื่องระหว่างการรักษา"
-        }
-        ],
         "Otitis media": [
         {
             "sub_indication": "Alternative agent (AOM)",
@@ -424,7 +414,7 @@ DRUG_DATABASE = {
             "frequency": [1, 2],
             "duration_days_range": [5, 10],
             "max_mg_per_day": 400,
-            "note": "ใช้ในกรณีไม่ตอบสนองต่อ first-line หรือร่วมกับ clindamycin"
+            "note": "ใช้ในกรณีไม่ตอบสนองต่อ first-line หรือร่วมกับ clindamycin, ใช้ในเด็กอายุ > 2 เดือน"
         }
         ],
         "Rhinosinusitis": [
@@ -660,16 +650,6 @@ DRUG_DATABASE = {
                     "duration_days": 1,
                     "max_mg_per_day": 1000,
                     "note": "💊 ให้เพียงครั้งเดียว 1,000 mg; พิจารณาร่วมกับยา gonorrhea ถ้ามีความเสี่ยง"
-                }
-            ],
-            "Pneumonia, congenital": [
-                {
-                    "sub_indication": "Infants",
-                    "dose_mg_per_kg_per_day": 20,
-                    "frequency": 1,
-                    "duration_days": 3,
-                    "max_mg_per_day": None,
-                    "note": "📌 ใช้ขนาด 20 mg/kg/day วันละครั้ง เป็นเวลา 3 วัน"
                 }
             ],
             "Diarrhea (Campylobacter infection)": [
@@ -961,56 +941,32 @@ SPECIAL_DRUGS = {
     "concentration_mg_per_ml": 120 / 5,
     "bottle_size_ml": 60,
     "indications": {
-        "Fever": [
+         "Pain/Fever": [
             {
                 "label": "10–15 mg/kg/dose",
-                "min_age_years": 0,
-                "max_age_years": 6,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 250
-            },
-            {
-                "label": "10–15 mg/kg/dose",
-                "min_age_years": 6,
-                "max_age_years": 18,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 500
+                "dose_mg_per_kg_per_dose": [10, 15],
+                "interval_hours": [4, 6],
+                "max_mg_per_dose": 500  # ✅ กำหนด max dose ต่อครั้งเดียวพอ
             }
         ]
     },
-    "common_indications": ["Fever"]
+    "common_indications": ["Pain/Fever"]
     },
 
     "Paracetamol drop": {
     "concentration_mg_per_ml": 60 / 0.6,
     "bottle_size_ml": 15,
     "indications": {
-        "Fever": [
+        "Pain/Fever": [
             {
                 "label": "10–15 mg/kg/dose",
-                "min_age_years": 0,
-                "max_age_years": 6,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 250
-            },
-            {
-                "label": "10–15 mg/kg/dose",
-                "min_age_years": 6,
-                "max_age_years": 18,
-                "dose_mg_per_kg_per_day": 60,
-                "frequency": 4,
-                "duration_days": 3,
-                "max_mg_per_dose": 500
+                "dose_mg_per_kg_per_dose": [10, 15],
+                "interval_hours": [4, 6],
+                "max_mg_per_dose": 500  # ✅ กำหนด max dose ต่อครั้งเดียวพอ
             }
         ]
     },
-    "common_indications": ["Fever"]
+    "common_indications": ["Pain/Fever"]
     },
 
     "Chlorpheniramine": {
@@ -1780,7 +1736,7 @@ def calculate_dose(drug, indication, weight):
                 ml_per_day_min = min_total_mg_day / conc
                 ml_per_day_max = max_total_mg_day / conc
                 ml_total = ml_per_day_max * days
-                total_ml += ml_total
+                num_bottles = math.ceil(ml_total / bottle_size)
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -1789,13 +1745,16 @@ def calculate_dose(drug, indication, weight):
                     f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                     f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
                 )
+                reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
+
             else:
                 total_mg_day = weight * dose_per_kg
                 if max_mg_day:
                     total_mg_day = min(total_mg_day, max_mg_day)
+
                 ml_per_day = total_mg_day / conc
                 ml_total = ml_per_day * days
-                total_ml += ml_total
+                num_bottles = math.ceil(ml_total / bottle_size)
 
                 if len(freqs) == 1:
                     freq = freqs[0]
@@ -1813,12 +1772,16 @@ def calculate_dose(drug, indication, weight):
                         f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                         f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                     )
+                reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
 
             if note:
                 reply_lines.append(f"📝 หมายเหตุ: {note}")
 
+
     # ✅ รองรับหลายช่วงวัน (list)
     elif isinstance(indication_info, list):
+        ml_total_all_phases = 0  # ✅ รวม ml จากทุก phase
+
         for phase in indication_info:
             if not isinstance(phase, dict):
                 continue
@@ -1826,7 +1789,6 @@ def calculate_dose(drug, indication, weight):
             total_mg_day = None
             dose_type = None
 
-            # ✅ ตรวจว่าใช้แบบไหน: weight-based หรือ fixed dose
             if "dose_mg_per_kg_per_day" in phase:
                 dose_per_kg = phase["dose_mg_per_kg_per_day"]
                 max_mg_day = phase.get("max_mg_per_day")
@@ -1848,11 +1810,9 @@ def calculate_dose(drug, indication, weight):
             elif "dose_mg" in phase:
                 total_mg_day = phase["dose_mg"]
                 dose_type = "fixed"
-
             else:
-                continue  # ❌ ข้ามถ้าไม่มี dose
+                continue
 
-            # ✅ ชื่อ label/title
             title = get_indication_title(phase)
             if title:
                 reply_lines.append(f"\n🔹 {title}")
@@ -1865,27 +1825,21 @@ def calculate_dose(drug, indication, weight):
                 min_mg, max_mg = total_mg_day
                 ml_per_day_min = min_mg / conc
                 ml_per_day_max = max_mg / conc
-                total_ml += ml_per_day_max * days
+                ml_total = ml_per_day_max * days
+                ml_total_all_phases += ml_total  # ✅ รวมเฉพาะ max เพื่อกันไว้ก่อน
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
 
-                if min_freq == max_freq:
-                    reply_lines.append(
-                        f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
-                        f"แบ่งวันละ {min_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
-                    )
-                else:
-                    reply_lines.append(
-                        f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
-                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
-                    )
+                reply_lines.append(
+                    f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
+                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                )
             else:
                 ml_per_day = total_mg_day / conc
-                ml_phase = ml_per_day * days
-                total_ml += ml_phase
+                ml_total = ml_per_day * days
+                ml_total_all_phases += ml_total
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -1910,9 +1864,13 @@ def calculate_dose(drug, indication, weight):
             if note:
                 reply_lines.append(f"📝 หมายเหตุ: {note}")
 
+        # ✅ แสดงจำนวนขวดรวมหลังจบลูปทุกช่วงวัน
+        total_bottles = math.ceil(ml_total_all_phases / bottle_size)
+        reply_lines.append(f"→ จ่าย {total_bottles} ขวด ({bottle_size} ml)")
 
 
-    # ✅ กรณี indication เป็น dict ธรรมดา
+
+
     else:
         dose_per_kg = indication_info.get("dose_mg_per_kg_per_day")
         if dose_per_kg is None:
@@ -1934,6 +1892,7 @@ def calculate_dose(drug, indication, weight):
             ml_per_day_min = min_total_mg_day / conc
             ml_per_day_max = max_total_mg_day / conc
             total_ml = ml_per_day_max * days
+            num_bottles = math.ceil(total_ml / bottle_size)
 
             min_freq = min(freqs)
             max_freq = max(freqs)
@@ -1942,6 +1901,8 @@ def calculate_dose(drug, indication, weight):
                 f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                 f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
             )
+            reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
+
         else:
             total_mg_day = weight * dose_per_kg
             if max_mg_day:
@@ -1949,6 +1910,7 @@ def calculate_dose(drug, indication, weight):
 
             ml_per_day = total_mg_day / conc
             total_ml = ml_per_day * days
+            num_bottles = math.ceil(total_ml / bottle_size)
 
             if len(freqs) == 1:
                 freq = freqs[0]
@@ -1967,13 +1929,12 @@ def calculate_dose(drug, indication, weight):
                     f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                     f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                 )
+            reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
+
         note = indication_info.get("note")
         if note:
             reply_lines.append(f"\n📝 หมายเหตุ: {note}")
 
-    bottles = math.ceil(total_ml / bottle_size)
-    reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
-    return "\n".join(reply_lines)
 
 def calculate_special_drug(user_id, drug, weight, age):
     info = SPECIAL_DRUGS[drug]
@@ -2434,24 +2395,46 @@ def calculate_special_drug(user_id, drug, weight, age):
     # กรณีพิเศษอื่น ๆ เช่น Paracetamol (ใช้แบบเดิม)
     indication_info = next(iter(info["indications"].values()))
     for entry in indication_info:
-        # ✅ ตรวจสอบก่อนว่า entry มี key 'dose_mg_per_kg_per_day'
-        dose_per_kg = entry.get("dose_mg_per_kg_per_day")
-        if dose_per_kg is None:
-            continue  # ข้ามถ้าไม่มี key นี้
+        # ✅ กรณีใหม่: Paracetamol → dose ต่อครั้ง แบบไม่ใช้ age
+        if "dose_mg_per_kg_per_dose" in entry:
+            dose_range = entry["dose_mg_per_kg_per_dose"]
+            interval = entry.get("interval_hours", [4, 6])
+            max_dose = entry.get("max_mg_per_dose", float("inf"))
 
-        if entry["min_age_years"] <= age < entry["max_age_years"]:
-            freq = entry["frequency"]
-            duration = entry["duration_days"]
-            max_dose = entry["max_mg_per_dose"]
+            # คำนวณขนาดต่อครั้ง
+            dose_min = min(weight * dose_range[0], max_dose)
+            dose_max = min(weight * dose_range[1], max_dose)
+            vol_min = round(dose_min / concentration, 1)
+            vol_max = round(dose_max / concentration, 1)
 
-            total_mg_day = weight * dose_per_kg
-            dose_per_time = min(total_mg_day / freq, max_dose)
+            # ✅ เพิ่ม: Max dose per day
+            max_daily_mg = weight * 75
+            max_daily_vol = round(max_daily_mg / concentration, 1)
 
             return (
                 f"{drug} (อายุ {age} ปี, น้ำหนัก {weight} kg):\n"
-                f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day\n"
-                f"แบ่ง {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg เป็นเวลา {duration} วัน"
+                f"ขนาดยา: {dose_range[0]}–{dose_range[1]} mg/kg/ครั้ง → {dose_min:.1f}–{dose_max:.1f} mg/ครั้ง ≈ ~{vol_min}–{vol_max} ml/ครั้ง ทุก {interval[0]}–{interval[1]} ชั่วโมง\n\n"
+                f"🔺 ขนาดยาไม่ควรเกิน: 75 mg/kg/day → {max_daily_mg:.1f} mg/day ≈ {max_daily_vol:.1f} ml\n"
+                f"📌 Max dose: 75 mg/kg/day (ไม่เกิน 5 ครั้งใน 24 ชั่วโมง, และไม่เกิน 4000 mg/day)"
             )
+
+        # ✅ กรณีเดิม: ใช้ dose ต่อวัน
+        elif "dose_mg_per_kg_per_day" in entry:
+            if entry["min_age_years"] <= age < entry["max_age_years"]:
+                dose_per_kg = entry["dose_mg_per_kg_per_day"]
+                freq = entry["frequency"]
+                duration = entry.get("duration_days", 3)
+                max_dose = entry.get("max_mg_per_dose", float("inf"))
+
+                total_mg_day = weight * dose_per_kg
+                dose_per_time = min(total_mg_day / freq, max_dose)
+
+                return (
+                    f"{drug} (อายุ {age} ปี, น้ำหนัก {weight} kg):\n"
+                    f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.1f} mg/day\n"
+                    f"แบ่ง {freq} ครั้ง/วัน → ครั้งละ ~{dose_per_time:.1f} mg เป็นเวลา {duration} วัน"
+                )
+
 
     return f"❌ ไม่พบขนาดยาที่เหมาะสมสำหรับอายุ {age} ปีใน {drug}"
 
@@ -2598,6 +2581,11 @@ def handle_message(event: MessageEvent):
         "แจ้งประกาศยาใหม่",
         "ติดต่อหัวหน้าแผนก",
         "เลือก: รายชื่อยา DUE",
+        "เลือก: ยาปฏิชีวนะ",
+        "เลือก: ยาแก้ปวด ลดไข้",
+        "เลือก: ยาแก้แพ้",
+        "เลือก: ยาอื่นๆ",
+        
     }
     if text_lower in auto_response_commands:
         return
