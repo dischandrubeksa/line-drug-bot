@@ -1365,7 +1365,7 @@ def callback():
         abort(400)
     return 'OK'
 
-def send_drug_selection(event):
+def send_drug_ATB_selection(event):
     # ✅ เตรียม column แต่ละชุด
     columnsA1 = [
         CarouselColumn(title='Amoxicillin', text='250 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Amoxicillin')]),
@@ -1377,38 +1377,72 @@ def send_drug_selection(event):
         CarouselColumn(title='Cephalexin', text='125 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cephalexin')]),
         CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cefdinir')]),
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cefixime')]),
-    
     ]
-    columnsP = [
-        CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]), 
-        CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
-        CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ibuprofen')]),
-    ]
-    columnsAH = [
-        CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cetirizine')]),
-        CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Hydroxyzine')]),
-        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Chlorpheniramine')]),
-    ]
-    columnsOT = [
-        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
-        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
-        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
-    ]
-
-    # ✅ รวมข้อความที่มี columns เท่านั้น
     messages = []
     if columnsA1:
         messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
     if columnsA2:
         messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อเพิ่มเติม", template=CarouselTemplate(columns=columnsA2)))
-    if columnsP:
-        messages.append(TemplateMessage(alt_text="เลือกยาแก้ปวดลดไข้", template=CarouselTemplate(columns=columnsP)))
-    if columnsAH:
-        messages.append(TemplateMessage(alt_text="เลือกยาแก้ภูมิแพ้", template=CarouselTemplate(columns=columnsAH)))
-    if columnsOT:
-        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มอื่นๆ", template=CarouselTemplate(columns=columnsOT)))
+    
+    if messages:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=messages
+            )
+        )
 
-    # ✅ ส่งข้อความ
+def send_drug_APY_selection(event):
+    # ✅ เตรียม column แต่ละชุด
+    columnsA1 = [
+        CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]), 
+        CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
+        CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ibuprofen')]),
+    ]
+    messages = []
+    if columnsA1:
+        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+    
+    if messages:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=messages
+            )
+        )
+
+def send_drug_AH_selection(event):
+    # ✅ เตรียม column แต่ละชุด
+    columnsA1 = [
+        CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cetirizine')]),
+        CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Hydroxyzine')]),
+        CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Chlorpheniramine')]),
+    ]
+
+    messages = []
+    if columnsA1:
+        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+    
+    if messages:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=messages
+            )
+        )
+
+def send_drug_OT_selection(event):
+    # ✅ เตรียม column แต่ละชุด
+    columnsA1 = [
+        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
+        CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
+        CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
+    ]
+   
+    messages = []
+    if columnsA1:
+        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+    
     if messages:
         messaging_api.reply_message(
             ReplyMessageRequest(
@@ -2580,11 +2614,32 @@ def handle_message(event: MessageEvent):
         )
         return
 
-    elif text_lower in ['คำนวณขนาดยาเด็ก', 'คำนวณยาเด็ก']:
+    elif text_lower in ['เลือก: ยาปฏิชีวนะ']:
         user_sessions.pop(user_id, None)
         user_drug_selection.pop(user_id, None)
         user_ages.pop(user_id, None)
-        send_drug_selection(event)
+        send_drug_ATB_selection(event)
+        return
+    
+    elif text_lower in ['เลือก: ยาแก้แพ้']:
+        user_sessions.pop(user_id, None)
+        user_drug_selection.pop(user_id, None)
+        user_ages.pop(user_id, None)
+        send_drug_AH_selection(event)
+        return
+    
+    elif text_lower in ['เลือก: ยาแก้ปวด ลดไข้']:
+        user_sessions.pop(user_id, None)
+        user_drug_selection.pop(user_id, None)
+        user_ages.pop(user_id, None)
+        send_drug_APY_selection(event)
+        return
+    
+    elif text_lower in ['เลือก: ยาอื่นๆ']:
+        user_sessions.pop(user_id, None)
+        user_drug_selection.pop(user_id, None)
+        user_ages.pop(user_id, None)
+        send_drug_OT_selection(event)
         return
     
     # ดำเนิน Warfarin flow
@@ -2674,8 +2729,6 @@ def handle_message(event: MessageEvent):
                 send_interaction_flex(reply_token)
                 return
 
-
-
             elif step == "choose_interaction":
                 if text == "ไม่ได้ใช้":
                     interaction_note = ""
@@ -2717,12 +2770,6 @@ def handle_message(event: MessageEvent):
                     ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
                 )
                 return
-
-    if text == "เลือกยาใหม่":
-        user_drug_selection.pop(user_id, None)
-        user_ages.pop(user_id, None)
-        send_drug_selection(event)
-        return
 
     if text.startswith("MoreIndication:"):
         drug_name = text.replace("MoreIndication:", "").strip()
