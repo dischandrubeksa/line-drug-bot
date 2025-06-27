@@ -962,10 +962,11 @@ SPECIAL_DRUGS = {
     "bottle_size_ml": 60,
     "indications": {
         "Fever / Pain": {
+            "label": "10–15 mg/kg/dose",
             "dose_mg_per_kg_per_dose": [10, 15],
             "frequency": "ทุก 4–6 ชม.",
             "max_mg_per_day": 4000,
-            "note": "ให้ทุก 4–6 ชั่วโมง ไม่ควรเกิน 5 ครั้ง/วัน"
+            "note": "ขนาดสูงสุด 75 mg/kg/dose ไม่เกิน 5 ครั้ง/วัน"
         }
     },
     "common_indications": ["Fever / Pain"]
@@ -976,10 +977,11 @@ SPECIAL_DRUGS = {
     "bottle_size_ml": 15,
     "indications": {
         "Fever / Pain": {
+            "label": "10–15 mg/kg/dose",
             "dose_mg_per_kg_per_dose": [10, 15],
             "frequency": "ทุก 4–6 ชม.",
             "max_mg_per_day": 4000,
-            "note": "ให้ทุก 4–6 ชั่วโมง ไม่ควรเกิน 5 ครั้ง/วัน"
+            "note": "ขนาดสูงสุด 75 mg/kg/dose ไม่เกิน 5 ครั้ง/วัน"
         }
     },
     "common_indications": ["Fever / Pain"]
@@ -1242,6 +1244,51 @@ SPECIAL_DRUGS = {
       "Urticaria, chronic spontaneous"
     ]
     },
+    "Carbocysteine": {
+    "concentration_mg_per_ml": 450 / 5,
+    "bottle_size_ml": 120,
+    "indications": {
+        "mucolytic (age-based)": [
+            {
+                "sub_indication": "อายุ 2 ถึง <6 ปี",
+                "age_min": 2,
+                "age_max": 5.9,
+                "dose_mg": [62.5, 125],
+                "frequency": 4,
+                "max_mg_per_day": 500
+            },
+            {
+                "sub_indication": "อายุ 6 ถึง <12 ปี",
+                "age_min": 6,
+                "age_max": 11.9,
+                "dose_mg": [100, 250],
+                "frequency": 3,
+                "max_mg_per_day": 750
+            },
+            {
+                "sub_indication": "อายุ 12 ถึง <15 ปี",
+                "age_min": 12,
+                "age_max": 14.9,
+                "dose_mg": [100, 750],
+                "frequency": 3,
+                "max_mg_per_day": 2250
+            },
+            {
+                "sub_indication": "อายุ ≥15 ปี",
+                "age_min": 15,
+                "dose_mg": [500, 750],
+                "frequency": [2, 3],
+                "max_mg_per_day": 2250
+            }
+        ],
+        "mucolytic (weight-based)": {
+            "age_min": 2,
+            "dose_mg_per_kg_per_day": [15, 20],
+            "frequency": [3, 4],
+            "max_mg_per_day": 2250
+        }
+    }
+    },
     "Hydroxyzine": {
         "concentration_mg_per_ml": 10 / 5 ,
         "bottle_size_ml": 60,
@@ -1373,7 +1420,7 @@ def send_drug_APY_selection(event):
     ]
     messages = []
     if columnsA1:
-        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+        messages.append(TemplateMessage(alt_text="เลือกยาแก้ปวด ลดไข้", template=CarouselTemplate(columns=columnsA1)))
     
     if messages:
         messaging_api.reply_message(
@@ -1393,7 +1440,7 @@ def send_drug_AH_selection(event):
 
     messages = []
     if columnsA1:
-        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+        messages.append(TemplateMessage(alt_text="เลือกยาแก้แพ้", template=CarouselTemplate(columns=columnsA1)))
     
     if messages:
         messaging_api.reply_message(
@@ -1406,6 +1453,7 @@ def send_drug_AH_selection(event):
 def send_drug_OT_selection(event):
     # ✅ เตรียม column แต่ละชุด
     columnsA1 = [
+        CarouselColumn(title='Carbocysteine', text='450 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Carbocysteine')]),
         CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
         CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
@@ -1413,7 +1461,7 @@ def send_drug_OT_selection(event):
    
     messages = []
     if columnsA1:
-        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+        messages.append(TemplateMessage(alt_text="เลือกยาอื่นๆ", template=CarouselTemplate(columns=columnsA1)))
     
     if messages:
         messaging_api.reply_message(
@@ -1953,6 +2001,63 @@ def calculate_special_drug(user_id, drug, weight, age):
     indication_info = next(iter(info["indications"].values()))
     concentration = info["concentration_mg_per_ml"]
 
+    if drug == "Carbocysteine":
+        concentration = info["concentration_mg_per_ml"]
+
+        if indication == "mucolytic_age_based":
+            data = info["indications"]["mucolytic_age_based"]
+
+            reply_lines = [f"🧪 {drug} - การใช้แบบอิงอายุ", f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n"]
+
+            matched = False
+            for profile in data:
+                if age >= profile["age_min"] and ("age_max" not in profile or age <= profile["age_max"]):
+                    freqs = profile["frequency"] if isinstance(profile["frequency"], list) else [profile["frequency"]]
+                    freq_str = f"{min(freqs)}–{max(freqs)}" if len(freqs) > 1 else f"{freqs[0]}"
+                    dose_range = profile["dose_mg"] if isinstance(profile["dose_mg"], list) else [profile["dose_mg"]]
+
+                    reply_lines.append(f"🔹 {profile['sub_indication']}")
+                    for dose in dose_range:
+                        dose_per_time = min(dose, profile["max_mg_per_day"])
+                        volume = round(dose_per_time / concentration, 1)
+                        reply_lines.append(f"ขนาดยา: {dose_per_time:.1f} mg × วันละ {freq_str} ครั้ง ≈ ~{volume:.1f} ml/ครั้ง")
+
+                    if "note" in profile:
+                        reply_lines.append(f"\n📌 หมายเหตุ: {profile['note']}")
+                    matched = True
+                    break
+
+            if not matched:
+                reply_lines.append("❌ ไม่พบช่วงอายุที่รองรับ")
+
+            return "\n".join(reply_lines)
+
+        elif indication == "mucolytic_weight_based":
+            data = info["indications"]["mucolytic_weight_based"]
+            if age < data["age_min"]:
+                return f"❌ ไม่แนะนำการใช้ Carbocysteine ตามน้ำหนักในเด็กอายุน้อยกว่า {data['age_min']} ปี"
+
+            dose_min, dose_max = data["dose_mg_per_kg_per_day"]
+            freqs = data["frequency"]
+            max_dose = data["max_mg_per_day"]
+
+            reply_lines = [f"🧪 {drug} - การใช้แบบอิงน้ำหนัก", f"(น้ำหนัก {weight:.1f} kg, อายุ {age:.1f} ปี):\n"]
+
+            for dose_per_kg in [dose_min, dose_max]:
+                total_mg_day = weight * dose_per_kg
+                reply_lines.append(f"💊 ขนาดรวมทั้งวัน: {dose_per_kg:.1f} mg/kg/day × {weight:.1f} kg = {total_mg_day:.1f} mg/day")
+
+                for freq in freqs:
+                    dose_per_time = min(total_mg_day / freq, max_dose)
+                    volume = round(dose_per_time / concentration, 1)
+                    reply_lines.append(f"  → วันละ {freq} ครั้ง → ครั้งละ ~{dose_per_time:.1f} mg ≈ ~{volume:.1f} ml/ครั้ง")
+
+            reply_lines.append("\n📌 หมายเหตุ: ขนาดยาไม่ควรเกิน 2,250 mg/วัน")
+            return "\n".join(reply_lines)
+
+        else:
+            return f"❌ ยังไม่รองรับข้อบ่งใช้ {indication} ของ {drug}"
+    
     if drug == "Hydroxyzine":
         if indication in ["Anxiety", "Pruritus (age-based)"]:
             data = info["indications"][indication]
