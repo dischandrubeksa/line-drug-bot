@@ -1950,6 +1950,7 @@ def calculate_dose(drug, indication, weight):
 def calculate_special_drug(user_id, drug, weight, age):
     info = SPECIAL_DRUGS[drug]
     indication = user_drug_selection.get(user_id, {}).get("indication")
+    indication_info = next(iter(info["indications"].values()))
     concentration = info["concentration_mg_per_ml"]
 
     if drug == "Hydroxyzine":
@@ -2431,7 +2432,38 @@ def calculate_special_drug(user_id, drug, weight, age):
             return result
         return "❌ ไม่พบข้อมูลขนาดยา"
 
+    if drug == "Paracetamol drop":
+        dose_range = indication_info.get("dose_mg_per_kg_per_dose")
+        frequency = indication_info.get("frequency")
+        max_mg_per_day = indication_info.get("max_mg_per_day")
+        note = indication_info.get("note", "")
+        concentration = info.get("concentration_mg_per_ml", 1)
+
+        if dose_range:
+            min_dose, max_dose = dose_range
+            min_total = weight * min_dose
+            max_total = weight * max_dose
+
+            min_ml = min_total / concentration
+            max_ml = max_total / concentration
+
+            result = (
+                f"{drug} (น้ำหนัก {weight} kg):\n"
+                f"ขนาดยา: {min_dose}–{max_dose} mg/kg/ครั้ง → {min_total:.1f}–{max_total:.1f} mg/ครั้ง\n"
+                f"ปริมาณยา: {min_ml:.1f}–{max_ml:.1f} ml/ครั้ง\n"
+                f"ความถี่: {frequency}"
+            )
+            if max_mg_per_day:
+                result += f"\n⚠️ ไม่เกิน {max_mg_per_day} mg/วัน"
+            if note:
+                result += f"\n📝 {note}"
+            return result
+        return "❌ ไม่พบข้อมูลขนาดยา"
+
     return f"❌ ไม่พบขนาดยาที่เหมาะสมสำหรับอายุ {age} ปีใน {drug}"
+
+
+    
 
 
 def send_special_indication_carousel(event, drug_name):
