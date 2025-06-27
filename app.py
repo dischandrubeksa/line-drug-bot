@@ -32,20 +32,28 @@ DRUG_DATABASE = {
             ],
             "Acute Otitis Media (AOM)": [
                 {
-                    "label": "High-dose regimen",
+                    "sub_indication": "High-dose regimen × 5–7 วัน",
+                    "dose_mg_per_kg_per_day": [80, 90],
+                    "frequency": 2,
+                    "duration_days_range": [5, 7],
+                    "max_mg_per_day": 4000,
+                    "note": "📝 แนะนำในประเทศที่มี penicillin-nonsusceptible Streptococcus pneumoniae"
+                },
+                {
+                    "sub_indication": "High-dose regimen × 10 วัน",
                     "dose_mg_per_kg_per_day": [80, 90],
                     "frequency": 2,
                     "duration_days": 10,
                     "max_mg_per_day": 4000,
-                    "note": "เหมาะในสหรัฐอเมริกา หรือเมื่อมี S. pneumoniae ดื้อเพนนิซิลลิน"
+                    "note": "📝 แนะนำในประเทศที่มี penicillin-nonsusceptible Streptococcus pneumoniae"
                 },
                 {
-                    "label": "Standard-dose regimen",
-                    "dose_mg_per_kg_per_day": [40, 50],
-                    "frequency": 2,
-                    "duration_days": 7,
-                    "max_mg_per_day": 1500,
-                    "note": "ใช้ได้เฉพาะในพื้นที่ที่เชื้อ S. pneumoniae ดื้อต่อ penicillin < 10% เท่านั้น"
+                    "sub_indication": "Standard-dose regimen",
+                    "dose_mg_per_kg_per_day": [40, 45],
+                    "frequency": [2, 3],
+                    "duration_days": 10,
+                    "max_mg_per_day": 1750,
+                    "note": "📝 ใช้ในพื้นที่ที่มีอุบัติการณ์เชื้อดื้อยา penicillin ต่ำ"
                 }
             ],
             "Pneumonia (community acquired)": [
@@ -53,7 +61,7 @@ DRUG_DATABASE = {
                     "label": "Empiric therapy (bacterial pneumonia)",
                     "dose_mg_per_kg_per_day": 90,
                     "frequency": 2,
-                    "duration_days": 5,
+                    "duration_days": 7,
                     "max_mg_per_day": 4000
                 },
                 {
@@ -151,7 +159,7 @@ DRUG_DATABASE = {
                     "frequency": 3,
                     "duration_days": 14,
                     "max_mg_per_dose": 500,
-                    "note": "รักษานาน 14 วัน"
+                    "note": "อาจรักษานาน 14 วัน"
                 },
                 {
                     "name": "Carditis",
@@ -159,7 +167,7 @@ DRUG_DATABASE = {
                     "frequency": 3,
                     "duration_days": 21,
                     "max_mg_per_dose": 500,
-                    "note": "รักษานาน 14–21 วัน"
+                    "note": "อาจรักษานาน 14–21 วัน"
                 },
                 {
                     "name": "Arthritis (initial, recurrent, or refractory)",
@@ -167,7 +175,6 @@ DRUG_DATABASE = {
                     "frequency": 3,
                     "duration_days": 28,
                     "max_mg_per_dose": 500,
-                    "note": "รักษานาน 28 วัน"
                 },
                 {
                     "name": "Acrodermatitis chronica atrophicans",
@@ -175,7 +182,7 @@ DRUG_DATABASE = {
                     "frequency": 3,
                     "duration_days": 28,
                     "max_mg_per_dose": 500,
-                    "note": "รักษานาน 21–28 วัน"
+                    "note": "อาจรักษานาน 21–28 วัน"
                 }
             ],
             "Urinary tract infection": [
@@ -307,7 +314,7 @@ DRUG_DATABASE = {
     },
     "Cefdinir": {
     "concentration_mg_per_ml": 125 / 5,
-    "bottle_size_ml": 60,
+    "bottle_size_ml": 30,
     "indications": {
         "Chronic bronchitis, acute bacterial exacerbation": [
         {
@@ -389,7 +396,7 @@ DRUG_DATABASE = {
     },
     "Cefixime": {
     "concentration_mg_per_ml": 100 / 5,
-    "bottle_size_ml": 50,
+    "bottle_size_ml": 30,
     "indications": {
         "Gonococcal infection": [
         {
@@ -461,8 +468,8 @@ DRUG_DATABASE = {
     }
     },
     "Augmentin": {
-    "concentration_mg_per_ml": 400 / 5,  # ตัวอย่าง: 400 mg amoxicillin + 57 mg clavulanate per 5 mL
-    "bottle_size_ml": 60,
+    "concentration_mg_per_ml": 600 / 5,  # ตัวอย่าง: 600 mg amoxicillin + 57 mg clavulanate per 5 mL
+    "bottle_size_ml": 70,
     "indications": {
         "Impetigo": [
         {
@@ -473,20 +480,12 @@ DRUG_DATABASE = {
             "note": "📝 ให้แบ่งทุก 8–12 ชม.; max 500 mg ถ้าให้ทุก 8 ชม., 875 mg ถ้าทุก 12 ชม."
         }
         ],
-        "Osteoarticular infection": [
-        {
-            "sub_indication": "Step-down therapy",
-            "dose_mg_per_kg_per_day": 120,
-            "frequency": [3, 4],
-            "max_mg_per_day": 3000,
-            "note": "📝 ไม่ควรให้ clavulanate เกิน 125 mg ต่อ dose; IV+PO อย่างน้อย 2–4 สัปดาห์"
-        }
-        ],
         "Otitis Media": [
         {
             "sub_indication": "High-dose regimen",
             "dose_mg_per_kg_per_day": [80, 90],
             "frequency": 2,
+            "duration_days_range": [5,7,10],
             "max_mg_per_day": 4000,
             "note": "📝 แนะนำในประเทศที่มี S. pneumoniae ดื้อ penicillin"
         },
@@ -1368,37 +1367,46 @@ def callback():
 
 def send_drug_selection(event):
     # ✅ เตรียม column แต่ละชุด
-    columns1 = [
+    columnsA1 = [
         CarouselColumn(title='Amoxicillin', text='250 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Amoxicillin')]),
+        CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Augmentin')]),
+        CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Azithromycin')]),
+    ]
+    columnsA2 = [
+        
         CarouselColumn(title='Cephalexin', text='125 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cephalexin')]),
         CarouselColumn(title='Cefdinir', text='125 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cefdinir')]),
         CarouselColumn(title='Cefixime', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cefixime')]),
-        CarouselColumn(title='Augmentin', text='600 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Augmentin')]),
+    
     ]
-    columns2 = [
-        CarouselColumn(title='Azithromycin', text='200 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Azithromycin')]),
+    columnsP = [
         CarouselColumn(title='Paracetamol', text='120 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol')]), 
         CarouselColumn(title='Paracetamol drop', text='60 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Paracetamol drop')]),
         CarouselColumn(title='Ibuprofen', text='100 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ibuprofen')]),
-        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
-        
     ]
-    columns3 = [
+    columnsAH = [
         CarouselColumn(title='Cetirizine', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Cetirizine')]),
         CarouselColumn(title='Hydroxyzine', text='10 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Hydroxyzine')]),
         CarouselColumn(title='Chlorpheniramine', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Chlorpheniramine')]),
+    ]
+    columnsOT = [
+        CarouselColumn(title='Domperidone', text='1 mg/1 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Domperidone')]),
         CarouselColumn(title='Salbutamol', text='2 mg/5 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Salbutamol')]),
         CarouselColumn(title='Ferrous drop', text='15 mg/0.6 ml', actions=[MessageAction(label='เลือก', text='เลือกยา: Ferrous drop')]),
     ]
 
     # ✅ รวมข้อความที่มี columns เท่านั้น
     messages = []
-    if columns1:
-        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มแรก", template=CarouselTemplate(columns=columns1)))
-    if columns2:
-        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มเพิ่มเติม", template=CarouselTemplate(columns=columns2)))
-    if columns3:
-        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มถัดไป", template=CarouselTemplate(columns=columns3)))
+    if columnsA1:
+        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อ", template=CarouselTemplate(columns=columnsA1)))
+    if columnsA2:
+        messages.append(TemplateMessage(alt_text="เลือกยาฆ่าเชื้อเพิ่มเติม", template=CarouselTemplate(columns=columnsA2)))
+    if columnsP:
+        messages.append(TemplateMessage(alt_text="เลือกยาแก้ปวดลดไข้", template=CarouselTemplate(columns=columnsP)))
+    if columnsAH:
+        messages.append(TemplateMessage(alt_text="เลือกยาแก้ภูมิแพ้", template=CarouselTemplate(columns=columnsAH)))
+    if columnsOT:
+        messages.append(TemplateMessage(alt_text="เลือกยากลุ่มอื่นๆ", template=CarouselTemplate(columns=columnsOT)))
 
     # ✅ ส่งข้อความ
     if messages:
@@ -2035,6 +2043,9 @@ def calculate_special_drug(user_id, drug, weight, age):
     if drug in ["Cetirizine"]:
         data = info["indications"][indication]
         concentration = info["concentration_mg_per_ml"]
+
+        if drug == "Cetirizine" and age < 0.5:
+            return "❌ ไม่แนะนำให้ใช้ในเด็กอายุน้อยกว่า 6 เดือน"
 
         # ✅ แปลงช่วงอายุ
         if drug == "Cetirizine" and indication == "Anaphylaxis (adjunctive only)":
