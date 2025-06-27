@@ -1690,7 +1690,6 @@ def send_interaction_flex(reply_token):
     )
 
 def calculate_dose(drug, indication, weight):
-    import math
     drug_info = DRUG_DATABASE.get(drug)
     if not drug_info:
         return f"❌ ไม่พบข้อมูลยา {drug}"
@@ -1704,173 +1703,18 @@ def calculate_dose(drug, indication, weight):
     total_ml = 0
     reply_lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg):"]
 
-    try:
-
-        # ✅ รองรับกรณี indication เป็น dict ซ้อน (sub-indications)
-        if isinstance(indication_info, dict) and all(isinstance(v, dict) for v in indication_info.values()):
-            for sub_ind, sub_info in indication_info.items():
-                dose_per_kg = sub_info.get("dose_mg_per_kg_per_day")
-                if dose_per_kg is None:
-                    continue  # ✅ ข้ามถ้าไม่ใช่แบบ weight-based
-
-                freqs = sub_info["frequency"] if isinstance(sub_info["frequency"], list) else [sub_info["frequency"]]
-                days = sub_info["duration_days"]
-                max_mg_day = sub_info.get("max_mg_per_day")
-                max_mg_per_dose = sub_info.get("max_mg_per_dose")
-                note = sub_info.get("note")
-
-                if isinstance(dose_per_kg, list):
-                    min_dose, max_dose = dose_per_kg
-                    min_total_mg_day = weight * min_dose
-                    max_total_mg_day = weight * max_dose
-
-                    if max_mg_day:
-                        min_total_mg_day = min(min_total_mg_day, max_mg_day)
-                        max_total_mg_day = min(max_total_mg_day, max_mg_day)
-
-                    ml_per_day_min = min_total_mg_day / conc
-                    ml_per_day_max = max_total_mg_day / conc
-                    ml_total = ml_per_day_max * days
-                    num_bottles = math.ceil(ml_total / bottle_size)
-
-                    min_freq = min(freqs)
-                    max_freq = max(freqs)
-                    reply_lines.append(
-                        f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
-                        f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
-                    )
-                    reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
-
-                else:
-                    total_mg_day = weight * dose_per_kg
-                    if max_mg_day:
-                        total_mg_day = min(total_mg_day, max_mg_day)
-
-                    ml_per_day = total_mg_day / conc
-                    ml_total = ml_per_day * days
-                    num_bottles = math.ceil(ml_total / bottle_size)
-
-                    if len(freqs) == 1:
-                        freq = freqs[0]
-                        ml_per_dose = ml_per_day / freq
-                        if max_mg_per_dose:
-                            ml_per_dose = min(ml_per_dose, max_mg_per_dose / conc)
-                        reply_lines.append(
-                            f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                            f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
-                        )
-                    else:
-                        min_freq = min(freqs)
-                        max_freq = max(freqs)
-                        reply_lines.append(
-                            f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                            f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
-                        )
-                    reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
-
-                if note:
-                    reply_lines.append(f"📝 หมายเหตุ: {note}")
-
-
-        # ✅ รองรับหลายช่วงวัน (list)
-        elif isinstance(indication_info, list):
-            ml_total_all_phases = 0  # ✅ รวม ml จากทุก phase
-
-            for phase in indication_info:
-                if not isinstance(phase, dict):
-                    continue
-
-                total_mg_day = None
-                dose_type = None
-
-                if "dose_mg_per_kg_per_day" in phase:
-                    dose_per_kg = phase["dose_mg_per_kg_per_day"]
-                    max_mg_day = phase.get("max_mg_per_day")
-                    dose_type = "weight_based"
-
-                    if isinstance(dose_per_kg, list):
-                        min_dose, max_dose = dose_per_kg
-                        min_total_mg_day = weight * min_dose
-                        max_total_mg_day = weight * max_dose
-                        if max_mg_day:
-                            min_total_mg_day = min(min_total_mg_day, max_mg_day)
-                            max_total_mg_day = min(max_total_mg_day, max_mg_day)
-                        total_mg_day = (min_total_mg_day, max_total_mg_day)
-                    else:
-                        total_mg_day = weight * dose_per_kg
-                        if max_mg_day:
-                            total_mg_day = min(total_mg_day, max_mg_day)
-
-                elif "dose_mg" in phase:
-                    total_mg_day = phase["dose_mg"]
-                    dose_type = "fixed"
-                else:
-                    continue
-
-                title = get_indication_title(phase)
-                if title:
-                    reply_lines.append(f"\n🔹 {title}")
-
-                freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
-                days = phase.get("duration_days") or phase.get("duration_days_range", [0])[0]
-                day_label = f"📆 {phase['day_range']}:" if "day_range" in phase else "📌"
-
-                if isinstance(total_mg_day, tuple):
-                    min_mg, max_mg = total_mg_day
-                    ml_per_day_min = min_mg / conc
-                    ml_per_day_max = max_mg / conc
-                    ml_total = ml_per_day_max * days
-                    ml_total_all_phases += ml_total  # ✅ รวมเฉพาะ max เพื่อกันไว้ก่อน
-
-                    min_freq = min(freqs)
-                    max_freq = max(freqs)
-
-                    reply_lines.append(
-                        f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
-                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
-                    )
-                else:
-                    ml_per_day = total_mg_day / conc
-                    ml_total = ml_per_day * days
-                    ml_total_all_phases += ml_total
-
-                    min_freq = min(freqs)
-                    max_freq = max(freqs)
-
-                    if min_freq == max_freq:
-                        ml_per_dose = ml_per_day / min_freq
-                        if "max_mg_per_dose" in phase:
-                            ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
-
-                        reply_lines.append(
-                            f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                            f"แบ่งวันละ {min_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_dose:.1f} ml)"
-                        )
-                    else:
-                        reply_lines.append(
-                            f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                            f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                            f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
-                        )
-
-                note = phase.get("note")
-                if note:
-                    reply_lines.append(f"📝 หมายเหตุ: {note}")
-
-            # ✅ แสดงจำนวนขวดรวมหลังจบลูปทุกช่วงวัน
-            total_bottles = math.ceil(ml_total_all_phases / bottle_size)
-            reply_lines.append(f"→ จ่าย {total_bottles} ขวด ({bottle_size} ml)")
-
-        else:
-            dose_per_kg = indication_info.get("dose_mg_per_kg_per_day")
+    # ✅ รองรับกรณี indication เป็น dict ซ้อน (sub-indications)
+    if isinstance(indication_info, dict) and all(isinstance(v, dict) for v in indication_info.values()):
+        for sub_ind, sub_info in indication_info.items():
+            dose_per_kg = sub_info.get("dose_mg_per_kg_per_day")
             if dose_per_kg is None:
-                return "❌ ไม่พบข้อมูล dose_mg_per_kg_per_day ใน indication นี้"
+                continue  # ✅ ข้ามถ้าไม่ใช่แบบ weight-based
 
-            freqs = indication_info["frequency"] if isinstance(indication_info["frequency"], list) else [indication_info["frequency"]]
-            days = indication_info["duration_days"]
-            max_mg_day = indication_info.get("max_mg_per_day")
+            freqs = sub_info["frequency"] if isinstance(sub_info["frequency"], list) else [sub_info["frequency"]]
+            days = sub_info["duration_days"]
+            max_mg_day = sub_info.get("max_mg_per_day")
+            max_mg_per_dose = sub_info.get("max_mg_per_dose")
+            note = sub_info.get("note")
 
             if isinstance(dose_per_kg, list):
                 min_dose, max_dose = dose_per_kg
@@ -1883,13 +1727,13 @@ def calculate_dose(drug, indication, weight):
 
                 ml_per_day_min = min_total_mg_day / conc
                 ml_per_day_max = max_total_mg_day / conc
-                total_ml = ml_per_day_max * days
-                num_bottles = math.ceil(total_ml / bottle_size)
+                ml_total = ml_per_day_max * days
+                num_bottles = math.ceil(ml_total / bottle_size)
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
                 reply_lines.append(
-                    f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
+                    f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
                     f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                     f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
                 )
@@ -1901,41 +1745,187 @@ def calculate_dose(drug, indication, weight):
                     total_mg_day = min(total_mg_day, max_mg_day)
 
                 ml_per_day = total_mg_day / conc
-                total_ml = ml_per_day * days
-                num_bottles = math.ceil(total_ml / bottle_size)
+                ml_total = ml_per_day * days
+                num_bottles = math.ceil(ml_total / bottle_size)
 
                 if len(freqs) == 1:
                     freq = freqs[0]
                     ml_per_dose = ml_per_day / freq
-                    if "max_mg_per_dose" in indication_info:
-                        ml_per_dose = min(ml_per_dose, indication_info["max_mg_per_dose"] / conc)
+                    if max_mg_per_dose:
+                        ml_per_dose = min(ml_per_dose, max_mg_per_dose / conc)
                     reply_lines.append(
-                        f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                        f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                         f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
                     )
                 else:
                     min_freq = min(freqs)
                     max_freq = max(freqs)
                     reply_lines.append(
-                        f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
-                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                        f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                     )
                 reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
 
-            note = indication_info.get("note")
             if note:
-                reply_lines.append(f"\n📝 หมายเหตุ: {note}")
-    
-    except Exception as e:
-        return f"❌ เกิดข้อผิดพลาด: {str(e)}"
+                reply_lines.append(f"📝 หมายเหตุ: {note}")
 
-    # ✅ กรองข้อความว่าง
-    reply_lines = [line for line in reply_lines if line.strip()]
-    if not reply_lines:
-        return "❌ ไม่สามารถคำนวณขนาดยาได้ในขณะนี้"
 
-    return "\n".join(reply_lines)
+    # ✅ รองรับหลายช่วงวัน (list)
+    elif isinstance(indication_info, list):
+        ml_total_all_phases = 0  # ✅ รวม ml จากทุก phase
+
+        for phase in indication_info:
+            if not isinstance(phase, dict):
+                continue
+
+            total_mg_day = None
+            dose_type = None
+
+            if "dose_mg_per_kg_per_day" in phase:
+                dose_per_kg = phase["dose_mg_per_kg_per_day"]
+                max_mg_day = phase.get("max_mg_per_day")
+                dose_type = "weight_based"
+
+                if isinstance(dose_per_kg, list):
+                    min_dose, max_dose = dose_per_kg
+                    min_total_mg_day = weight * min_dose
+                    max_total_mg_day = weight * max_dose
+                    if max_mg_day:
+                        min_total_mg_day = min(min_total_mg_day, max_mg_day)
+                        max_total_mg_day = min(max_total_mg_day, max_mg_day)
+                    total_mg_day = (min_total_mg_day, max_total_mg_day)
+                else:
+                    total_mg_day = weight * dose_per_kg
+                    if max_mg_day:
+                        total_mg_day = min(total_mg_day, max_mg_day)
+
+            elif "dose_mg" in phase:
+                total_mg_day = phase["dose_mg"]
+                dose_type = "fixed"
+            else:
+                continue
+
+            title = get_indication_title(phase)
+            if title:
+                reply_lines.append(f"\n🔹 {title}")
+
+            freqs = phase["frequency"] if isinstance(phase["frequency"], list) else [phase["frequency"]]
+            days = phase.get("duration_days") or phase.get("duration_days_range", [0])[0]
+            day_label = f"📆 {phase['day_range']}:" if "day_range" in phase else "📌"
+
+            if isinstance(total_mg_day, tuple):
+                min_mg, max_mg = total_mg_day
+                ml_per_day_min = min_mg / conc
+                ml_per_day_max = max_mg / conc
+                ml_total = ml_per_day_max * days
+                ml_total_all_phases += ml_total  # ✅ รวมเฉพาะ max เพื่อกันไว้ก่อน
+
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+
+                reply_lines.append(
+                    f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
+                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                )
+            else:
+                ml_per_day = total_mg_day / conc
+                ml_total = ml_per_day * days
+                ml_total_all_phases += ml_total
+
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+
+                if min_freq == max_freq:
+                    ml_per_dose = ml_per_day / min_freq
+                    if "max_mg_per_dose" in phase:
+                        ml_per_dose = min(ml_per_dose, phase["max_mg_per_dose"] / conc)
+
+                    reply_lines.append(
+                        f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                        f"แบ่งวันละ {min_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_dose:.1f} ml)"
+                    )
+                else:
+                    reply_lines.append(
+                        f"{day_label} {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                        f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                        f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                    )
+
+            note = phase.get("note")
+            if note:
+                reply_lines.append(f"📝 หมายเหตุ: {note}")
+
+        # ✅ แสดงจำนวนขวดรวมหลังจบลูปทุกช่วงวัน
+        total_bottles = math.ceil(ml_total_all_phases / bottle_size)
+        reply_lines.append(f"→ จ่าย {total_bottles} ขวด ({bottle_size} ml)")
+
+
+
+
+    else:
+        dose_per_kg = indication_info.get("dose_mg_per_kg_per_day")
+        if dose_per_kg is None:
+            return "❌ ไม่พบข้อมูล dose_mg_per_kg_per_day ใน indication นี้"
+
+        freqs = indication_info["frequency"] if isinstance(indication_info["frequency"], list) else [indication_info["frequency"]]
+        days = indication_info["duration_days"]
+        max_mg_day = indication_info.get("max_mg_per_day")
+
+        if isinstance(dose_per_kg, list):
+            min_dose, max_dose = dose_per_kg
+            min_total_mg_day = weight * min_dose
+            max_total_mg_day = weight * max_dose
+
+            if max_mg_day:
+                min_total_mg_day = min(min_total_mg_day, max_mg_day)
+                max_total_mg_day = min(max_total_mg_day, max_mg_day)
+
+            ml_per_day_min = min_total_mg_day / conc
+            ml_per_day_max = max_total_mg_day / conc
+            total_ml = ml_per_day_max * days
+            num_bottles = math.ceil(total_ml / bottle_size)
+
+            min_freq = min(freqs)
+            max_freq = max(freqs)
+            reply_lines.append(
+                f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
+                f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+            )
+            reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
+
+        else:
+            total_mg_day = weight * dose_per_kg
+            if max_mg_day:
+                total_mg_day = min(total_mg_day, max_mg_day)
+
+            ml_per_day = total_mg_day / conc
+            total_ml = ml_per_day * days
+            num_bottles = math.ceil(total_ml / bottle_size)
+
+            if len(freqs) == 1:
+                freq = freqs[0]
+                ml_per_dose = ml_per_day / freq
+                if "max_mg_per_dose" in indication_info:
+                    ml_per_dose = min(ml_per_dose, indication_info["max_mg_per_dose"] / conc)
+                reply_lines.append(
+                    f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"ครั้งละ ~{ml_per_dose:.1f} ml × {freq} ครั้ง/วัน × {days} วัน"
+                )
+            else:
+                min_freq = min(freqs)
+                max_freq = max(freqs)
+                reply_lines.append(
+                    f"ขนาดยา: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
+                    f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
+                    f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
+                )
+            reply_lines.append(f"→ จ่าย {num_bottles} ขวด ({bottle_size} ml)")
+
+        note = indication_info.get("note")
+        if note:
+            reply_lines.append(f"\n📝 หมายเหตุ: {note}")
 
 
 def calculate_special_drug(user_id, drug, weight, age):
@@ -2721,11 +2711,7 @@ def handle_message(event: MessageEvent):
                     interaction_note = ""
                     supplement = session.get("supplement", "")
                     result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
-                    parts = result.split('\n\n')
-                    if len(parts) >= 2:
-                        final_result = f"{parts[0]}{interaction_note}\n\n{parts[1]}"
-                    else:
-                        final_result = result + interaction_note
+                    final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
                     user_sessions.pop(user_id, None)
                     messaging_api.reply_message(
                         ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
@@ -2744,11 +2730,7 @@ def handle_message(event: MessageEvent):
                     interaction_note = f"\n⚠️ พบการใช้ยา: {text} ซึ่งอาจมีปฏิกิริยากับ Warfarin"
                     supplement = session.get("supplement", "")
                     result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
-                    parts = result.split('\n\n')
-                    if len(parts) >= 2:
-                        final_result = f"{parts[0]}{interaction_note}\n\n{parts[1]}"
-                    else:
-                        final_result = result + interaction_note
+                    final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
                     user_sessions.pop(user_id, None)
                     messaging_api.reply_message(
                         ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
@@ -2759,11 +2741,7 @@ def handle_message(event: MessageEvent):
                 interaction_note = f"\n⚠️ พบการใช้ยา: {text.strip()} ซึ่งอาจมีปฏิกิริยากับ Warfarin"
                 supplement = session.get("supplement", "")
                 result = calculate_warfarin(session["inr"], session["twd"], session["bleeding"], supplement)
-                parts = result.split('\n\n')
-                if len(parts) >= 2:
-                    final_result = f"{parts[0]}{interaction_note}\n\n{parts[1]}"
-                else:
-                    final_result = result + interaction_note
+                final_result = f"{result.split('\n\n')[0]}{interaction_note}\n\n{result.split('\n\n')[1]}"
                 user_sessions.pop(user_id, None)
                 messaging_api.reply_message(
                     ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=final_result)])
