@@ -1800,7 +1800,6 @@ def calculate_dose(drug, indication, weight):
                 ml_per_day_min = min_total_mg_day / conc
                 ml_per_day_max = max_total_mg_day / conc
                 ml_total = ml_per_day_max * days
-                total_ml += ml_total
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -1809,13 +1808,15 @@ def calculate_dose(drug, indication, weight):
                     f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                     f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
                 )
+                 # ✅ เพิ่มส่วนนี้เพื่อคำนวณขวดของ sub นี้เท่านั้น
+                bottles_needed = math.ceil(ml_total / bottle_size)
+                reply_lines.append(f"→ รวม {ml_total:.1f} ml ≈ {bottles_needed} ขวด (ขวดละ {bottle_size} ml)")
             else:
                 total_mg_day = weight * dose_per_kg
                 if max_mg_day:
                     total_mg_day = min(total_mg_day, max_mg_day)
                 ml_per_day = total_mg_day / conc
                 ml_total = ml_per_day * days
-                total_ml += ml_total
 
                 if len(freqs) == 1:
                     freq = freqs[0]
@@ -1833,6 +1834,10 @@ def calculate_dose(drug, indication, weight):
                         f"📌 {sub_ind}: {dose_per_kg} mg/kg/day → {total_mg_day:.0f} mg/day ≈ {ml_per_day:.1f} ml/day, "
                         f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน (ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                     )
+                # ✅ เพิ่มตรงนี้เพื่อแสดงจำนวนขวดเฉพาะของ sub นี้
+                bottles_needed = math.ceil(ml_total / bottle_size)
+                reply_lines.append(f"→ รวม {ml_total:.1f} ml ≈ {bottles_needed} ขวด (ขวดละ {bottle_size} ml)")
+
 
             if note:
                 reply_lines.append(f"📝 หมายเหตุ: {note}")
@@ -1885,7 +1890,8 @@ def calculate_dose(drug, indication, weight):
                 min_mg, max_mg = total_mg_day
                 ml_per_day_min = min_mg / conc
                 ml_per_day_max = max_mg / conc
-                total_ml += ml_per_day_max * days
+                ml_total = ml_per_day_max * days  # ✅ แยก ml เฉพาะของช่วงนี้ แก้ตรงนี้เมื่อกี้ 
+
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -1902,10 +1908,13 @@ def calculate_dose(drug, indication, weight):
                         f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                         f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
                     )
+                # ✅ คำนวณขวดเฉพาะของช่วงนี้
+                bottles_needed = math.ceil(ml_total / bottle_size)
+                reply_lines.append(f"→ รวม {ml_total:.1f} ml ≈ {bottles_needed} ขวด (ขวดละ {bottle_size} ml)")  
+
             else:
                 ml_per_day = total_mg_day / conc
                 ml_phase = ml_per_day * days
-                total_ml += ml_phase
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
@@ -1925,6 +1934,9 @@ def calculate_dose(drug, indication, weight):
                         f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
                         f"(ครั้งละ ~{ml_per_day / max_freq:.1f} – {ml_per_day / min_freq:.1f} ml)"
                     )
+                # ✅ คำนวณขวดเฉพาะของช่วงนี้
+                bottles_needed = math.ceil(ml_phase / bottle_size)
+                reply_lines.append(f"→ รวม {ml_phase:.1f} ml ≈ {bottles_needed} ขวด (ขวดละ {bottle_size} ml)")
 
             note = phase.get("note")
             if note:
@@ -1991,8 +2003,6 @@ def calculate_dose(drug, indication, weight):
         if note:
             reply_lines.append(f"\n📝 หมายเหตุ: {note}")
 
-    bottles = math.ceil(total_ml / bottle_size)
-    reply_lines.append(f"\nรวมทั้งหมด {total_ml:.1f} ml → จ่าย {bottles} ขวด ({bottle_size} ml)")
     return "\n".join(reply_lines)
 
 def calculate_special_drug(user_id, drug, weight, age):
