@@ -1761,7 +1761,20 @@ def send_interaction_flex(reply_token):
         )
     )
 
-def calculate_dose(drug, indication, weight):
+def calculate_dose(drug, indication, weight, age=None):
+    
+    MIN_AGE_LIMITS = {
+        "Cefixime": 0.5,          # 6 เดือน
+        "Cefdinir": 0.5,          # 6 เดือน
+        "Azithromycin": 0.5,      # 6 เดือน
+        "Cephalexin": 0.083,      # 1 เดือน
+    }
+     
+    if age is not None:
+        min_age = MIN_AGE_LIMITS.get(drug)
+        if min_age is not None and age < min_age:
+            return f"❌ ไม่แนะนำให้ใช้ {drug} ในเด็กอายุน้อยกว่า {min_age} ปี"
+    
     drug_info = DRUG_DATABASE.get(drug)
     if not drug_info:
         return f"❌ ไม่พบข้อมูลยา {drug}"
@@ -1800,13 +1813,17 @@ def calculate_dose(drug, indication, weight):
                 ml_per_day_min = min_total_mg_day / conc
                 ml_per_day_max = max_total_mg_day / conc
                 ml_total = ml_per_day_max * days
-
                 min_freq = min(freqs)
                 max_freq = max(freqs)
+                min_dose_per_time = min(ml_per_day_min / min_freq, ml_per_day_max / max_freq)
+                max_dose_per_time = max(ml_per_day_min / min_freq, ml_per_day_max / max_freq)
+                min_dose_per_time, max_dose_per_time = sorted([min_dose_per_time, max_dose_per_time])
+
+                
                 reply_lines.append(
                     f"📌 {sub_ind}: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
                     f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                    f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                    f"(ครั้งละ ~{min_dose_per_time:.1f} – {max_dose_per_time:.1f} ml)"
                 )
                  # ✅ เพิ่มส่วนนี้เพื่อคำนวณขวดของ sub นี้เท่านั้น
                 bottles_needed = math.ceil(ml_total / bottle_size)
@@ -1895,18 +1912,21 @@ def calculate_dose(drug, indication, weight):
 
                 min_freq = min(freqs)
                 max_freq = max(freqs)
-
+                min_dose_per_time = min(ml_per_day_min / min_freq, ml_per_day_max / max_freq)
+                max_dose_per_time = max(ml_per_day_min / min_freq, ml_per_day_max / max_freq)
+                min_dose_per_time, max_dose_per_time = sorted([min_dose_per_time, max_dose_per_time])
+                
                 if min_freq == max_freq:
                     reply_lines.append(
                         f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
                         f"แบ่งวันละ {min_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                        f"(ครั้งละ ~{min_dose_per_time:.1f} – {max_dose_per_time:.1f} ml)"
                     )
                 else:
                     reply_lines.append(
                         f"{day_label} {min_mg:.0f} – {max_mg:.0f} mg/day ≈ {ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, "
                         f"แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                        f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                        f"(ครั้งละ ~{min_dose_per_time:.1f} – {max_dose_per_time:.1f} ml)"
                     )
                 # ✅ คำนวณขวดเฉพาะของช่วงนี้
                 bottles_needed = math.ceil(ml_total / bottle_size)
@@ -1969,10 +1989,14 @@ def calculate_dose(drug, indication, weight):
 
             min_freq = min(freqs)
             max_freq = max(freqs)
+            min_dose_per_time = min(ml_per_day_min / min_freq, ml_per_day_max / max_freq)
+            max_dose_per_time = max(ml_per_day_min / min_freq, ml_per_day_max / max_freq)
+            min_dose_per_time, max_dose_per_time = sorted([min_dose_per_time, max_dose_per_time])
+
             reply_lines.append(
                 f"ขนาดยา: {min_dose} – {max_dose} mg/kg/day → {min_total_mg_day:.0f} – {max_total_mg_day:.0f} mg/day ≈ "
                 f"{ml_per_day_min:.1f} – {ml_per_day_max:.1f} ml/day, แบ่งวันละ {min_freq} – {max_freq} ครั้ง × {days} วัน "
-                f"(ครั้งละ ~{ml_per_day_max / max_freq:.1f} – {ml_per_day_min / min_freq:.1f} ml)"
+                f"(ครั้งละ ~{min_dose_per_time:.1f} – {max_dose_per_time:.1f} ml)"
             )
         else:
             total_mg_day = weight * dose_per_kg
@@ -2068,6 +2092,9 @@ def calculate_special_drug(user_id, drug, weight, age):
         else:
             return f"❌ ยังไม่รองรับข้อบ่งใช้ {indication} ของ {drug}"
     
+    if drug == "Hydroxyzine" and age < 2:
+        return "❌ ไม่แนะนำให้ใช้ Hydroxyzine ในเด็กอายุน้อยกว่า 2 ปี"
+
     if drug == "Hydroxyzine":
         if indication in ["Anxiety", "Pruritus (age-based)"]:
             data = info["indications"][indication]
@@ -2296,15 +2323,15 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         return "\n".join(reply_lines)
     
+    if drug == "Domperidone" and age < 1 / 12:  # 1 เดือน = 1/12 ปี
+        return "❌ ไม่แนะนำให้ใช้ Domperidone ในเด็กอายุน้อยกว่า 1 เดือน"
+
     if drug == "Domperidone":
         indication_data = info["indications"].get(indication)
         if not indication_data:
             return f"❌ ไม่พบข้อมูลข้อบ่งใช้ {indication}"
 
         lines = [f"{drug} - {indication} (น้ำหนัก {weight} kg, อายุ {age} ปี):"]
-
-        if age < 12:
-            return "❌ ไม่แนะนำให้ใช้ในเด็กอายุน้อยกว่า 12 ปี"
 
         matched_group = None
         for group in indication_data:
@@ -2353,6 +2380,9 @@ def calculate_special_drug(user_id, drug, weight, age):
 
         return "\n".join(lines)
     
+    if drug == "Salbutamol" and age < 2:
+        return "❌ ไม่แนะนำให้ใช้ Salbutamol ในเด็กอายุน้อยกว่า 2 ปี"
+
     if drug == "Salbutamol":
         indication_data = info["indications"].get(indication)
         if not indication_data:
@@ -2415,6 +2445,9 @@ def calculate_special_drug(user_id, drug, weight, age):
             lines.append(f"\n📌 หมายเหตุเพิ่มเติม: {info['note']}")
 
         return "\n".join(lines)
+
+    if drug == "Chlorpheniramine" and age < 2:
+        return "❌ ไม่แนะนำให้ใช้ Chlorpheniramine ในเด็กอายุน้อยกว่า 2 ปี"
 
     if drug == "Chlorpheniramine":
         indication_data = info["indications"].get(indication)
@@ -2481,6 +2514,9 @@ def calculate_special_drug(user_id, drug, weight, age):
 
     
     # ✅ Ibuprofen และยาอื่น ๆ ที่ใช้โครงสร้าง weight_based
+    if drug == "Ibuprofen" and age < 0.25:
+        return "❌ ไม่แนะนำให้ใช้ Ibuprofen ในเด็กอายุน้อยกว่า 3 เดือน"
+
     if drug == "Ibuprofen":
         indication_data = info["indications"].get(indication)
         if not indication_data:
@@ -3034,7 +3070,8 @@ def handle_message(event: MessageEvent):
                     else:
                         indication = entry["indication"]
                         try:
-                            reply = calculate_dose(drug, indication, weight)
+                            age = user_ages.get(user_id)
+                            reply = calculate_dose(drug, indication, weight, age)
                         except Exception as e:
                             logging.info(f"❌ คำนวณผิดพลาดใน DRUG_DATABASE: {e}")
                             reply = "เกิดข้อผิดพลาดในการคำนวณยา"
