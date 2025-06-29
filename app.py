@@ -2959,25 +2959,18 @@ def handle_message(event: MessageEvent):
         user_drug_selection[user_id]["indication"] = indication
         drug = user_drug_selection[user_id].get("drug")
 
+        # ล้างอายุก่อน (กันข้อมูลซ้ำเดิม)
         if user_id in user_ages:
             user_ages.pop(user_id)
 
-        if drug in SPECIAL_DRUGS:
-            example_age = random.randint(1, 18)
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
-                )
+        # ✅ แก้ตรงนี้: ถามอายุของเด็กเสมอทั้ง SPECIAL_DRUGS และ DRUG_DATABASE
+        example_age = random.randint(1, 18)
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"📆 กรุณาพิมพ์อายุของเด็ก เช่น {example_age} ปี")]
             )
-        else:
-            example_weight = round(random.uniform(5.0, 20.0), 1)
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"เลือกข้อบ่งใช้ {indication} แล้ว กรุณาพิมพ์น้ำหนักเป็นกิโลกรัม เช่น {example_weight}")]
-                )
-            )
+        )
         return
     
     if user_id in user_drug_selection:
