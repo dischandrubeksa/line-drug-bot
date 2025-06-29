@@ -3000,10 +3000,27 @@ def handle_message(event: MessageEvent):
                 if 0 <= age_years <= 18:
                     user_ages[user_id] = age_years
                     example_weight = round(random.uniform(5.0, 20.0), 1)
+
+                    # ✅ แปลงปีและเดือนเป็นตัวเลขเต็ม
+                    total_months = int(age_years * 12)
+                    display_years = total_months // 12
+                    display_months = total_months % 12
+
+                    # ✅ สร้างข้อความแสดงอายุ เช่น "1 ปี 6 เดือน"
+                    parts = []
+                    if display_years > 0:
+                        parts.append(f"{display_years} ปี")
+                    if display_months > 0:
+                        parts.append(f"{display_months} เดือน")
+                    if not parts:
+                        parts.append("0 เดือน")
+
+                    age_text = " ".join(parts)
+
                     messaging_api.reply_message(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
-                            messages=[TextMessage(text=f"🎯 อายุ {age_years:.2f} ปีแล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
+                            messages=[TextMessage(text=f"🎯 อายุ {age_text}แล้ว กรุณาใส่น้ำหนัก เช่น {example_weight} กก")]
                         )
                     )
                 else:
@@ -3014,6 +3031,7 @@ def handle_message(event: MessageEvent):
                         )
                     )
                 return
+
 
             except:
                 messaging_api.reply_message(
