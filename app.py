@@ -1773,7 +1773,22 @@ def calculate_dose(drug, indication, weight, age=None):
     if age is not None:
         min_age = MIN_AGE_LIMITS.get(drug)
         if min_age is not None and age < min_age:
-            return f"❌ ไม่แนะนำให้ใช้ {drug} ในเด็กอายุน้อยกว่า {min_age} ปี"
+            # 🔁 แปลง min_age (float) → ปี เดือน
+            total_months = int(round(min_age * 12))
+            display_years = total_months // 12
+            display_months = total_months % 12
+
+            parts = []
+            if display_years > 0:
+                parts.append(f"{display_years} ปี")
+            if display_months > 0:
+                parts.append(f"{display_months} เดือน")
+            if not parts:
+                parts.append("0 เดือน")
+
+            readable_min_age = " ".join(parts)
+
+            return f"❌ ไม่แนะนำให้ใช้ {drug} ในเด็กอายุน้อยกว่า {readable_min_age}"
     
     drug_info = DRUG_DATABASE.get(drug)
     if not drug_info:
